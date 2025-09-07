@@ -46,6 +46,7 @@ serve(async (req) => {
     );
 
     const { userInfo, representative, senators, finalMessage, sendOption } = postcardData;
+    const userEmail = postcardData.email; // Extract email to avoid variable shadowing issues
 
     // Validate required fields with detailed error messages
     if (!userInfo) {
@@ -229,7 +230,7 @@ serve(async (req) => {
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[userEmail]': postcardData.email,
+        'metadata[userEmail]': userEmail,
         'metadata[uid]': `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`
       };
 
@@ -288,7 +289,7 @@ serve(async (req) => {
         delivery_status: deliveryStatus
       };
 
-      const { data: postcardData, error: postcardError } = await supabase
+      const { data: insertedPostcard, error: postcardError } = await supabase
         .from('postcards')
         .insert(postcardRecord)
         .select()
@@ -304,7 +305,7 @@ serve(async (req) => {
 
       return { 
         ...ignitepostResult, 
-        postcard_id: postcardData?.id,
+        postcard_id: insertedPostcard?.id,
         delivery_status: deliveryStatus 
       };
     };
@@ -398,13 +399,13 @@ serve(async (req) => {
     // Debug email sending
     console.log('Email sending debug:', {
       successCount,
-      hasEmail: !!postcardData.email,
-      email: postcardData.email,
-      shouldSendEmail: successCount > 0 && postcardData.email
+      hasEmail: !!userEmail,
+      email: userEmail,
+      shouldSendEmail: successCount > 0 && userEmail
     });
 
     // Send confirmation email if any postcards succeeded and email is provided
-    if (successCount > 0 && postcardData.email) {
+    if (successCount > 0 && userEmail) {
       try {
         console.log('Triggering order confirmation email...');
         
@@ -424,7 +425,7 @@ serve(async (req) => {
           body: JSON.stringify({
             userInfo: {
               fullName: userInfo.fullName,
-              email: postcardData.email,
+              email: userEmail,
               streetAddress: userInfo.streetAddress,
               city: userInfo.city,
               state: userInfo.state,
