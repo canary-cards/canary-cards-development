@@ -30,11 +30,12 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Update the AI draft with human approved message
+    // Update the postcard draft with human approved message and approved status
     const { data: updatedDraft, error: updateError } = await supabase
-      .from('ai_drafts')
+      .from('postcard_drafts')
       .update({
-        human_approved_message: humanApprovedMessage
+        human_approved_message: humanApprovedMessage,
+        generation_status: 'approved'
       })
       .eq('id', draftId)
       .select()

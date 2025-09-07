@@ -1092,47 +1092,6 @@ serve(async (req) => {
       });
     }
     
-    // Get API keys from environment
-    const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
-    const guardianApiKey = Deno.env.get('GUARDIAN_API_KEY');
-    const nytApiKey = Deno.env.get('NYT_API_KEY');
-    
-    if (!congressApiKey || !guardianApiKey || !nytApiKey) {
-      return new Response(JSON.stringify({
-        error: 'Missing required API keys. Please configure CONGRESS_API_KEY, GUARDIAN_API_KEY, and NYT_API_KEY'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Initialize API key manager and generator
-    const apiManager = new ApiKeyManager();
-    await apiManager.initialize();
-    
-    const generator = new ClaudeFirstGenerator(
-      congressApiKey,
-      guardianApiKey,
-      nytApiKey,
-      apiManager
-    );
-    
-    // Transform app input to claude-first-system format
-    const claudeRequest = {
-      concern: concerns,
-      personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
-      zipCode: zipCode || 'Not provided',
-      representative: {
-        name: representative.name,
-        title: representative.type?.toLowerCase() === 'representative' ? 'Rep.' : 'Sen.'
-      }
-    };
-    
-    // Generate postcard using complete claude-first-system
-    const result = await generator.generatePostcard(claudeRequest);
-    
-    console.log(`Final message (${result.postcard.length} chars):`, result.postcard);
-    
     // Create Supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -1140,15 +1099,15 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Insert AI draft record
-    const { data: aiDraft, error: draftError } = await supabaseClient
-      .from('ai_drafts')
+    // First, always insert the postcard draft with pending status and user inputs
+    const { data: postcardDraft, error: draftError } = await supabaseClient
+      .from('postcard_drafts')
       .insert({
         invite_code: inviteCode,
         zip_code: zipCode,
         concerns: concerns,
         personal_impact: personalImpact,
-        ai_drafted_message: result.postcard,
+        generation_status: 'pending',
         recipient_type: representative.type === 'representative' ? 'representative' : 'senator',
         recipient_snapshot: representative
       })
@@ -1156,14 +1115,85 @@ serve(async (req) => {
       .single();
 
     if (draftError) {
-      console.error("Error inserting AI draft:", draftError);
-      throw new Error("Failed to save draft");
+      console.error("Error inserting postcard draft:", draftError);
+      return new Response(JSON.stringify({
+        error: 'Failed to save draft record'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Insert sources if available
-    if (result.sources && result.sources.length > 0) {
-      const sourcesData = result.sources.map((source, index) => ({
-        ai_draft_id: aiDraft.id,
+    let finalResult = { postcard: '', sources: [] };
+    let apiStatusCode = 200;
+    let apiStatusMessage = 'Success';
+    let generationStatus = 'success';
+
+    try {
+      // Get API keys from environment
+      const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
+      const guardianApiKey = Deno.env.get('GUARDIAN_API_KEY');
+      const nytApiKey = Deno.env.get('NYT_API_KEY');
+      
+      if (!congressApiKey || !guardianApiKey || !nytApiKey) {
+        throw new Error('Missing required API keys. Please configure CONGRESS_API_KEY, GUARDIAN_API_KEY, and NYT_API_KEY');
+      }
+      
+      // Initialize API key manager and generator
+      const apiManager = new ApiKeyManager();
+      await apiManager.initialize();
+      
+      const generator = new ClaudeFirstGenerator(
+        congressApiKey,
+        guardianApiKey,
+        nytApiKey,
+        apiManager
+      );
+      
+      // Transform app input to claude-first-system format
+      const claudeRequest = {
+        concern: concerns,
+        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
+        zipCode: zipCode || 'Not provided',
+        representative: {
+          name: representative.name,
+          title: representative.type?.toLowerCase() === 'representative' ? 'Rep.' : 'Sen.'
+        }
+      };
+      
+      // Generate postcard using complete claude-first-system
+      finalResult = await generator.generatePostcard(claudeRequest);
+      
+      console.log(`Final message (${finalResult.postcard.length} chars):`, finalResult.postcard);
+      
+    } catch (error) {
+      console.error('AI generation error:', error);
+      generationStatus = 'error';
+      apiStatusCode = 500;
+      apiStatusMessage = error.message || 'AI generation failed';
+      // finalResult remains empty but we continue to save the record
+    }
+
+    // Update the postcard draft with results (success or failure)
+    const { error: updateError } = await supabaseClient
+      .from('postcard_drafts')
+      .update({
+        ai_drafted_message: finalResult.postcard || null,
+        generation_status: generationStatus,
+        api_status_code: apiStatusCode,
+        api_status_message: apiStatusMessage
+      })
+      .eq('id', postcardDraft.id);
+
+    if (updateError) {
+      console.error("Error updating postcard draft:", updateError);
+      // Continue anyway since we already have the draft saved
+    }
+
+    // Insert sources if available and generation was successful
+    if (finalResult.sources && finalResult.sources.length > 0) {
+      const sourcesData = finalResult.sources.map((source, index) => ({
+        ai_draft_id: postcardDraft.id,
         ordinal: index + 1,
         description: source.description,
         url: source.url,
@@ -1171,7 +1201,7 @@ serve(async (req) => {
       }));
 
       const { error: sourcesError } = await supabaseClient
-        .from('ai_draft_sources')
+        .from('postcard_draft_sources')
         .insert(sourcesData);
 
       if (sourcesError) {
@@ -1180,11 +1210,11 @@ serve(async (req) => {
       }
     }
     
-    // Return in app's expected format with draft ID
+    // Return in app's expected format with draft ID (even if AI generation failed)
     return new Response(JSON.stringify({ 
-      draftMessage: result.postcard,
-      sources: result.sources,
-      draftId: aiDraft.id
+      draftMessage: finalResult.postcard,
+      sources: finalResult.sources,
+      draftId: postcardDraft.id
     }), {
       headers: {
         ...corsHeaders,
