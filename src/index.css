@@ -1,0 +1,344 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Canary Cards Brand System v2.0 - Light Mode */
+    --background: 35 85% 96%;
+    --foreground: 212 30% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 212 30% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 212 30% 25%;
+
+    --primary: 212 29% 26%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 7 45% 42%;
+    --secondary-foreground: 7 42% 49%;
+
+    --muted: 36 35% 86%;
+    --muted-foreground: 209 10% 48%;
+
+    --disabled: 210 16% 90%;
+    --disabled-foreground: 209 10% 48%;
+
+    --accent: 46 100% 65%;
+    --accent-foreground: 212 29% 26%;
+
+    --destructive: 3 50% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --rust: 12 76% 61%;
+    --rust-foreground: 0 0% 100%;
+
+    --border: 36 35% 86%;
+    --input: 0 0% 100%;
+    --ring: 212 29% 26%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 35 85% 96%;
+    --sidebar-foreground: 212 30% 25%;
+    --sidebar-primary: 212 29% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 46 100% 65%;
+    --sidebar-accent-foreground: 212 29% 26%;
+    --sidebar-border: 36 35% 86%;
+    --sidebar-ring: 212 29% 26%;
+
+    /* Component sizing variables */
+    --logo-size: 3.25rem; /* ~13, 30% larger than h-10 (2.5rem) */
+    --menu-icon-size: 2.25rem; /* ~9, 50% larger than h-6 (1.5rem) */
+    --menu-icon-stroke: 1; /* Half thickness of default stroke (2) */
+
+    /* Responsive drawer widths */
+    --drawer-width: min(92vw, 360px);
+  }
+
+  .dark {
+    /* Canary Cards Brand System v2.0 - Dark Mode */
+    --background: 212 29% 12%; /* Deep Ink Blue */
+    --foreground: 0 0% 100%; /* White text */
+
+    --card: 212 29% 16%; /* Slightly lighter Ink Blue for cards */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 212 29% 16%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 212 29% 26%; /* Keep Ink Blue consistent */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 7 50% 48%; /* Slightly lighter Brick Red for contrast */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 212 20% 20%; /* Dark muted backgrounds */
+    --muted-foreground: 212 10% 70%;
+
+    --disabled: 212 15% 25%;
+    --disabled-foreground: 212 10% 50%;
+
+    --accent: 46 100% 65%; /* Keep Canary Yellow, ensure proper framing */
+    --accent-foreground: 212 29% 26%; /* Ink Blue text on yellow */
+
+    --destructive: 3 60% 55%; /* Slightly brighter red for dark mode */
+    --destructive-foreground: 0 0% 100%;
+
+    --rust: 12 76% 61%; /* Keep rust consistent */
+    --rust-foreground: 0 0% 100%;
+
+    --border: 212 20% 25%; /* Subtle borders */
+    --input: 212 29% 16%; /* Dark input fields */
+    --ring: 212 29% 26%;
+
+    --sidebar-background: 212 29% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 212 29% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 46 100% 65%;
+    --sidebar-accent-foreground: 212 29% 26%;
+    --sidebar-border: 212 20% 25%;
+    --sidebar-ring: 212 29% 26%;
+  }
+
+  /* Responsive drawer width breakpoints */
+  @media (min-width: 641px) {
+    :root {
+      --drawer-width: min(88vw, 380px);
+    }
+  }
+
+  @media (min-width: 1025px) {
+    :root {
+      --drawer-width: 400px;
+    }
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+  }
+
+  /* Typography Utilities - Canary Cards Brand System */
+  .display-title {
+    font-family: Spectral, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-weight: 700;
+    color: hsl(var(--primary));
+    font-size: 1.5rem; /* text-2xl */
+    line-height: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .display-title {
+      font-size: 1.875rem; /* text-3xl */
+      line-height: 2.25rem;
+    }
+  }
+
+  .subtitle {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+    font-weight: 600;
+    color: hsl(var(--secondary));
+  }
+
+  .eyebrow {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: hsl(var(--primary));
+  }
+
+  .eyebrow-lowercase {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: hsl(var(--primary));
+  }
+
+  .field-label {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: hsl(var(--primary));
+  }
+
+  .body-text {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
+    color: hsl(var(--foreground));
+  }
+
+
+  /* Warmer, friendlier styling */
+  .card-warm {
+    @apply bg-card border border-border/60 shadow-lg shadow-primary/5;
+    border-radius: 1.25rem;
+  }
+
+  .button-warm {
+    @apply rounded-xl shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .input-warm {
+    @apply rounded-xl border-2 border-border/60 focus:border-primary/40 transition-colors;
+  }
+
+  /* Animation utilities */
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  .slide-in {
+    animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .pulse-gentle {
+    animation: pulseGentle 2s infinite;
+  }
+
+  @keyframes pulseGentle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Mobile-first touch targets */
+  button, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+
+  /* Voice recording animations */
+  .recording-pulse {
+    animation: recordingPulse 1.5s infinite;
+  }
+
+  @keyframes recordingPulse {
+    0% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.4); }
+    70% { box-shadow: 0 0 0 10px hsl(var(--destructive) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0); }
+  }
+
+  /* Pen nib glow animation for canary icon */
+  .pen-nib-glow {
+    filter: drop-shadow(0 0 8px hsl(var(--accent))) drop-shadow(0 0 12px hsl(var(--accent))) drop-shadow(0 0 16px hsl(var(--accent)));
+    animation: pen-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pen-glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 4px hsl(var(--accent))) drop-shadow(0 0 8px hsl(var(--accent))) drop-shadow(0 0 12px hsl(var(--accent)));
+      opacity: 0.8;
+    }
+    50% {
+      filter: drop-shadow(0 0 12px hsl(var(--accent))) drop-shadow(0 0 20px hsl(var(--accent))) drop-shadow(0 0 28px hsl(var(--accent)));
+      opacity: 1;
+    }
+  }
+
+  /* Writing progress bar animation - synced with 2s message timing */
+  .writing-progress {
+    animation: writing-fill 2s ease-out forwards;
+  }
+
+  @keyframes writing-fill {
+    0% { width: 0%; }
+    90% { width: 85%; }
+    100% { width: 100%; }
+  }
+
+  /* Scale-in animation for messages */
+  .animate-scale-in {
+    animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes scale-in {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Typewriter effect without cursor */
+  .typewriter-text {
+    animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Hamburger menu responsive widths - higher specificity override */
+  [data-hamburger-menu="true"] {
+    width: min(92vw, 360px) !important;
+    max-width: min(92vw, 360px) !important;
+  }
+
+  @media (min-width: 640px) {
+    [data-hamburger-menu="true"] {
+      width: min(88vw, 380px) !important;
+      max-width: min(88vw, 380px) !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    [data-hamburger-menu="true"] {
+      width: 400px !important;
+      max-width: 400px !important;
+    }
+  }
+}
+
+@keyframes flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
