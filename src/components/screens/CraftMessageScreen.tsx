@@ -199,6 +199,10 @@ export function CraftMessageScreen() {
 
 
   const handleSkipAI = async () => {
+    // Clear any existing toasts first
+    const existingToasts = document.querySelectorAll('[data-sonner-toast]');
+    existingToasts.forEach(toast => toast.remove());
+    
     // Convert list-style inputs to sentences first
     const processedConcerns = convertListToSentence(concerns);
     const processedPersonalImpact = convertListToSentence(personalImpact);

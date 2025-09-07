@@ -5,12 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAppContext } from '../../context/AppContext';
 import { ArrowLeft, Edit3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+
 export function ReviewEditScreen() {
-  const {
-    state,
-    dispatch
-  } = useAppContext();
+  const { state, dispatch } = useAppContext();
+  const { toast } = useToast();
   
   // Debug logging
   console.log('🎯 ReviewEditScreen: Full state:', state);
@@ -48,7 +47,11 @@ ${userInfo?.fullName}`;
   };
   const handleContinue = async () => {
     if (!state.postcardData.draftId) {
-      toast.error('No draft found. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'No draft found. Please try again.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -66,13 +69,21 @@ ${userInfo?.fullName}`;
 
       if (error) {
         console.error('Error approving postcard draft:', error);
-        toast.error('Failed to save your changes. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to save your changes. Please try again.',
+          variant: 'destructive'
+        });
         return;
       }
 
       if (!data?.success) {
         console.error('Failed to approve postcard draft:', data?.error);
-        toast.error('Failed to save your changes. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to save your changes. Please try again.',
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -91,7 +102,11 @@ ${userInfo?.fullName}`;
       });
     } catch (error) {
       console.error('Error calling postcard-draft:', error);
-      toast.error('Failed to save your changes. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to save your changes. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsUpdating(false);
     }
