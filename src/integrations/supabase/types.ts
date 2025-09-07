@@ -23,6 +23,7 @@ export type Database = {
           country: string | null
           created_at: string
           email: string
+          email_normalized: string
           full_name: string
           id: string
           parsed_via: string | null
@@ -39,6 +40,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email: string
+          email_normalized: string
           full_name: string
           id?: string
           parsed_via?: string | null
@@ -55,6 +57,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string
+          email_normalized?: string
           full_name?: string
           id?: string
           parsed_via?: string | null
@@ -325,7 +328,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      normalize_email: {
+        Args: { email_input: string }
+        Returns: string
+      }
     }
     Enums: {
       delivery_status: "submitted" | "mailed" | "failed"
