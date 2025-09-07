@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.draft-postcard-message] 
 verify_jwt = false
 
+[functions.env-diagnostics]
+verify_jwt = false
+
 [functions.geocodio-lookup]
 verify_jwt = false
 

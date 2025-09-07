@@ -3,8 +3,9 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { getStripePublishableKey } from '@/lib/environment';
 
-const stripePromise = loadStripe('pk_test_51Rm04GLqBC9dKThjLjUe7M1Cd8oIgW3IAFBwI1QYk3GsoBLUCu9SfW79On3wjkvst8OJtKpyLPhwjtyqBtonVg5O00BztMUEXj');
+const stripePromise = loadStripe(getStripePublishableKey());
 
 // Global instance tracker to prevent multiple embedded checkouts
 let globalCheckoutInstance: any = null;
