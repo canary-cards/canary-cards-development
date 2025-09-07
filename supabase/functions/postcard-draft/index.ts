@@ -68,8 +68,7 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ 
         success: true,
-        draftId: newDraft.id,
-        message: "Draft created successfully"
+        draftId: newDraft.id
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -104,8 +103,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: true,
         draftId: updatedDraft.id,
-        humanApprovedMessage: updatedDraft.human_approved_message,
-        message: "Draft approved successfully"
+        humanApprovedMessage: updatedDraft.human_approved_message
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
