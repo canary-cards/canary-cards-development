@@ -14,94 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      ai_draft_sources: {
-        Row: {
-          ai_draft_id: string
-          data_point_count: number
-          description: string
-          id: string
-          ordinal: number
-          url: string
-        }
-        Insert: {
-          ai_draft_id: string
-          data_point_count?: number
-          description: string
-          id?: string
-          ordinal: number
-          url: string
-        }
-        Update: {
-          ai_draft_id?: string
-          data_point_count?: number
-          description?: string
-          id?: string
-          ordinal?: number
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_draft_sources_ai_draft_id_fkey"
-            columns: ["ai_draft_id"]
-            isOneToOne: false
-            referencedRelation: "ai_drafts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_drafts: {
-        Row: {
-          ai_drafted_message: string
-          concerns: string | null
-          created_at: string
-          human_approved_message: string | null
-          id: string
-          invite_code: string | null
-          personal_impact: string | null
-          recipient_snapshot: Json
-          recipient_type: Database["public"]["Enums"]["recipient_type"]
-          sent_order_id: string | null
-          sources_count: number
-          zip_code: string
-        }
-        Insert: {
-          ai_drafted_message: string
-          concerns?: string | null
-          created_at?: string
-          human_approved_message?: string | null
-          id?: string
-          invite_code?: string | null
-          personal_impact?: string | null
-          recipient_snapshot: Json
-          recipient_type: Database["public"]["Enums"]["recipient_type"]
-          sent_order_id?: string | null
-          sources_count?: number
-          zip_code: string
-        }
-        Update: {
-          ai_drafted_message?: string
-          concerns?: string | null
-          created_at?: string
-          human_approved_message?: string | null
-          id?: string
-          invite_code?: string | null
-          personal_impact?: string | null
-          recipient_snapshot?: Json
-          recipient_type?: Database["public"]["Enums"]["recipient_type"]
-          sent_order_id?: string | null
-          sources_count?: number
-          zip_code?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ai_drafts_sent_order_id"
-            columns: ["sent_order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       customers: {
         Row: {
           address_line1: string | null
@@ -210,7 +122,7 @@ export type Database = {
             foreignKeyName: "orders_ai_draft_id_fkey"
             columns: ["ai_draft_id"]
             isOneToOne: false
-            referencedRelation: "ai_drafts"
+            referencedRelation: "postcard_drafts"
             referencedColumns: ["id"]
           },
           {
@@ -218,6 +130,103 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      postcard_draft_sources: {
+        Row: {
+          ai_draft_id: string
+          data_point_count: number
+          description: string
+          id: string
+          ordinal: number
+          url: string
+        }
+        Insert: {
+          ai_draft_id: string
+          data_point_count?: number
+          description: string
+          id?: string
+          ordinal: number
+          url: string
+        }
+        Update: {
+          ai_draft_id?: string
+          data_point_count?: number
+          description?: string
+          id?: string
+          ordinal?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_draft_sources_ai_draft_id_fkey"
+            columns: ["ai_draft_id"]
+            isOneToOne: false
+            referencedRelation: "postcard_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      postcard_drafts: {
+        Row: {
+          ai_drafted_message: string | null
+          api_status_code: number | null
+          api_status_message: string | null
+          concerns: string | null
+          created_at: string
+          generation_status: Database["public"]["Enums"]["generation_status"]
+          human_approved_message: string | null
+          id: string
+          invite_code: string | null
+          personal_impact: string | null
+          recipient_snapshot: Json
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id: string | null
+          sources_count: number
+          zip_code: string
+        }
+        Insert: {
+          ai_drafted_message?: string | null
+          api_status_code?: number | null
+          api_status_message?: string | null
+          concerns?: string | null
+          created_at?: string
+          generation_status?: Database["public"]["Enums"]["generation_status"]
+          human_approved_message?: string | null
+          id?: string
+          invite_code?: string | null
+          personal_impact?: string | null
+          recipient_snapshot: Json
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id?: string | null
+          sources_count?: number
+          zip_code: string
+        }
+        Update: {
+          ai_drafted_message?: string | null
+          api_status_code?: number | null
+          api_status_message?: string | null
+          concerns?: string | null
+          created_at?: string
+          generation_status?: Database["public"]["Enums"]["generation_status"]
+          human_approved_message?: string | null
+          id?: string
+          invite_code?: string | null
+          personal_impact?: string | null
+          recipient_snapshot?: Json
+          recipient_type?: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id?: string | null
+          sources_count?: number
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_ai_drafts_sent_order_id"
+            columns: ["sent_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -311,6 +320,7 @@ export type Database = {
     }
     Enums: {
       delivery_status: "submitted" | "mailed" | "failed"
+      generation_status: "pending" | "success" | "error" | "approved"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       recipient_type: "representative" | "senator"
       send_option: "single" | "double" | "triple"
@@ -442,6 +452,7 @@ export const Constants = {
   public: {
     Enums: {
       delivery_status: ["submitted", "mailed", "failed"],
+      generation_status: ["pending", "success", "error", "approved"],
       payment_status: ["pending", "paid", "failed", "refunded"],
       recipient_type: ["representative", "senator"],
       send_option: ["single", "double", "triple"],
