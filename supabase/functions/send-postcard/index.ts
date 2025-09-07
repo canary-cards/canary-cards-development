@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,18 +25,25 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData } = await req.json();
+    const { postcardData, orderId } = await req.json();
     console.log('Received postcard data:', JSON.stringify(postcardData, null, 2));
 
-    if (!postcardData) {
+    if (!postcardData || !orderId) {
       return new Response(
-        JSON.stringify({ error: 'Postcard data required' }),
+        JSON.stringify({ error: 'Postcard data and order ID required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     const { userInfo, representative, senators, finalMessage, sendOption } = postcardData;
 
@@ -227,23 +235,78 @@ serve(async (req) => {
 
       console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));
 
-      const response = await fetch('https://dashboard.ignitepost.com/api/v1/orders', {
-        method: 'POST',
-        headers: {
-          'X-TOKEN': apiKey,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams(orderData).toString()
-      });
+      let ignitepostResult = null;
+      let deliveryStatus = 'failed';
+      let ignitepostError = null;
 
-      const result = await response.json();
-      console.log(`${recipientType} order response:`, JSON.stringify(result, null, 2));
+      try {
+        const response = await fetch('https://dashboard.ignitepost.com/api/v1/orders', {
+          method: 'POST',
+          headers: {
+            'X-TOKEN': apiKey,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams(orderData).toString()
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create ${recipientType} postcard: ${JSON.stringify(result)}`);
+        ignitepostResult = await response.json();
+        console.log(`${recipientType} order response:`, JSON.stringify(ignitepostResult, null, 2));
+
+        if (!response.ok) {
+          ignitepostError = `IgnitePost API error: ${JSON.stringify(ignitepostResult)}`;
+          throw new Error(ignitepostError);
+        } else {
+          deliveryStatus = 'submitted';
+        }
+      } catch (error) {
+        ignitepostError = error.message;
+        console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
-      return result;
+      // Create postcard record in database
+      const postcardRecord = {
+        order_id: orderId,
+        recipient_type: recipientType,
+        recipient_snapshot: recipient,
+        recipient_name: recipientName,
+        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
+        recipient_office_address: recipientAddress.address_one,
+        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
+        message_text: message,
+        ignitepost_template_id: templateId,
+        ignitepost_order_id: ignitepostResult?.id || null,
+        ignitepost_send_on: ignitepostResult?.send_on || null,
+        ignitepost_created_at: ignitepostResult?.created_at ? new Date(ignitepostResult.created_at).toISOString() : null,
+        ignitepost_error: ignitepostError,
+        sender_snapshot: {
+          fullName: userInfo.fullName,
+          streetAddress: senderAddress.streetAddress,
+          city: senderAddress.city,
+          state: senderAddress.state,
+          zipCode: senderAddress.zip
+        },
+        delivery_status: deliveryStatus
+      };
+
+      const { data: postcardData, error: postcardError } = await supabase
+        .from('postcards')
+        .insert(postcardRecord)
+        .select()
+        .single();
+
+      if (postcardError) {
+        console.error('Error creating postcard record:', postcardError);
+      }
+
+      if (deliveryStatus === 'failed') {
+        throw new Error(ignitepostError);
+      }
+
+      return { 
+        ...ignitepostResult, 
+        postcard_id: postcardData?.id,
+        delivery_status: deliveryStatus 
+      };
     };
 
     const results = [];

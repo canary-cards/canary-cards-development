@@ -14,7 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_draft_sources: {
+        Row: {
+          ai_draft_id: string
+          data_point_count: number
+          description: string
+          id: string
+          ordinal: number
+          url: string
+        }
+        Insert: {
+          ai_draft_id: string
+          data_point_count?: number
+          description: string
+          id?: string
+          ordinal: number
+          url: string
+        }
+        Update: {
+          ai_draft_id?: string
+          data_point_count?: number
+          description?: string
+          id?: string
+          ordinal?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_draft_sources_ai_draft_id_fkey"
+            columns: ["ai_draft_id"]
+            isOneToOne: false
+            referencedRelation: "ai_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_drafts: {
+        Row: {
+          ai_drafted_message: string
+          concerns: string | null
+          created_at: string
+          human_approved_message: string | null
+          id: string
+          invite_code: string | null
+          personal_impact: string | null
+          recipient_snapshot: Json
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id: string | null
+          sources_count: number
+          zip_code: string
+        }
+        Insert: {
+          ai_drafted_message: string
+          concerns?: string | null
+          created_at?: string
+          human_approved_message?: string | null
+          id?: string
+          invite_code?: string | null
+          personal_impact?: string | null
+          recipient_snapshot: Json
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id?: string | null
+          sources_count?: number
+          zip_code: string
+        }
+        Update: {
+          ai_drafted_message?: string
+          concerns?: string | null
+          created_at?: string
+          human_approved_message?: string | null
+          id?: string
+          invite_code?: string | null
+          personal_impact?: string | null
+          recipient_snapshot?: Json
+          recipient_type?: Database["public"]["Enums"]["recipient_type"]
+          sent_order_id?: string | null
+          sources_count?: number
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_ai_drafts_sent_order_id"
+            columns: ["sent_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          parsed_via: string | null
+          postal_code: string | null
+          raw_address_text: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          parsed_via?: string | null
+          postal_code?: string | null
+          raw_address_text: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          parsed_via?: string | null
+          postal_code?: string | null
+          raw_address_text?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          ai_draft_id: string | null
+          amount_total: number
+          created_at: string
+          currency: string
+          customer_id: string
+          email_for_receipt: string
+          id: string
+          metadata_snapshot: Json | null
+          paid_at: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          postcard_count: number
+          send_option: Database["public"]["Enums"]["send_option"]
+          stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+        }
+        Insert: {
+          ai_draft_id?: string | null
+          amount_total: number
+          created_at?: string
+          currency?: string
+          customer_id: string
+          email_for_receipt: string
+          id?: string
+          metadata_snapshot?: Json | null
+          paid_at?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          postcard_count?: number
+          send_option: Database["public"]["Enums"]["send_option"]
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Update: {
+          ai_draft_id?: string | null
+          amount_total?: number
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          email_for_receipt?: string
+          id?: string
+          metadata_snapshot?: Json | null
+          paid_at?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          postcard_count?: number
+          send_option?: Database["public"]["Enums"]["send_option"]
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_ai_draft_id_fkey"
+            columns: ["ai_draft_id"]
+            isOneToOne: false
+            referencedRelation: "ai_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      postcards: {
+        Row: {
+          created_at: string
+          delivery_metadata: Json | null
+          delivery_status: Database["public"]["Enums"]["delivery_status"]
+          id: string
+          ignitepost_created_at: string | null
+          ignitepost_error: string | null
+          ignitepost_order_id: string | null
+          ignitepost_send_on: string | null
+          ignitepost_template_id: string | null
+          mailed_at: string | null
+          message_text: string
+          order_id: string
+          postcard_front_image: string | null
+          recipient_district_info: string | null
+          recipient_name: string
+          recipient_office_address: string | null
+          recipient_snapshot: Json
+          recipient_title: string | null
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sender_snapshot: Json
+          webhook_received_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_metadata?: Json | null
+          delivery_status?: Database["public"]["Enums"]["delivery_status"]
+          id?: string
+          ignitepost_created_at?: string | null
+          ignitepost_error?: string | null
+          ignitepost_order_id?: string | null
+          ignitepost_send_on?: string | null
+          ignitepost_template_id?: string | null
+          mailed_at?: string | null
+          message_text: string
+          order_id: string
+          postcard_front_image?: string | null
+          recipient_district_info?: string | null
+          recipient_name: string
+          recipient_office_address?: string | null
+          recipient_snapshot: Json
+          recipient_title?: string | null
+          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          sender_snapshot: Json
+          webhook_received_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_metadata?: Json | null
+          delivery_status?: Database["public"]["Enums"]["delivery_status"]
+          id?: string
+          ignitepost_created_at?: string | null
+          ignitepost_error?: string | null
+          ignitepost_order_id?: string | null
+          ignitepost_send_on?: string | null
+          ignitepost_template_id?: string | null
+          mailed_at?: string | null
+          message_text?: string
+          order_id?: string
+          postcard_front_image?: string | null
+          recipient_district_info?: string | null
+          recipient_name?: string
+          recipient_office_address?: string | null
+          recipient_snapshot?: Json
+          recipient_title?: string | null
+          recipient_type?: Database["public"]["Enums"]["recipient_type"]
+          sender_snapshot?: Json
+          webhook_received_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postcards_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +307,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      delivery_status: "submitted" | "mailed" | "failed"
+      payment_status: "pending" | "paid" | "failed" | "refunded"
+      recipient_type: "representative" | "senator"
+      send_option: "single" | "double" | "triple"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +437,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      delivery_status: ["submitted", "mailed", "failed"],
+      payment_status: ["pending", "paid", "failed", "refunded"],
+      recipient_type: ["representative", "senator"],
+      send_option: ["single", "double", "triple"],
+    },
   },
 } as const

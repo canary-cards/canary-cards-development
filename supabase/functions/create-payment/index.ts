@@ -35,7 +35,8 @@ serve(async (req) => {
           postcard_senators: JSON.stringify(postcardData.senators || []),
           postcard_finalMessage: postcardData.finalMessage || "",
           postcard_sendOption: postcardData.sendOption || sendOption,
-          postcard_email: postcardData.email || email
+          postcard_email: postcardData.email || email,
+          postcard_draftId: postcardData.draftId || ""
         };
         console.log("Prepared postcard metadata for session");
       } catch (error) {

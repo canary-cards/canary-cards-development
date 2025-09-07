@@ -70,6 +70,28 @@ serve(async (req) => {
     if (sent_at) {
       console.log('📮 DELIVERY notification detected - postcard has been sent to mail!');
       
+      // Update postcard record in database
+      const { data: updatedPostcard, error: updateError } = await supabase
+        .from('postcards')
+        .update({
+          delivery_status: 'mailed',
+          mailed_at: new Date(sent_at).toISOString(),
+          webhook_received_at: new Date().toISOString(),
+          delivery_metadata: {
+            sent_at_unix,
+            ignitepost_id: postcardId,
+            webhook_received: true
+          }
+        })
+        .eq('ignitepost_order_id', postcardId)
+        .select();
+
+      if (updateError) {
+        console.error('Error updating postcard delivery status:', updateError);
+      } else {
+        console.log('Updated postcard delivery status:', updatedPostcard);
+      }
+      
       // Try to extract user info from metadata
       let userEmail = null;
       let recipientType = null;

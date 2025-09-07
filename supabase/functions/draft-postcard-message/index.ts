@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { load } from "https://deno.land/std@0.208.0/dotenv/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 // =============================================================================
 // API KEY MANAGER
@@ -1080,11 +1081,11 @@ serve(async (req) => {
   
   try {
     const requestBody = await req.json();
-    const { concerns, personalImpact, representative, zipCode } = requestBody;
+    const { concerns, personalImpact, representative, zipCode, inviteCode } = requestBody;
     
-    if (!concerns || !representative) {
+    if (!concerns || !representative || !zipCode) {
       return new Response(JSON.stringify({
-        error: 'Missing required fields: concerns or representative'
+        error: 'Missing required fields: concerns, representative, or zipCode'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -1132,10 +1133,58 @@ serve(async (req) => {
     
     console.log(`Final message (${result.postcard.length} chars):`, result.postcard);
     
-    // Return in app's expected format
+    // Create Supabase client with service role key
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // Insert AI draft record
+    const { data: aiDraft, error: draftError } = await supabaseClient
+      .from('ai_drafts')
+      .insert({
+        invite_code: inviteCode,
+        zip_code: zipCode,
+        concerns: concerns,
+        personal_impact: personalImpact,
+        ai_drafted_message: result.postcard,
+        recipient_type: representative.type === 'representative' ? 'representative' : 'senator',
+        recipient_snapshot: representative
+      })
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error("Error inserting AI draft:", draftError);
+      throw new Error("Failed to save draft");
+    }
+
+    // Insert sources if available
+    if (result.sources && result.sources.length > 0) {
+      const sourcesData = result.sources.map((source, index) => ({
+        ai_draft_id: aiDraft.id,
+        ordinal: index + 1,
+        description: source.description,
+        url: source.url,
+        data_point_count: source.dataPointCount || 0
+      }));
+
+      const { error: sourcesError } = await supabaseClient
+        .from('ai_draft_sources')
+        .insert(sourcesData);
+
+      if (sourcesError) {
+        console.error("Error inserting sources:", sourcesError);
+        // Don't fail the request for sources error, just log it
+      }
+    }
+    
+    // Return in app's expected format with draft ID
     return new Response(JSON.stringify({ 
       draftMessage: result.postcard,
-      sources: result.sources
+      sources: result.sources,
+      draftId: aiDraft.id
     }), {
       headers: {
         ...corsHeaders,
