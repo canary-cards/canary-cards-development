@@ -89,8 +89,6 @@ ${userInfo?.fullName}`;
         type: 'SET_STEP',
         payload: 4
       });
-
-      toast.success('Your message has been saved.');
     } catch (error) {
       console.error('Error calling postcard-draft:', error);
       toast.error('Failed to save your changes. Please try again.');

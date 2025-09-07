@@ -86,8 +86,7 @@ serve(async (req) => {
       const { data: updatedDraft, error: updateError } = await supabase
         .from('postcard_drafts')
         .update({
-          human_approved_message: humanApprovedMessage,
-          generation_status: 'approved'
+          human_approved_message: humanApprovedMessage
         })
         .eq('id', draftId)
         .select()
