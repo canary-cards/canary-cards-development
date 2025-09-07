@@ -68,7 +68,8 @@ export type Database = {
       orders: {
         Row: {
           ai_draft_id: string | null
-          amount_total: number
+          amount_paid: number
+          amount_refunded: number
           created_at: string
           currency: string
           customer_id: string
@@ -85,7 +86,8 @@ export type Database = {
         }
         Insert: {
           ai_draft_id?: string | null
-          amount_total: number
+          amount_paid: number
+          amount_refunded?: number
           created_at?: string
           currency?: string
           customer_id: string
@@ -102,7 +104,8 @@ export type Database = {
         }
         Update: {
           ai_draft_id?: string | null
-          amount_total?: number
+          amount_paid?: number
+          amount_refunded?: number
           created_at?: string
           currency?: string
           customer_id?: string

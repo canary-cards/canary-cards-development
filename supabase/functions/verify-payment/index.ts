@@ -107,7 +107,7 @@ serve(async (req) => {
           stripe_session_id: session.id,
           stripe_payment_intent_id: session.payment_intent,
           stripe_customer_id: session.customer,
-          amount_total: session.amount_total,
+          amount_paid: session.amount_total, // Using new column name
           payment_status: 'paid',
           paid_at: new Date().toISOString(),
           metadata_snapshot: metadata
@@ -188,6 +188,69 @@ serve(async (req) => {
         status: 200,
       });
     } else {
+      // For failed payments, still create an order record for tracking
+      const metadata = session.metadata;
+      
+      try {
+        // Parse address with fallback
+        const parseAddress = (rawText) => {
+          if (!rawText) return {};
+          
+          // Simple regex parsing as fallback
+          const match = rawText.match(/^([^,]+)(?:,\s*([^,]+))?(?:,\s*([A-Z]{2}))?\s*(\d{5}(?:-\d{4})?)?$/);
+          if (match) {
+            return {
+              address_line1: match[1]?.trim() || rawText,
+              city: match[2]?.trim(),
+              state: match[3]?.trim(),
+              postal_code: match[4]?.trim(),
+              parsed_via: 'regex'
+            };
+          }
+          return { address_line1: rawText, parsed_via: 'fallback' };
+        };
+
+        const userInfo = metadata.postcard_userInfo ? JSON.parse(metadata.postcard_userInfo) : {};
+        const parsedAddress = parseAddress(userInfo.streetAddress);
+
+        // Upsert customer even for failed payments
+        const { data: customer, error: customerError } = await supabase
+          .from('customers')
+          .upsert({
+            email: session.customer_email || metadata.user_email,
+            full_name: metadata.user_full_name || userInfo.fullName || '',
+            raw_address_text: userInfo.streetAddress || '',
+            ...parsedAddress
+          }, {
+            onConflict: 'email',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+
+        if (!customerError) {
+          // Create failed order record
+          await supabase
+            .from('orders')
+            .insert({
+              ai_draft_id: metadata.postcard_draftId || null,
+              customer_id: customer.id,
+              email_for_receipt: session.customer_email || metadata.user_email,
+              send_option: metadata.send_option || metadata.postcard_sendOption || 'single',
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent,
+              stripe_customer_id: session.customer,
+              amount_paid: 0, // No amount paid for failed payment
+              payment_status: 'failed',
+              metadata_snapshot: metadata
+            });
+
+          console.log('Failed payment order recorded');
+        }
+      } catch (error) {
+        console.error('Error recording failed payment:', error);
+      }
+
       return new Response(JSON.stringify({ 
         success: false,
         paymentStatus: session.payment_status,
