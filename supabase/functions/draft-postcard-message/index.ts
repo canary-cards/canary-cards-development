@@ -39,6 +39,7 @@ class ApiKeyManager {
     
     // Extract Anthropic API keys
     const keyPatterns = [
+      'anthropickey', // This appears to be the actual secret name in your Supabase
       'ANTHROPIC_API_KEY_1',
       'ANTHROPIC_API_KEY_2', 
       'ANTHROPIC_API_KEY_3',
