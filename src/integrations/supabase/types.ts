@@ -176,7 +176,9 @@ export type Database = {
           api_status_message: string | null
           concerns: string | null
           created_at: string
-          generation_status: Database["public"]["Enums"]["generation_status"]
+          generation_status:
+            | Database["public"]["Enums"]["generation_status"]
+            | null
           human_approved_message: string | null
           id: string
           invite_code: string | null
@@ -193,7 +195,9 @@ export type Database = {
           api_status_message?: string | null
           concerns?: string | null
           created_at?: string
-          generation_status?: Database["public"]["Enums"]["generation_status"]
+          generation_status?:
+            | Database["public"]["Enums"]["generation_status"]
+            | null
           human_approved_message?: string | null
           id?: string
           invite_code?: string | null
@@ -210,7 +214,9 @@ export type Database = {
           api_status_message?: string | null
           concerns?: string | null
           created_at?: string
-          generation_status?: Database["public"]["Enums"]["generation_status"]
+          generation_status?:
+            | Database["public"]["Enums"]["generation_status"]
+            | null
           human_approved_message?: string | null
           id?: string
           invite_code?: string | null
