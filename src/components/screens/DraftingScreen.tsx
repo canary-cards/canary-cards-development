@@ -136,8 +136,8 @@ export function DraftingScreen() {
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
           <DynamicSvg 
-            assetName="onboarding_icon_3.svg"
-            alt="Real handwriting with ink and pen"
+            assetName="onboarding_icon_2.svg"
+            alt="Canary research process"
             className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
           />
           <div className="flex items-center justify-center space-x-3">
