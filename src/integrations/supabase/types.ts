@@ -14,33 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      svg_assets: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          file_path: string | null
-          id: string
-          name: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          file_path?: string | null
-          id: string
-          name?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          file_path?: string | null
-          id?: string
-          name?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

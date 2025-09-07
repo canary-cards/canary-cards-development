@@ -21,23 +21,6 @@ const getAssetUrl = (assetName: string): string | null => {
   );
   if (directMatch) return directMatch[1];
 
-  // Simplified name mapping for backward compatibility
-  const nameMap: Record<string, string> = {
-    'New Logo v4.svg': 'logo.svg',
-    'onboarding-icon-1-v4': 'onboarding_icon_1.svg',
-    'onboarding-icon-2-v4': 'onboarding_icon_2.svg', 
-    'onboarding-icon-3-v4': 'onboarding_icon_3.svg',
-    'onboarding-icon-4-v4': 'onboarding_icon_4.svg',
-    'zip-code-icon': 'zip_code_page_icon.svg'
-  };
-
-  const mappedName = nameMap[assetName];
-  if (mappedName) {
-    const mappedMatch = Object.entries(svgAssets).find(([path]) => 
-      path.includes(`/${mappedName}`)
-    );
-    if (mappedMatch) return mappedMatch[1];
-  }
 
   return null;
 };
