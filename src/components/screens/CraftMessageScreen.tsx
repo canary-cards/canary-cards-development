@@ -253,11 +253,6 @@ export function CraftMessageScreen() {
       
       dispatch({ type: 'SET_STEP', payload: 3 }); // Go to review screen
 
-      toast({
-        title: 'Draft created',
-        description: 'You can now review and edit your message.',
-      });
-
     } catch (error) {
       console.error('Error in handleSkipAI:', error);
       toast({

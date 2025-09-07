@@ -50,9 +50,9 @@ serve(async (req) => {
           zip_code: zipCode,
           recipient_snapshot: recipientSnapshot,
           recipient_type: recipientType,
-          generation_status: 'pending',
           concerns: concerns || null,
           personal_impact: personalImpact || null,
+          // Don't set generation_status for manual drafts - only for AI generation
           // Don't set human_approved_message until user clicks "Continue"
         })
         .select()
