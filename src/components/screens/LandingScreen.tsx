@@ -15,13 +15,13 @@ import { lookupRepresentatives } from '../../services/geocodio';
 import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target } from 'lucide-react';
 import { Logo } from '../Logo';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
-import { useSvgAssets } from '@/hooks/useSvgAssets';
+
 export function LandingScreen() {
   const {
     state,
     dispatch
   } = useAppContext();
-  const { getSvgUrl } = useSvgAssets();
+  
   const [zipCode, setZipCode] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -132,11 +132,9 @@ export function LandingScreen() {
 
         {/* Icon between title and form */}
         <div className="flex justify-center mb-2">
-          <img
-            src={getSvgUrl('zip code page icon 2.svg')}
-            alt="Zip code page icon"
-            className="w-full max-w-56 h-48 sm:h-56 md:h-64 object-contain pointer-events-none select-none"
-          />
+          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 bg-muted/20 rounded-lg flex items-center justify-center">
+            <span className="text-muted-foreground text-sm">Icon Placeholder</span>
+          </div>
         </div>
 
         {/* Primary CTA - Zip Code Form (Above the fold) */}

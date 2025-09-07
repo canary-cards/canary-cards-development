@@ -7,7 +7,7 @@ import { CheckCircle, Share, Mail, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/Header';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useSvgAssets } from '@/hooks/useSvgAssets';
+
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -15,7 +15,7 @@ export default function PaymentSuccess() {
   const [shareableLink, setShareableLink] = useState('');
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const { toast } = useToast();
-  const { getSvgUrl } = useSvgAssets();
+  
 
   // Get representative data from localStorage
   const getRepresentativeData = () => {
@@ -220,11 +220,9 @@ export default function PaymentSuccess() {
 
         {/* Robot arm icon - positioned with minimal spacing */}
         <div className="flex justify-center my-1">
-          <img 
-            src={getSvgUrl('Onboarding icon 3 new.svg')} 
-            alt="Robot arm" 
-            className="w-full max-w-80 h-48 sm:h-56 md:h-64" 
-          />
+          <div className="w-full max-w-80 h-48 sm:h-56 md:h-64 bg-muted/20 rounded-lg flex items-center justify-center">
+            <span className="text-muted-foreground text-sm">Robot Icon Placeholder</span>
+          </div>
         </div>
 
         {/* Card 1 - Order details (collapsible, default closed) */}

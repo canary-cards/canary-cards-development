@@ -1,5 +1,3 @@
-import { useDynamicSvg } from '@/hooks/useDynamicSvg';
-
 interface DynamicSvgProps {
   assetName: string;
   fallbackSrc?: string;
@@ -17,7 +15,10 @@ export const DynamicSvg = ({
   width, 
   height 
 }: DynamicSvgProps) => {
-  const { svgUrl, loading, error } = useDynamicSvg(assetName);
+  // Simplified version - just use fallback for now
+  const svgUrl = fallbackSrc;
+  const loading = false;
+  const error = null;
 
   if (loading) {
     return (
