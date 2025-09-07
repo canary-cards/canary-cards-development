@@ -7,6 +7,41 @@ interface DynamicSvgProps {
   height?: number;
 }
 
+// Load all SVG assets using Vite's glob import
+const svgAssets = import.meta.glob('/src/assets/**/*.svg', { 
+  eager: true, 
+  as: 'url' 
+}) as Record<string, string>;
+
+// Create a mapping from asset names to URLs
+const getAssetUrl = (assetName: string): string | null => {
+  // Direct filename match
+  const directMatch = Object.entries(svgAssets).find(([path]) => 
+    path.includes(`/${assetName}`)
+  );
+  if (directMatch) return directMatch[1];
+
+  // Simplified name mapping for backward compatibility
+  const nameMap: Record<string, string> = {
+    'New Logo v4.svg': 'logo.svg',
+    'onboarding-icon-1-v4': 'onboarding_icon_1.svg',
+    'onboarding-icon-2-v4': 'onboarding_icon_2.svg', 
+    'onboarding-icon-3-v4': 'onboarding_icon_3.svg',
+    'onboarding-icon-4-v4': 'onboarding_icon_4.svg',
+    'zip-code-icon': 'zip_code_page_icon.svg'
+  };
+
+  const mappedName = nameMap[assetName];
+  if (mappedName) {
+    const mappedMatch = Object.entries(svgAssets).find(([path]) => 
+      path.includes(`/${mappedName}`)
+    );
+    if (mappedMatch) return mappedMatch[1];
+  }
+
+  return null;
+};
+
 export const DynamicSvg = ({ 
   assetName, 
   fallbackSrc, 
@@ -15,26 +50,8 @@ export const DynamicSvg = ({
   width, 
   height 
 }: DynamicSvgProps) => {
-  // Simplified version - just use fallback for now
-  const svgUrl = fallbackSrc;
-  const loading = false;
-  const error = null;
-
-  if (loading) {
-    return (
-      <div 
-        className={`relative overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30 rounded ${className}`} 
-        style={{ width, height }}
-      >
-        {/* Skeleton shape that mimics icon appearance */}
-        <div className="absolute inset-2 bg-gradient-to-br from-muted to-muted/80 rounded animate-pulse" />
-        <div className="absolute inset-4 bg-gradient-to-tr from-muted/60 to-muted/40 rounded-full animate-pulse delay-75" />
-      </div>
-    );
-  }
-
-  // If there's an error or no SVG found, use fallback if provided
-  const src = error || !svgUrl ? fallbackSrc : svgUrl;
+  const assetUrl = getAssetUrl(assetName);
+  const src = assetUrl || fallbackSrc;
 
   if (!src) {
     return (

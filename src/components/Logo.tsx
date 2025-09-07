@@ -8,8 +8,7 @@ interface LogoProps {
 export function Logo({ className }: LogoProps) {
   return (
     <DynamicSvg 
-      assetName="New Logo v4.svg"
-      fallbackSrc="/postallogov1.svg"
+      assetName="logo.svg"
       alt="Canary Cards" 
       className={className}
     />

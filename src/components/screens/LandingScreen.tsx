@@ -14,6 +14,7 @@ import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
 import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target } from 'lucide-react';
 import { Logo } from '../Logo';
+import { DynamicSvg } from '../DynamicSvg';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 
 export function LandingScreen() {
@@ -132,8 +133,12 @@ export function LandingScreen() {
 
         {/* Icon between title and form */}
         <div className="flex justify-center mb-2">
-          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 bg-muted/20 rounded-lg flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">Icon Placeholder</span>
+          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 flex items-center justify-center">
+            <DynamicSvg 
+              assetName="zip_code_page_icon.svg"
+              alt="Enter your zip code"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 

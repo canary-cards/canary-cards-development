@@ -7,6 +7,7 @@ import { CheckCircle, Share, Mail, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/Header';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DynamicSvg } from '@/components/DynamicSvg';
 
 
 export default function PaymentSuccess() {
@@ -220,8 +221,12 @@ export default function PaymentSuccess() {
 
         {/* Robot arm icon - positioned with minimal spacing */}
         <div className="flex justify-center my-1">
-          <div className="w-full max-w-80 h-48 sm:h-56 md:h-64 bg-muted/20 rounded-lg flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">Robot Icon Placeholder</span>
+          <div className="w-full max-w-80 h-48 sm:h-56 md:h-64 flex items-center justify-center">
+            <DynamicSvg 
+              assetName="onboarding_icon_3.svg"
+              alt="Real handwriting with ink and pen"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 
