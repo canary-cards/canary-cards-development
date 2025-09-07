@@ -55,25 +55,28 @@ ${userInfo?.fullName}`;
     setIsUpdating(true);
 
     try {
-      // Call the update-ai-draft edge function
-      const { data, error } = await supabase.functions.invoke('update-ai-draft', {
+      // Call the postcard-draft edge function to approve the draft
+      const { data, error } = await supabase.functions.invoke('postcard-draft', {
         body: {
+          action: 'approve',
           draftId: state.postcardData.draftId,
           humanApprovedMessage: editedMessage
         }
       });
 
       if (error) {
-        console.error('Error updating AI draft:', error);
+        console.error('Error approving postcard draft:', error);
         toast.error('Failed to save your changes. Please try again.');
         return;
       }
 
       if (!data?.success) {
-        console.error('Failed to update AI draft:', data?.error);
+        console.error('Failed to approve postcard draft:', data?.error);
         toast.error('Failed to save your changes. Please try again.');
         return;
       }
+
+      console.log('Draft approved successfully, human_approved_message:', data?.humanApprovedMessage ? 'saved' : 'missing');
 
       // Update local state and continue
       dispatch({
@@ -89,7 +92,7 @@ ${userInfo?.fullName}`;
 
       toast.success('Your message has been saved.');
     } catch (error) {
-      console.error('Error calling update-ai-draft:', error);
+      console.error('Error calling postcard-draft:', error);
       toast.error('Failed to save your changes. Please try again.');
     } finally {
       setIsUpdating(false);

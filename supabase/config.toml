@@ -21,6 +21,9 @@ verify_jwt = false
 [functions.ignitepost-webhook]
 verify_jwt = false
 
+[functions.postcard-draft]
+verify_jwt = false
+
 [functions.refund-payment]
 verify_jwt = false
 
@@ -37,9 +40,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.transcribe-audio]
-verify_jwt = false
-
-[functions.update-ai-draft]
 verify_jwt = false
 
 [functions.verify-payment]
