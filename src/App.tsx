@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { FinalizingOrderScreen } from "./components/FinalizingOrderScreen";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
 import About from "./pages/About";
@@ -74,11 +75,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="civic-postcard-theme">
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
+        <AppErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </AppErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

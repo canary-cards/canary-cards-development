@@ -29,11 +29,7 @@ const AppContent = () => {
 };
 
 const Index = () => {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
+  return <AppContent />;
 };
 
 export default Index;
