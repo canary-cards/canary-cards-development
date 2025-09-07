@@ -145,6 +145,7 @@ serve(async (req) => {
       };
 
       // Auto-trigger postcard sending
+      let postcardResults = null;
       try {
         const sendResponse = await supabase.functions.invoke('send-postcard', {
           body: { 
@@ -154,8 +155,23 @@ serve(async (req) => {
         });
         
         console.log("Postcard sending triggered:", sendResponse);
+        if (sendResponse.data) {
+          postcardResults = sendResponse.data;
+        }
       } catch (sendError) {
         console.error("Failed to trigger postcard sending:", sendError);
+        // Create error results for frontend handling
+        postcardResults = {
+          success: false,
+          error: sendError.message,
+          summary: { totalSent: 0, totalFailed: 1, total: 1 },
+          results: [{
+            type: 'representative',
+            recipient: postcardData.representative?.name || 'Unknown',
+            status: 'error',
+            error: sendError.message
+          }]
+        };
       }
       
       return new Response(JSON.stringify({ 
@@ -165,7 +181,8 @@ serve(async (req) => {
         amountTotal: session.amount_total,
         customerEmail: session.customer_email,
         orderId: order.id,
-        postcardData: postcardData
+        postcardData: postcardData,
+        postcardResults: postcardResults
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

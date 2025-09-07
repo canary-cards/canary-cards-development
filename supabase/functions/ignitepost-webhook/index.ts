@@ -11,6 +11,37 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Webhook verification function
+const verifyWebhookSignature = async (payload: string, signature: string, secret: string): Promise<boolean> => {
+  try {
+    // IgnitePost uses HMAC-SHA256 for webhook signatures
+    const crypto = globalThis.crypto;
+    const encoder = new TextEncoder();
+    const key = encoder.encode(secret);
+    const data = encoder.encode(payload);
+    
+    // Create HMAC signature
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, data);
+    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Compare signatures (should be prefixed with 'sha256=')
+    const receivedSignature = signature.replace('sha256=', '');
+    return expectedSignature === receivedSignature;
+  } catch {
+    return false;
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -31,8 +62,31 @@ serve(async (req) => {
       });
     }
 
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-signature') || req.headers.get('x-ignitepost-signature');
+    const webhookSecret = Deno.env.get('IGNITEPOST_WEBHOOK_SECRET');
+    
+    // Verify webhook signature if secret is configured
+    if (webhookSecret && signature) {
+      console.log('Verifying webhook signature...');
+      const isValid = await verifyWebhookSignature(rawBody, signature, webhookSecret);
+      if (!isValid) {
+        console.error('❌ Invalid webhook signature');
+        return new Response('Unauthorized', { 
+          status: 401, 
+          headers: corsHeaders 
+        });
+      }
+      console.log('✅ Webhook signature verified');
+    } else if (webhookSecret) {
+      console.warn('⚠️ Webhook secret configured but no signature provided');
+    } else {
+      console.warn('⚠️ Webhook signature verification disabled (no secret configured)');
+    }
+
     // Parse the webhook payload - this is the actual IgnitePost format
-    const webhookData = await req.json();
+    const webhookData = JSON.parse(rawBody);
     console.log('Webhook payload:', JSON.stringify(webhookData, null, 2));
 
     // Extract information from the actual IgnitePost webhook format

@@ -62,36 +62,31 @@ export default function PaymentReturn() {
     return null;
   };
 
-  const orderPostcardsWithData = async (postcardData: any) => {
+  const handlePostcardResults = async (postcardResults: any) => {
     try {
       setStatus('ordering');
       
+      if (!postcardResults) {
+        toast({
+          title: "No postcard results",
+          description: "Please contact support.",
+          variant: "destructive",
+        });
+        setStatus('error');
+        dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
+        return;
+      }
+
       // Simulation flags for testing (now works in production too)
       const urlParams = new URLSearchParams(window.location.search);
       const simulateFailure = urlParams.has('simulate_failure');
       const simulatedFailedCount = parseInt(urlParams.get('simulate_failed') || '1');
       
-      if (!postcardData || !validatePostcardData(postcardData)) {
-        // Clear any corrupted storage data
-        sessionStorage.removeItem('appContextBackup');
-        localStorage.removeItem('postcardData');
-        
-        toast({
-          title: "Session expired",
-          description: "Please start the postcard process again.",
-          variant: "destructive",
-        });
-        
-        setTimeout(() => {
-          navigate('/onboarding');
-        }, 3000);
-        return;
-      }
+      let data;
       
-      let data, error;
-      
-      // Simulate failure for testing if flag is set
-      if (simulateFailure) {
+      // Use simulation results if flag is set, otherwise use actual results
+      if (simulateFailure && state.postcardData) {
+        const postcardData = state.postcardData;
         const totalRecipients = 1 + (postcardData.sendOption === 'double' ? 1 : postcardData.sendOption === 'triple' ? 2 : 0);
         const failedCount = Math.min(simulatedFailedCount, totalRecipients);
         const successCount = totalRecipients - failedCount;
@@ -121,17 +116,8 @@ export default function PaymentReturn() {
             sendOption: postcardData.sendOption
           }
         };
-        error = null;
       } else {
-        const result = await supabase.functions.invoke('send-postcard', {
-          body: { postcardData }
-        });
-        data = result.data;
-        error = result.error;
-      }
-      
-      if (error) {
-        throw error;
+        data = postcardResults;
       }
       
       setOrderingResults(data);
@@ -158,7 +144,7 @@ export default function PaymentReturn() {
       } else {
         // Some or all postcards failed - issue partial refund
         const sessionId = searchParams.get('session_id');
-        const sendOption = postcardData.sendOption;
+        const sendOption = state.postcardData?.sendOption || 'single';
         
         let refundAmountCents: number;
         if (totalFailed === totalRecipients) {
@@ -213,57 +199,12 @@ export default function PaymentReturn() {
         });
       }
     } catch (error) {
-      console.error("Postcard ordering failed:", error);
-      
-      // Full failure - refund entire amount
-      const sessionId = searchParams.get('session_id');
-      if (sessionId) {
-        try {
-          const sendOption = postcardData?.sendOption || 'single';
-          const refundAmountCents = getTotalPriceCents(sendOption);
-          
-          console.log("Attempting full refund for total failure...");
-          const { data: refundData, error: refundError } = await supabase.functions.invoke('refund-payment', {
-            body: { 
-              sessionId,
-              amount: refundAmountCents,
-              reason: "Total postcard creation failure: " + error.message 
-            }
-          });
-          
-          if (refundError) {
-            console.error("Refund failed:", refundError);
-          } else {
-            console.log("Full refund successful:", refundData);
-          }
-          
-          dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
-          navigate('/payment-refunded', {
-            state: {
-              failedCount: 1,
-              totalCount: 1,
-              refundAmountCents,
-              refundId: refundData?.refund_id || null,
-              results: [{
-                type: 'representative',
-                recipient: postcardData?.representative?.name || 'Unknown',
-                status: 'error',
-                error: error.message
-              }]
-            }
-          });
-          return;
-        } catch (refundError) {
-          console.error("Error during refund process:", refundError);
-        }
-      }
-      
-      // Fallback if no session ID or refund fails
+      console.error("Error processing postcard results:", error);
       setStatus('error');
       setOrderingResults({ error: error.message });
       dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
       toast({
-        title: "Failed to order postcards",
+        title: "Failed to process postcard results",
         description: "Please contact support. Your payment may need to be refunded manually.",
         variant: "destructive",
       });
@@ -272,9 +213,9 @@ export default function PaymentReturn() {
 
   const retryPostcardOrdering = async () => {
     setRetryAttempts(prev => prev + 1);
-    const postcardData = getPostcardData();
-    if (postcardData) {
-      await orderPostcardsWithData(postcardData);
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+      await verifyPaymentAndOrder(sessionId);
     }
   };
 
@@ -307,7 +248,7 @@ export default function PaymentReturn() {
         return;
       }
       
-      // Use postcard data from payment session metadata
+      // Use postcard data from payment session metadata and results from verify-payment
       if (verificationResult.postcardData) {        
         // Update app state with the postcard data from payment session
         dispatch({ 
@@ -315,8 +256,25 @@ export default function PaymentReturn() {
           payload: verificationResult.postcardData 
         });
         
-        // Start ordering immediately with session data (pass data directly to avoid state timing issues)
-        orderPostcardsWithData(verificationResult.postcardData);
+        // Handle postcard results from verify-payment (server-side orchestration)
+        if (verificationResult.postcardResults) {
+          handlePostcardResults(verificationResult.postcardResults);
+        } else {
+          // If no postcard results, assume success and proceed to success page
+          const elapsed = Date.now() - startTime;
+          const minTime = 4000; // 4 seconds
+          const remainingTime = Math.max(0, minTime - elapsed);
+          
+          setTimeout(() => {
+            dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
+            navigate('/payment-success', { 
+              state: { 
+                sessionId: searchParams.get('session_id'),
+                orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } }
+              }
+            });
+          }, remainingTime);
+        }
       } else {
         setStatus('error');
         // Clear global payment loading on error
