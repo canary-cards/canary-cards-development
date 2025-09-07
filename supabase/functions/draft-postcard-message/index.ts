@@ -44,7 +44,7 @@ class ApiKeyManager {
       'ANTHROPIC_API_KEY_3',
       'ANTHROPIC_API_KEY_4',
       'ANTHROPIC_API_KEY_5',
-      'anthropickey' // Legacy support
+      'ANTHROPIC_API_KEY' // Legacy support
     ];
 
     for (const pattern of keyPatterns) {

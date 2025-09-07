@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('IgnitePostAPI Key - Test');
+    const apiKey = Deno.env.get('IgnitePostAPI');
     if (!apiKey) {
       console.error('IgnitePost API key not found');
       return new Response(
@@ -352,7 +352,7 @@ serve(async (req) => {
         // Generate order ID
         const orderId = `CC-${Date.now()}${Math.floor(Math.random() * 1000)}`;
         
-        const emailResponse = await fetch('https://xwsgyxlvxntgpochonwe.supabase.co/functions/v1/send-order-confirmation', {
+        const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-order-confirmation`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

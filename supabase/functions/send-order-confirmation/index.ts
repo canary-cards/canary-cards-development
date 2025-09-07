@@ -58,8 +58,10 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get app URL for sharing - use canary.cards as primary domain
+    // Get app URL for sharing - use environment variable with fallback
     const getAppUrl = () => {
+      const frontendUrl = Deno.env.get('FRONTEND_URL');
+      if (frontendUrl) return frontendUrl;
       return 'https://canary.cards';
     };
 
@@ -94,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         console.log('Attempting to fetch files from Email logo bucket...');
         const { data: files, error } = await supabase.storage
-          .from('Email logo bucket')
+          .from('svg-assets')
           .list('', {
             limit: 100,
             offset: 0
@@ -113,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (logoFile) {
             const { data: { publicUrl } } = supabase.storage
-              .from('Email logo bucket')
+              .from('svg-assets')
               .getPublicUrl(logoFile.name);
             logoUrl = publicUrl;
             console.log('Using logo from storage:', logoUrl);

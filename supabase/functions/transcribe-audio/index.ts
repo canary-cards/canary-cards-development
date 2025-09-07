@@ -48,7 +48,7 @@ serve(async (req) => {
       throw new Error('No audio data provided');
     }
 
-    const OPENAI_API_KEY = Deno.env.get('ChatGPTKey');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
       throw new Error('ChatGPT API key not configured');
     }

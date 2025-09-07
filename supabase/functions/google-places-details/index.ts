@@ -15,7 +15,7 @@ serve(async (req) => {
     
     console.log('Received place details request for:', placeId)
 
-    const apiKey = Deno.env.get('Google Places Api')
+    const apiKey = Deno.env.get('Google')
     if (!apiKey) {
       console.error('Google Places API key not found')
       throw new Error('Google Places API key not found')
