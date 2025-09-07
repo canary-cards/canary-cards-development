@@ -76,7 +76,7 @@ serve(async (req) => {
       const userInfo = metadata.postcard_userInfo ? JSON.parse(metadata.postcard_userInfo) : {};
       const parsedAddress = parseAddress(userInfo.streetAddress);
 
-      // Upsert customer
+      // Upsert customer using normalized email
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .upsert({
@@ -85,7 +85,7 @@ serve(async (req) => {
           raw_address_text: userInfo.streetAddress || '',
           ...parsedAddress
         }, {
-          onConflict: 'email',
+          onConflict: 'email_normalized',
           ignoreDuplicates: false
         })
         .select()
@@ -213,7 +213,7 @@ serve(async (req) => {
         const userInfo = metadata.postcard_userInfo ? JSON.parse(metadata.postcard_userInfo) : {};
         const parsedAddress = parseAddress(userInfo.streetAddress);
 
-        // Upsert customer even for failed payments
+        // Upsert customer even for failed payments using normalized email
         const { data: customer, error: customerError } = await supabase
           .from('customers')
           .upsert({
@@ -222,7 +222,7 @@ serve(async (req) => {
             raw_address_text: userInfo.streetAddress || '',
             ...parsedAddress
           }, {
-            onConflict: 'email',
+            onConflict: 'email_normalized',
             ignoreDuplicates: false
           })
           .select()

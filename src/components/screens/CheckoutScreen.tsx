@@ -16,6 +16,7 @@ import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTotalPriceDollars } from '@/lib/pricing';
+import { validateEmailWithSuggestion, normalizeEmail } from '@/lib/emailUtils';
 type RecipientSelection = 'rep-only' | 'all-three' | 'custom';
 export function CheckoutScreen() {
   const {
@@ -25,6 +26,7 @@ export function CheckoutScreen() {
   const isMobile = useIsMobile(); // Fixed mobile hook import
   const [email, setEmail] = useState(state.postcardData.email || '');
   const [emailError, setEmailError] = useState('');
+  const [emailSuggestion, setEmailSuggestion] = useState('');
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
   const [selection, setSelection] = useState<RecipientSelection>('rep-only'); // Default to "Just your Representative"
@@ -61,13 +63,25 @@ export function CheckoutScreen() {
     };
     fetchSenatorsFromZip();
   }, [userInfo?.zipCode]);
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    if (emailError && validateEmail(value)) {
+    setEmailError('');
+    setEmailSuggestion('');
+    
+    if (value) {
+      const validation = validateEmailWithSuggestion(value);
+      if (!validation.isValid) {
+        setEmailError(validation.error || '');
+      } else if (validation.suggestion) {
+        setEmailSuggestion(validation.suggestion);
+      }
+    }
+  };
+  
+  const applySuggestion = () => {
+    if (emailSuggestion) {
+      setEmail(emailSuggestion);
+      setEmailSuggestion('');
       setEmailError('');
     }
   };
@@ -142,8 +156,9 @@ export function CheckoutScreen() {
     return result;
   };
   const handlePayment = async () => {
-    if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
+    const validation = validateEmailWithSuggestion(email);
+    if (!validation.isValid) {
+      setEmailError(validation.error || 'Please enter a valid email address');
       return;
     }
     if (!validateSelection()) {
@@ -485,11 +500,31 @@ export function CheckoutScreen() {
                 {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} className="bg-white" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    value={email} 
+                    onChange={e => handleEmailChange(e.target.value)} 
+                    className="bg-white" 
+                  />
                   <p className="text-sm text-muted-foreground">
                     We'll send you an order confirmation here after checkout and when your card is mailed.
                   </p>
                   {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+                  {emailSuggestion && !emailError && (
+                    <div className="text-sm text-muted-foreground">
+                      Did you mean{' '}
+                      <button 
+                        type="button"
+                        onClick={applySuggestion}
+                        className="text-primary underline hover:no-underline"
+                      >
+                        {emailSuggestion}
+                      </button>
+                      ?
+                    </div>
+                  )}
                 </div>
 
 
@@ -510,7 +545,7 @@ export function CheckoutScreen() {
         {/* Sticky CTA for Both Mobile and Desktop */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40 space-y-2 pb-[env(safe-area-inset-bottom)]">
           <div className="max-w-2xl mx-auto">
-            <Button onClick={handlePayment} disabled={!email || !validateEmail(email) || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium">
+            <Button onClick={handlePayment} disabled={!email || !validateEmailWithSuggestion(email).isValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium">
               {isProcessing ? <>
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
                   <span>Loading...</span>
