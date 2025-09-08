@@ -316,7 +316,7 @@ export function CraftMessageScreen() {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <label className="field-label">I'm most concerned about:</label>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 items-start">
                     <Textarea
                       placeholder="Immigration..."
                       value={concerns}
@@ -403,7 +403,7 @@ export function CraftMessageScreen() {
 
                 <div className="space-y-3">
                   <label className="field-label">How it affects me or my community:</label>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 items-start">
                     <Textarea
                       placeholder="I am a parent of two children in public schools..."
                       value={personalImpact}
