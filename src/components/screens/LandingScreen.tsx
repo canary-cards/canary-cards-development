@@ -212,7 +212,7 @@ export function LandingScreen() {
             
             {representatives.map(rep => <RepresentativeCard key={rep.id} representative={rep} isSelected={selectedRep?.id === rep.id} showBadge={true} onClick={() => handleRepSelect(rep)} />)}
             
-            {selectedRep && <Button ref={continueButtonRef} onClick={handleContinue} className="w-full h-12 text-base font-medium">
+            {selectedRep && <Button ref={continueButtonRef} onClick={handleContinue} className="w-full h-12 text-base font-medium mb-6">
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>}
