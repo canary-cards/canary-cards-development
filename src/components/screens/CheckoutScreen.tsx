@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
 import { EmbeddedCheckout } from '../EmbeddedCheckout';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, Check, MapPin, IdCard } from 'lucide-react';
+import { ArrowLeft, Shield, ChevronDown, ChevronUp, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,7 @@ export function CheckoutScreen() {
   const [email, setEmail] = useState(state.postcardData.email || '');
   const [emailError, setEmailError] = useState('');
   const [emailSuggestion, setEmailSuggestion] = useState('');
+  const [emailValid, setEmailValid] = useState(false);
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
   const [selection, setSelection] = useState<RecipientSelection>('rep-only'); // Default to "Just your Representative"
@@ -65,16 +66,34 @@ export function CheckoutScreen() {
   }, [userInfo?.zipCode]);
   const handleEmailChange = (value: string) => {
     setEmail(value);
+    // Clear validation states on change
     setEmailError('');
     setEmailSuggestion('');
+    setEmailValid(false);
+  };
+
+  const handleEmailBlur = () => {
+    if (!email.trim()) {
+      setEmailError('');
+      setEmailSuggestion('');
+      setEmailValid(false);
+      return;
+    }
+
+    const validation = validateEmailWithSuggestion(email);
     
-    if (value) {
-      const validation = validateEmailWithSuggestion(value);
-      if (!validation.isValid) {
-        setEmailError(validation.error || '');
-      } else if (validation.suggestion) {
-        setEmailSuggestion(validation.suggestion);
-      }
+    if (!validation.isValid) {
+      setEmailError(validation.combinedMessage || validation.error || '');
+      setEmailSuggestion(validation.suggestion || '');
+      setEmailValid(false);
+    } else if (validation.suggestion) {
+      setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
+      setEmailSuggestion(validation.suggestion);
+      setEmailValid(false);
+    } else {
+      setEmailError('');
+      setEmailSuggestion('');
+      setEmailValid(true);
     }
   };
   
@@ -83,6 +102,7 @@ export function CheckoutScreen() {
       setEmail(emailSuggestion);
       setEmailSuggestion('');
       setEmailError('');
+      setEmailValid(true);
     }
   };
   const getSelectedRecipients = () => {
@@ -500,29 +520,43 @@ export function CheckoutScreen() {
                 {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@example.com" 
-                    value={email} 
-                    onChange={e => handleEmailChange(e.target.value)} 
-                    className="bg-white" 
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="you@example.com" 
+                      value={email} 
+                      onChange={e => handleEmailChange(e.target.value)}
+                      onBlur={handleEmailBlur}
+                      className={`bg-white pr-10 ${
+                        emailError ? 'border-destructive focus-visible:border-destructive' : 
+                        emailValid ? 'border-green-500 focus-visible:border-green-500' : ''
+                      }`} 
+                    />
+                    {emailValid && (
+                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     We'll send you an order confirmation here after checkout and when your card is mailed.
                   </p>
-                  {emailError && <p className="text-sm text-destructive">{emailError}</p>}
-                  {emailSuggestion && !emailError && (
-                    <div className="text-sm text-muted-foreground">
-                      Did you mean{' '}
-                      <button 
-                        type="button"
-                        onClick={applySuggestion}
-                        className="text-primary underline hover:no-underline"
-                      >
-                        {emailSuggestion}
-                      </button>
-                      ?
+                  {emailError && (
+                    <div className="text-sm text-destructive">
+                      {emailSuggestion ? (
+                        <>
+                          {emailError.replace(`Did you mean ${emailSuggestion}?`, 'Invalid email address. Did you mean')}{' '}
+                          <button 
+                            type="button"
+                            onClick={applySuggestion}
+                            className="text-primary underline hover:no-underline font-medium"
+                          >
+                            {emailSuggestion}
+                          </button>
+                          ?
+                        </>
+                      ) : (
+                        emailError
+                      )}
                     </div>
                   )}
                 </div>

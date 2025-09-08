@@ -121,6 +121,7 @@ export function validateEmailWithSuggestion(email: string): {
   isValid: boolean;
   suggestion?: string;
   error?: string;
+  combinedMessage?: string;
 } {
   if (!email) {
     return { isValid: false, error: 'Email is required' };
@@ -129,7 +130,16 @@ export function validateEmailWithSuggestion(email: string): {
   const trimmed = email.trim();
   
   if (!validateEmail(trimmed)) {
-    return { isValid: false, error: 'Please enter a valid email address' };
+    const suggestion = suggestEmailCorrection(trimmed);
+    if (suggestion && suggestion !== trimmed) {
+      return { 
+        isValid: false, 
+        suggestion,
+        error: 'Invalid email address',
+        combinedMessage: `Invalid email address. Did you mean ${suggestion}?`
+      };
+    }
+    return { isValid: false, error: 'Invalid email address' };
   }
   
   const suggestion = suggestEmailCorrection(trimmed);
@@ -137,7 +147,7 @@ export function validateEmailWithSuggestion(email: string): {
     return { 
       isValid: true, 
       suggestion,
-      error: `Did you mean ${suggestion}?`
+      combinedMessage: `Did you mean ${suggestion}?`
     };
   }
   
