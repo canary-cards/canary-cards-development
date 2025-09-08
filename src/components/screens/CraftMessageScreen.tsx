@@ -341,7 +341,6 @@ export function CraftMessageScreen() {
                         <Button
                           type="button"
                           variant="secondary"
-                          size="default"
                           aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
                           aria-pressed={isRecording && recordingField === 'concerns'}
                           onClick={() => {
@@ -356,7 +355,7 @@ export function CraftMessageScreen() {
                               }
                             }
                           }}
-                          className={`self-stretch w-auto px-3 sm:px-4 button-warm transition-all duration-200 flex-shrink-0 ${
+                          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
                             showOnboarding && recordingField !== 'concerns' ? 'pulse-gentle' : ''
                           } ${
                             isRecording && recordingField === 'concerns'
@@ -428,11 +427,10 @@ export function CraftMessageScreen() {
                         <Button
                           type="button"
                           variant="secondary"
-                          size="default"
                           aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
                           aria-pressed={isRecording && recordingField === 'impact'}
                           onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-                          className={`self-stretch w-auto px-3 sm:px-4 button-warm transition-all duration-200 flex-shrink-0 ${
+                          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
                             isRecording && recordingField === 'impact'
                               ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 recording-pulse'
                               : 'bg-secondary text-secondary-foreground hover:bg-secondary/90'
