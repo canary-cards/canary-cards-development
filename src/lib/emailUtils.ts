@@ -60,6 +60,14 @@ export function validateEmail(email: string): boolean {
   // Ensure domain doesn't start or end with dot or hyphen
   if (domain.startsWith('.') || domain.endsWith('.') || domain.startsWith('-') || domain.endsWith('-')) return false;
   
+  // Check TLD is at least 2 characters long
+  const parts = domain.split('.');
+  const tld = parts[parts.length - 1];
+  if (tld.length < 2) return false;
+  
+  // Ensure TLD contains only letters (no numbers or special chars)
+  if (!/^[a-zA-Z]{2,}$/.test(tld)) return false;
+  
   return true;
 }
 
