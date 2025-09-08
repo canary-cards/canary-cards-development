@@ -25,17 +25,13 @@ export function CraftMessageScreen() {
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const onboardingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check for first visit and show onboarding
+  // Show onboarding animation on every page load
   useEffect(() => {
-    const hasSeenVoiceOnboarding = safeStorage.getItem('voice-onboarding-seen');
-    if (!hasSeenVoiceOnboarding) {
-      setShowOnboarding(true);
-      // Auto-hide onboarding after 3 seconds
-      onboardingTimeoutRef.current = setTimeout(() => {
-        setShowOnboarding(false);
-        safeStorage.setItem('voice-onboarding-seen', 'true');
-      }, 3000);
-    }
+    setShowOnboarding(true);
+    // Auto-hide onboarding after 3 seconds
+    onboardingTimeoutRef.current = setTimeout(() => {
+      setShowOnboarding(false);
+    }, 3000);
 
     return () => {
       if (onboardingTimeoutRef.current) {
@@ -351,7 +347,6 @@ export function CraftMessageScreen() {
                               // Hide onboarding when user interacts
                               if (showOnboarding) {
                                 setShowOnboarding(false);
-                                safeStorage.setItem('voice-onboarding-seen', 'true');
                               }
                             }
                           }}
