@@ -117,7 +117,7 @@ export function LandingScreen() {
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} />}
 
       <div className={`min-h-screen bg-background ${showSharedDialog ? 'pt-16' : ''}`}>
-      <div className="container mx-auto px-4 max-w-2xl">
+      <div className="container mx-auto px-4 max-w-2xl pb-4">
         {/* Mobile-First Hero Section */}
         <div className="text-center">
           {/* Hero Text */}
