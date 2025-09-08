@@ -12,7 +12,7 @@ export function StepDots({ currentStep, totalSteps }: StepDotsProps) {
   // Mobile: Use dots
   if (isMobile) {
     return (
-      <div className="flex items-center justify-center gap-2 py-4">
+      <div className="flex items-center justify-center gap-2 py-4 max-w-2xl mx-auto px-4">
         {Array.from({ length: totalSteps }, (_, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
