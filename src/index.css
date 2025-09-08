@@ -234,20 +234,18 @@ All colors MUST be HSL.
   }
 
   .pulse-gentle {
-    animation: pulseGentle 6s infinite ease-in-out;
+    animation: pulseGentle 3s infinite ease-in-out;
   }
 
   @keyframes pulseGentle {
-    0%, 100% { opacity: 1; }
-    10% { opacity: 0.98; }
-    20% { opacity: 0.95; }
-    30% { opacity: 0.92; }
-    40% { opacity: 0.88; }
-    50% { opacity: 0.85; }
-    60% { opacity: 0.88; }
-    70% { opacity: 0.92; }
-    80% { opacity: 0.95; }
-    90% { opacity: 0.98; }
+    0%, 100% { 
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3);
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 0 6px hsl(var(--primary) / 0);
+      transform: scale(1.02);
+    }
   }
 
   /* Mobile-first touch targets */
