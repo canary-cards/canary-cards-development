@@ -537,9 +537,6 @@ export function CheckoutScreen() {
                       <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    We'll send you an order confirmation here after checkout and when your card is mailed.
-                  </p>
                   {emailError && (
                     <div className="text-sm text-destructive">
                       {emailSuggestion ? (
@@ -559,6 +556,9 @@ export function CheckoutScreen() {
                       )}
                     </div>
                   )}
+                  <p className="text-sm text-muted-foreground">
+                    We'll send you an order confirmation here after checkout and when your card is mailed.
+                  </p>
                 </div>
 
 
