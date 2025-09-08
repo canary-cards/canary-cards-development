@@ -565,12 +565,11 @@ export function CheckoutScreen() {
                       onChange={e => handleEmailChange(e.target.value)}
                       onBlur={handleEmailBlur}
                       className={`bg-white pr-10 ${
-                        emailError ? 'border-destructive focus-visible:border-destructive' : 
-                        emailValid ? 'border-green-500 focus-visible:border-green-500' : ''
+                        emailError ? 'border-destructive focus-visible:border-destructive' : ''
                       }`} 
                     />
                     {emailValid && (
-                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     )}
                   </div>
                   {emailError && (
