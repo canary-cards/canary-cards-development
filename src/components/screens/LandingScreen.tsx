@@ -205,7 +205,7 @@ export function LandingScreen() {
             <Skeleton className="h-20 w-full rounded-xl" />
           </div>}
 
-        {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-6 space-y-4">
+        {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-3 space-y-4">
             {representatives.length > 1 && <p className="text-center text-sm text-muted-foreground px-4">
                 Multiple representatives found. Select yours:
               </p>}
