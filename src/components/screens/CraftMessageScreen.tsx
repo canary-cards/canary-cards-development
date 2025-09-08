@@ -355,13 +355,13 @@ export function CraftMessageScreen() {
                               }
                             }
                           }}
-                          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
-                            showOnboarding && recordingField !== 'concerns' ? 'pulse-gentle' : ''
-                          } ${
-                            isRecording && recordingField === 'concerns'
-                              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-                              : 'bg-secondary text-white hover:bg-secondary/90'
-                          }`}
+          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+            showOnboarding && recordingField !== 'concerns' ? 'pulse-gentle' : ''
+          } ${
+            isRecording && recordingField === 'concerns'
+              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+              : 'bg-primary text-white hover:bg-primary/90'
+          }`}
                         >
                           {isRecording && recordingField === 'concerns' ? (
                             <>
@@ -430,11 +430,11 @@ export function CraftMessageScreen() {
                           aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
                           aria-pressed={isRecording && recordingField === 'impact'}
                           onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-                          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
-                            isRecording && recordingField === 'impact'
-                              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-                              : 'bg-secondary text-white hover:bg-secondary/90'
-                          }`}
+          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+            isRecording && recordingField === 'impact'
+              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+              : 'bg-primary text-white hover:bg-primary/90'
+          }`}
                         >
                           {isRecording && recordingField === 'impact' ? (
                             <>
