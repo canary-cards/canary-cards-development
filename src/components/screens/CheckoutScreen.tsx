@@ -28,6 +28,7 @@ export function CheckoutScreen() {
   const [emailError, setEmailError] = useState('');
   const [emailSuggestion, setEmailSuggestion] = useState('');
   const [emailValid, setEmailValid] = useState(false);
+  const [hasBeenValidated, setHasBeenValidated] = useState(false);
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
@@ -74,36 +75,46 @@ export function CheckoutScreen() {
       }
     };
   }, []);
+  const validateEmailField = (value: string) => {
+    const validation = validateEmailWithSuggestion(value);
+    
+    if (!validation.isValid) {
+      setEmailError(validation.error || 'Invalid email address');
+      setEmailValid(false);
+    } else {
+      setEmailError('');
+      setEmailValid(true);
+    }
+    setEmailSuggestion(''); // Always clear suggestions
+  };
+
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    // Clear validation states on change
-    setEmailError('');
-    setEmailSuggestion('');
-    setEmailValid(false);
-
+    
     // Clear existing timeout
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
 
-    // Set new timeout for delayed validation
-    if (value.trim()) {
+    // Clear validation states on change
+    setEmailError('');
+    setEmailSuggestion('');
+    setEmailValid(false);
+
+    if (!value.trim()) {
+      setHasBeenValidated(false);
+      return;
+    }
+
+    // Hybrid approach: delayed for first validation, immediate for subsequent
+    if (hasBeenValidated) {
+      // Immediate validation for subsequent edits
+      validateEmailField(value);
+    } else {
+      // Delayed validation for first time
       validationTimeoutRef.current = setTimeout(() => {
-        const validation = validateEmailWithSuggestion(value);
-        
-        if (!validation.isValid) {
-          setEmailError(validation.combinedMessage || validation.error || '');
-          setEmailSuggestion(validation.suggestion || '');
-          setEmailValid(false);
-        } else if (validation.suggestion) {
-          setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
-          setEmailSuggestion(validation.suggestion);
-          setEmailValid(false);
-        } else {
-          setEmailError('');
-          setEmailSuggestion('');
-          setEmailValid(true);
-        }
+        validateEmailField(value);
+        setHasBeenValidated(true);
       }, 500);
     }
   };
@@ -116,25 +127,13 @@ export function CheckoutScreen() {
 
     // Validate immediately on blur if there's content
     if (email.trim()) {
-      const validation = validateEmailWithSuggestion(email);
-      
-      if (!validation.isValid) {
-        setEmailError(validation.combinedMessage || validation.error || '');
-        setEmailSuggestion(validation.suggestion || '');
-        setEmailValid(false);
-      } else if (validation.suggestion) {
-        setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
-        setEmailSuggestion(validation.suggestion);
-        setEmailValid(false);
-      } else {
-        setEmailError('');
-        setEmailSuggestion('');
-        setEmailValid(true);
-      }
+      validateEmailField(email);
+      setHasBeenValidated(true);
     }
   };
   
   const applySuggestion = () => {
+    // No longer used since we're removing suggestions
     if (emailSuggestion) {
       setEmail(emailSuggestion);
       setEmailSuggestion('');
@@ -576,21 +575,7 @@ export function CheckoutScreen() {
                   </div>
                   {emailError && (
                     <div className="text-sm text-destructive">
-                      {emailSuggestion ? (
-                        <>
-                          {emailError.replace(`Did you mean ${emailSuggestion}?`, 'Invalid email address. Did you mean')}{' '}
-                          <button 
-                            type="button"
-                            onClick={applySuggestion}
-                            className="text-primary underline hover:no-underline font-medium"
-                          >
-                            {emailSuggestion}
-                          </button>
-                          ?
-                        </>
-                      ) : (
-                        emailError
-                      )}
+                      {emailError}
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground">
