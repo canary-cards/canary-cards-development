@@ -115,7 +115,7 @@ export function CheckoutScreen() {
       validationTimeoutRef.current = setTimeout(() => {
         validateEmailField(value);
         setHasBeenValidated(true);
-      }, 500);
+      }, 750);
     }
   };
 
