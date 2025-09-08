@@ -42,8 +42,8 @@ export function normalizeEmail(email: string): string {
 export function validateEmail(email: string): boolean {
   if (!email) return false;
   
-  // More comprehensive email regex
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  // More comprehensive email regex that requires proper domain with TLD
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   
   if (!emailRegex.test(email)) return false;
   
@@ -53,6 +53,12 @@ export function validateEmail(email: string): boolean {
   if (localPart.length > 64) return false; // Local part max length
   if (domain.length > 253) return false; // Domain max length
   if (email.length > 320) return false; // Total max length
+  
+  // Ensure domain has at least one dot (TLD requirement)
+  if (!domain.includes('.')) return false;
+  
+  // Ensure domain doesn't start or end with dot or hyphen
+  if (domain.startsWith('.') || domain.endsWith('.') || domain.startsWith('-') || domain.endsWith('-')) return false;
   
   return true;
 }
