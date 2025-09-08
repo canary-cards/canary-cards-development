@@ -234,12 +234,14 @@ All colors MUST be HSL.
   }
 
   .pulse-gentle {
-    animation: pulseGentle 4s infinite;
+    animation: pulseGentle 3s infinite ease-in-out;
   }
 
   @keyframes pulseGentle {
     0%, 100% { opacity: 1; }
+    25% { opacity: 0.95; }
     50% { opacity: 0.85; }
+    75% { opacity: 0.95; }
   }
 
   /* Mobile-first touch targets */
