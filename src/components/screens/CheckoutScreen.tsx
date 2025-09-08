@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,7 @@ export function CheckoutScreen() {
   const [emailError, setEmailError] = useState('');
   const [emailSuggestion, setEmailSuggestion] = useState('');
   const [emailValid, setEmailValid] = useState(false);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
   const [selection, setSelection] = useState<RecipientSelection>('rep-only'); // Default to "Just your Representative"
@@ -64,36 +65,72 @@ export function CheckoutScreen() {
     };
     fetchSenatorsFromZip();
   }, [userInfo?.zipCode]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
   const handleEmailChange = (value: string) => {
     setEmail(value);
     // Clear validation states on change
     setEmailError('');
     setEmailSuggestion('');
     setEmailValid(false);
+
+    // Clear existing timeout
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
+    // Set new timeout for delayed validation
+    if (value.trim()) {
+      validationTimeoutRef.current = setTimeout(() => {
+        const validation = validateEmailWithSuggestion(value);
+        
+        if (!validation.isValid) {
+          setEmailError(validation.combinedMessage || validation.error || '');
+          setEmailSuggestion(validation.suggestion || '');
+          setEmailValid(false);
+        } else if (validation.suggestion) {
+          setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
+          setEmailSuggestion(validation.suggestion);
+          setEmailValid(false);
+        } else {
+          setEmailError('');
+          setEmailSuggestion('');
+          setEmailValid(true);
+        }
+      }, 500);
+    }
   };
 
   const handleEmailBlur = () => {
-    if (!email.trim()) {
-      setEmailError('');
-      setEmailSuggestion('');
-      setEmailValid(false);
-      return;
+    // Clear timeout if user leaves field
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
     }
 
-    const validation = validateEmailWithSuggestion(email);
-    
-    if (!validation.isValid) {
-      setEmailError(validation.combinedMessage || validation.error || '');
-      setEmailSuggestion(validation.suggestion || '');
-      setEmailValid(false);
-    } else if (validation.suggestion) {
-      setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
-      setEmailSuggestion(validation.suggestion);
-      setEmailValid(false);
-    } else {
-      setEmailError('');
-      setEmailSuggestion('');
-      setEmailValid(true);
+    // Validate immediately on blur if there's content
+    if (email.trim()) {
+      const validation = validateEmailWithSuggestion(email);
+      
+      if (!validation.isValid) {
+        setEmailError(validation.combinedMessage || validation.error || '');
+        setEmailSuggestion(validation.suggestion || '');
+        setEmailValid(false);
+      } else if (validation.suggestion) {
+        setEmailError(validation.combinedMessage || `Did you mean ${validation.suggestion}?`);
+        setEmailSuggestion(validation.suggestion);
+        setEmailValid(false);
+      } else {
+        setEmailError('');
+        setEmailSuggestion('');
+        setEmailValid(true);
+      }
     }
   };
   
