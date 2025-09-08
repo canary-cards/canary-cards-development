@@ -315,8 +315,27 @@ export function CraftMessageScreen() {
             <TooltipProvider>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="field-label">I'm most concerned about:</label>
+                  <label className="field-label">I'm most concerned about:</label>
+                  <div className="flex gap-3">
+                    <Textarea
+                      placeholder="Immigration..."
+                      value={concerns}
+                      onChange={(e) => {
+                        setConcerns(e.target.value);
+                        dispatch({ 
+                          type: 'UPDATE_POSTCARD_DATA', 
+                          payload: { 
+                            concerns: e.target.value,
+                            originalMessage: '',
+                            draftMessage: '',
+                            finalMessage: '',
+                            sources: []
+                          }
+                        });
+                      }}
+                      className="input-warm min-h-[60px] resize-none flex-1"
+                    />
+                    
                     <Tooltip open={showOnboarding && recordingField !== 'concerns'}>
                       <TooltipTrigger asChild>
                         <Button
@@ -337,7 +356,7 @@ export function CraftMessageScreen() {
                               }
                             }
                           }}
-                          className={`h-12 w-auto px-4 button-warm transition-all duration-200 ${
+                          className={`h-[60px] w-auto px-3 sm:px-4 button-warm transition-all duration-200 flex-shrink-0 ${
                             showOnboarding && recordingField !== 'concerns' ? 'pulse-gentle' : ''
                           } ${
                             isRecording && recordingField === 'concerns'
@@ -347,13 +366,13 @@ export function CraftMessageScreen() {
                         >
                           {isRecording && recordingField === 'concerns' ? (
                             <>
-                              <Square className="w-5 h-5 mr-2" />
-                              Stop
+                              <Square className="w-5 h-5 sm:mr-2" />
+                              <span className="hidden sm:inline">Stop</span>
                             </>
                           ) : (
                             <>
-                              <Mic className="w-5 h-5 mr-2" />
-                              Speak
+                              <Mic className="w-5 h-5 sm:mr-2" />
+                              <span className="hidden sm:inline">Speak</span>
                             </>
                           )}
                         </Button>
@@ -363,25 +382,6 @@ export function CraftMessageScreen() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  
-                  <Textarea
-                    placeholder="Immigration..."
-                    value={concerns}
-                    onChange={(e) => {
-                      setConcerns(e.target.value);
-                      dispatch({ 
-                        type: 'UPDATE_POSTCARD_DATA', 
-                        payload: { 
-                          concerns: e.target.value,
-                          originalMessage: '',
-                          draftMessage: '',
-                          finalMessage: '',
-                          sources: []
-                        }
-                      });
-                    }}
-                    className="input-warm min-h-[60px] resize-none"
-                  />
                   
                   {isRecording && recordingField === 'concerns' && (
                     <div className="flex items-center justify-between text-sm">
@@ -402,8 +402,27 @@ export function CraftMessageScreen() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="field-label">How it affects me or my community:</label>
+                  <label className="field-label">How it affects me or my community:</label>
+                  <div className="flex gap-3">
+                    <Textarea
+                      placeholder="I am a parent of two children in public schools..."
+                      value={personalImpact}
+                      onChange={(e) => {
+                        setPersonalImpact(e.target.value);
+                        dispatch({ 
+                          type: 'UPDATE_POSTCARD_DATA', 
+                          payload: { 
+                            personalImpact: e.target.value,
+                            originalMessage: '',
+                            draftMessage: '',
+                            finalMessage: '',
+                            sources: []
+                          }
+                        });
+                      }}
+                      className="input-warm min-h-[70px] resize-none flex-1"
+                    />
+                    
                     <Tooltip open={isRecording && recordingField === 'impact'}>
                       <TooltipTrigger asChild>
                         <Button
@@ -413,7 +432,7 @@ export function CraftMessageScreen() {
                           aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
                           aria-pressed={isRecording && recordingField === 'impact'}
                           onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-                          className={`h-12 w-auto px-4 button-warm transition-all duration-200 ${
+                          className={`h-[70px] w-auto px-3 sm:px-4 button-warm transition-all duration-200 flex-shrink-0 ${
                             isRecording && recordingField === 'impact'
                               ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 recording-pulse'
                               : 'bg-secondary text-secondary-foreground hover:bg-secondary/90'
@@ -421,13 +440,13 @@ export function CraftMessageScreen() {
                         >
                           {isRecording && recordingField === 'impact' ? (
                             <>
-                              <Square className="w-5 h-5 mr-2" />
-                              Stop
+                              <Square className="w-5 h-5 sm:mr-2" />
+                              <span className="hidden sm:inline">Stop</span>
                             </>
                           ) : (
                             <>
-                              <Mic className="w-5 h-5 mr-2" />
-                              Speak
+                              <Mic className="w-5 h-5 sm:mr-2" />
+                              <span className="hidden sm:inline">Speak</span>
                             </>
                           )}
                         </Button>
@@ -437,25 +456,6 @@ export function CraftMessageScreen() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  
-                  <Textarea
-                    placeholder="I am a parent of two children in public schools..."
-                    value={personalImpact}
-                    onChange={(e) => {
-                      setPersonalImpact(e.target.value);
-                      dispatch({ 
-                        type: 'UPDATE_POSTCARD_DATA', 
-                        payload: { 
-                          personalImpact: e.target.value,
-                          originalMessage: '',
-                          draftMessage: '',
-                          finalMessage: '',
-                          sources: []
-                        }
-                      });
-                    }}
-                    className="input-warm min-h-[70px] resize-none"
-                  />
                   
                   {isRecording && recordingField === 'impact' && (
                     <div className="flex items-center justify-between text-sm">
