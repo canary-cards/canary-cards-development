@@ -235,8 +235,8 @@ export default function Onboarding() {
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
-        {/* Progress Strips - taking most of the width */}
-        <div className="flex-1">
+        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
+        <div className="flex-1 ml-2">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
