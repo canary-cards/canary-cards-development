@@ -234,17 +234,31 @@ All colors MUST be HSL.
   }
 
   .pulse-gentle {
-    animation: pulseGentle 5s infinite ease-in-out;
+    animation: pulseGentle 8s infinite ease-in-out;
   }
 
   @keyframes pulseGentle {
     0%, 100% { 
-      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3);
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
       transform: scale(1);
     }
     50% { 
-      box-shadow: 0 0 0 6px hsl(var(--primary) / 0);
-      transform: scale(1.02);
+      box-shadow: 0 0 0 4px hsl(var(--primary) / 0);
+      transform: scale(1.01);
+    }
+  }
+
+  /* Ultra gentle pulse for onboarding */
+  .pulse-subtle {
+    animation: pulseSubtle 10s infinite ease-in-out;
+  }
+
+  @keyframes pulseSubtle {
+    0%, 100% { 
+      opacity: 1;
+    }
+    50% { 
+      opacity: 0.7;
     }
   }
 
