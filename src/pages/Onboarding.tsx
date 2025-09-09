@@ -230,9 +230,9 @@ export default function Onboarding() {
       {/* X Button - Fixed at very top */}
       <button
         onClick={exitToHome}
-        className="fixed right-4 top-4 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
+        className="fixed right-4 top-6 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
         style={{ 
-          top: showSharedBanner ? 'calc(3.25rem + 1rem)' : '1rem'
+          top: showSharedBanner ? 'calc(3.25rem + 1.5rem)' : '1.5rem'
         }}
         aria-label="Skip onboarding"
       >
@@ -260,7 +260,7 @@ export default function Onboarding() {
         id="onboarding-container"
         className="relative h-full w-full touch-pan-x select-none group"
         style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 6rem)' : '6rem'
+          paddingTop: showSharedBanner ? 'calc(3.25rem + 5.5rem)' : '5.5rem'
         }}
         onClick={handleClick}
         onMouseEnter={() => setShowControls(true)}
