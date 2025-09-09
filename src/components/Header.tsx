@@ -40,7 +40,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
   };
 
   return (
-    <header className={`h-14 md:h-16 ${isDark ? 'bg-primary border-background/20' : 'bg-background border-[#E8DECF]'} border-b ${className || ''}`}>
+    <header className={`h-14 md:h-16 ${isDark ? 'bg-primary' : 'bg-background'} ${className || ''}`}>
       <div className="flex items-center justify-between px-4 h-full">
         <button 
           onClick={handleLogoClick}
