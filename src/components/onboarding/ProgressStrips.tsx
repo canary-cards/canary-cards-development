@@ -13,15 +13,15 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
       {Array.from({ length: totalSlides }, (_, index) => (
         <div
           key={index}
-          className="flex-1 h-2 rounded-full overflow-hidden"
+          className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
         >
           <div
             className={`h-full transition-all duration-300 ease-out ${
               index < currentSlide 
                 ? 'bg-primary' 
                 : index === currentSlide 
-                  ? 'bg-yellow-500'
-                  : 'bg-transparent'
+                  ? 'bg-accent'
+                  : 'bg-muted'
             }`}
             style={{
               width: index < currentSlide 
