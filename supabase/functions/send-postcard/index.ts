@@ -188,30 +188,107 @@ serve(async (req) => {
       return selectedTemplate;
     };
 
+    // Helper function to parse recipient office address from contact.address field
+    const parseRecipientOfficeAddress = (recipient: any, recipientType: 'representative' | 'senator') => {
+      console.log(`Parsing address for ${recipientType}:`, recipient);
+      
+      // Try to use contact.address from Geocodio data
+      const contactAddress = recipient.address || recipient.contact?.address;
+      
+      if (contactAddress && typeof contactAddress === 'string') {
+        console.log(`Found contact address: ${contactAddress}`);
+        
+        // Parse the address string - common formats:
+        // "123 Main St, City, State ZIP"
+        // "123 Main St\nCity, State ZIP"
+        // "123 Main St, City, State"
+        const normalizedAddress = contactAddress.replace(/\n/g, ', ').trim();
+        const parts = normalizedAddress.split(',').map(p => p.trim());
+        
+        if (parts.length >= 3) {
+          const streetAddress = parts[0];
+          const city = parts[1];
+          const stateZipPart = parts[2];
+          
+          // Extract state and zip from "State ZIP" format
+          const stateZipMatch = stateZipPart.match(/^([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+          if (stateZipMatch) {
+            return {
+              address_one: streetAddress,
+              city: city,
+              state: stateZipMatch[1],
+              zip: stateZipMatch[2]
+            };
+          } else {
+            // Try to split by space and take last part as zip
+            const lastSpaceIndex = stateZipPart.lastIndexOf(' ');
+            if (lastSpaceIndex > 0) {
+              const state = stateZipPart.substring(0, lastSpaceIndex);
+              const zip = stateZipPart.substring(lastSpaceIndex + 1);
+              return {
+                address_one: streetAddress,
+                city: city,
+                state: state,
+                zip: zip
+              };
+            } else {
+              // No zip found, use state only
+              return {
+                address_one: streetAddress,
+                city: city,
+                state: stateZipPart,
+                zip: recipientType === 'representative' ? '20515' : '20510'
+              };
+            }
+          }
+        } else if (parts.length === 2) {
+          // Format: "123 Main St, City State ZIP"
+          const streetAddress = parts[0];
+          const cityStateZip = parts[1];
+          
+          // Try to extract city, state, and zip
+          const match = cityStateZip.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+          if (match) {
+            return {
+              address_one: streetAddress,
+              city: match[1],
+              state: match[2],
+              zip: match[3]
+            };
+          }
+        }
+        
+        console.log(`Could not parse address format: ${contactAddress}, using fallback`);
+      } else {
+        console.log(`No contact address found for ${recipientType}, using fallback`);
+      }
+      
+      // Fallback to default addresses if parsing fails
+      if (recipientType === 'representative') {
+        return {
+          address_one: recipient.address || '2157 Rayburn House Office Building',
+          city: recipient.city || 'Washington',
+          state: recipient.state || 'DC',
+          zip: '20515'
+        };
+      } else {
+        return {
+          address_one: 'U.S. Senate',
+          city: 'Washington', 
+          state: 'DC',
+          zip: '20510'
+        };
+      }
+    };
+
     // Function to create a postcard order
     const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string) => {
       const recipientName = recipientType === 'representative' 
         ? `Rep. ${recipient.name.split(' ').pop()}` 
         : `Sen. ${recipient.name.split(' ').pop()}`;
 
-      // Use representative address from Geocodio data, or default Senate address for senators
-      let recipientAddress;
-      if (recipientType === 'representative' && recipient.address) {
-        recipientAddress = {
-          address_one: recipient.address,
-          city: recipient.city,
-          state: recipient.state,
-          zip: recipient.district ? '20515' : '20510' // House vs Senate default
-        };
-      } else {
-        // Default Senate address for senators without specific addresses
-        recipientAddress = {
-          address_one: 'U.S. Senate',
-          city: 'Washington',
-          state: 'DC',
-          zip: '20510'
-        };
-      }
+      // Parse recipient address using the helper function
+      const recipientAddress = parseRecipientOfficeAddress(recipient, recipientType);
 
       const orderData = {
         letter_template_id: templateId, // Use selected template instead of hardcoded font/image
