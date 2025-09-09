@@ -234,7 +234,7 @@ All colors MUST be HSL.
   }
 
   .pulse-gentle {
-    animation: pulseGentle 3s infinite ease-in-out;
+    animation: pulseGentle 5s infinite ease-in-out;
   }
 
   @keyframes pulseGentle {
