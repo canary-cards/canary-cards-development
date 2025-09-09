@@ -227,11 +227,23 @@ export default function Onboarding() {
         />
       )}
 
-      {/* Progress Strips - Fixed at top */}
+      {/* X Button - Fixed at very top */}
+      <button
+        onClick={exitToHome}
+        className="fixed right-4 top-4 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
+        style={{ 
+          top: showSharedBanner ? 'calc(3.25rem + 1rem)' : '1rem'
+        }}
+        aria-label="Skip onboarding"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      {/* Progress Strips - Below X button */}
       <div 
         className="fixed left-0 right-0 z-40"
         style={{ 
-          top: showSharedBanner ? '3.25rem' : 0,
+          top: showSharedBanner ? 'calc(3.25rem + 3rem)' : '3rem',
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
@@ -243,24 +255,12 @@ export default function Onboarding() {
         />
       </div>
 
-      {/* X Button - Fixed */}
-      <button
-        onClick={exitToHome}
-        className="fixed right-4 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
-        style={{ 
-          top: showSharedBanner ? 'calc(3.25rem + 1rem)' : '1rem'
-        }}
-        aria-label="Skip onboarding"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
         className="relative h-full w-full touch-pan-x select-none group"
         style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 5.5rem)' : '5.75rem'
+          paddingTop: showSharedBanner ? 'calc(3.25rem + 6rem)' : '6rem'
         }}
         onClick={handleClick}
         onMouseEnter={() => setShowControls(true)}
