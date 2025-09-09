@@ -229,7 +229,7 @@ export default function Onboarding() {
 
       {/* Progress Strips - Fixed at top */}
       <div 
-        className="fixed left-0 right-0 z-40 bg-foreground/90 text-background"
+        className="fixed left-0 right-0 z-40"
         style={{ 
           top: showSharedBanner ? '3.25rem' : 0,
           paddingTop: 'env(safe-area-inset-top, 0px)'
