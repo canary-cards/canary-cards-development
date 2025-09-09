@@ -351,7 +351,7 @@ export function CraftMessageScreen() {
                             }
                           }}
           className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
-            showOnboarding && recordingField !== 'concerns' ? 'pulse-gentle' : ''
+            showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
           } ${
             isRecording && recordingField === 'concerns'
               ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
