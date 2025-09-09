@@ -142,33 +142,33 @@ export type Database = {
       }
       postcard_draft_sources: {
         Row: {
-          ai_draft_id: string
           data_point_count: number
           description: string
           id: string
           ordinal: number
+          postcard_draft_id: string
           url: string
         }
         Insert: {
-          ai_draft_id: string
           data_point_count?: number
           description: string
           id?: string
           ordinal: number
+          postcard_draft_id: string
           url: string
         }
         Update: {
-          ai_draft_id?: string
           data_point_count?: number
           description?: string
           id?: string
           ordinal?: number
+          postcard_draft_id?: string
           url?: string
         }
         Relationships: [
           {
             foreignKeyName: "ai_draft_sources_ai_draft_id_fkey"
-            columns: ["ai_draft_id"]
+            columns: ["postcard_draft_id"]
             isOneToOne: false
             referencedRelation: "postcard_drafts"
             referencedColumns: ["id"]
