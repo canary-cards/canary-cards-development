@@ -236,7 +236,7 @@ export default function Onboarding() {
         }}
       >
         {/* Progress Strips - taking most of the width */}
-        <div className="flex-1 mr-0.5">
+        <div className="flex-1">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}

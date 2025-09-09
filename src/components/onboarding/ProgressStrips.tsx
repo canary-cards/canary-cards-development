@@ -9,7 +9,7 @@ interface ProgressStripsProps {
 
 export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, progress }: ProgressStripsProps) {
   return (
-    <div className="flex gap-1 px-4 py-2">
+    <div className="flex gap-1 py-2">
       {Array.from({ length: totalSlides }, (_, index) => (
         <div
           key={index}
