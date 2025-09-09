@@ -22,9 +22,11 @@ class ApiKeyManager {
   private keyReuseDelay = 60000; // 60 seconds between reusing same key
   private maxRequestsPerMinute = 50; // Conservative limit
   private initialized = false;
+  private keyType: string;
 
-  constructor() {
+  constructor(keyType: 'main' | 'shortening' = 'main') {
     this.rateLimitDelay = parseInt(Deno.env.get('RATE_LIMIT_DELAY_MS') || '1500');
+    this.keyType = keyType;
   }
 
   public async initialize(): Promise<void> {
@@ -38,8 +40,12 @@ class ApiKeyManager {
     // Load environment variables
     const env = await load();
     
-    // Extract Anthropic API keys
-    const keyPatterns = [
+    // Extract Anthropic API keys based on type
+    const keyPatterns = this.keyType === 'shortening' ? [
+      'ANTHROPIC_SHORTENING_KEY_1',
+      'ANTHROPIC_SHORTENING_KEY_2', 
+      'ANTHROPIC_SHORTENING_KEY_3',
+    ] : [
       'anthropickey', // This appears to be the actual secret name in your Supabase
       'ANTHROPIC_API_KEY_1',
       'ANTHROPIC_API_KEY_2', 
@@ -62,10 +68,13 @@ class ApiKeyManager {
       }
     }
 
-    console.log(`🔑 Loaded ${this.keys.length} API keys for rotation`);
+    console.log(`🔑 Loaded ${this.keys.length} ${this.keyType} API keys for rotation`);
     
     if (this.keys.length === 0) {
-      throw new Error('No Anthropic API keys found. Please set ANTHROPIC_API_KEY_1 in .env file.');
+      const errorMsg = this.keyType === 'shortening' 
+        ? 'No shortening API keys found. Please set ANTHROPIC_SHORTENING_KEY_1 in .env file.'
+        : 'No main API keys found. Please set ANTHROPIC_API_KEY_1 in .env file.';
+      throw new Error(errorMsg);
     }
   }
 
@@ -539,17 +548,20 @@ class ClaudeFirstGenerator {
   private guardianApi: GuardianApi;
   private nytApi: NYTApi;
   private apiManager: ApiKeyManager;
+  private shorteningApiManager: ApiKeyManager;
 
   constructor(
     congressApiKey: string, 
     guardianApiKey: string, 
-    nytApiKey: string, 
-    apiManager: ApiKeyManager
+    nytApiKey: string,
+    apiManager: ApiKeyManager,
+    shorteningApiManager: ApiKeyManager
   ) {
     this.congressFinder = new CongressBillFinder(congressApiKey);
     this.guardianApi = new GuardianApi(guardianApiKey);
     this.nytApi = new NYTApi(nytApiKey);
     this.apiManager = apiManager;
+    this.shorteningApiManager = shorteningApiManager;
   }
 
   async generatePostcard(request: {
@@ -986,7 +998,7 @@ Current length: ${currentPostcard.length} characters. Must be under ${targetLeng
 Keep core message, personal impact, and call to action. Return only the shortened postcard.`;
 
       try {
-        const response = await this.apiManager.makeAnthropicRequestWithCycling({
+        const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 150,
           temperature: 0.1,
@@ -1041,7 +1053,7 @@ REPRESENTATIVE: ${representative.title} ${representative.name}
 Must be under 295 characters. Keep core message and call to action. Return only the rewritten postcard.`;
 
     try {
-      const response = await this.apiManager.makeAnthropicRequestWithCycling({
+      const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
         temperature: 0.1,
@@ -1081,7 +1093,7 @@ Core theme: ${coreTheme}
 Add detail or urgency to reach 280 characters. Keep format and tone. Return only the expanded postcard.`;
 
     try {
-      const response = await this.apiManager.makeAnthropicRequestWithCycling({
+      const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 150,
         temperature: 0.1,
@@ -1184,15 +1196,19 @@ serve(async (req) => {
         throw new Error('Missing required API keys. Please configure CONGRESS_API_KEY, GUARDIAN_API_KEY, and NYT_API_KEY');
       }
       
-      // Initialize API key manager and generator
-      const apiManager = new ApiKeyManager();
+      // Initialize API key managers
+      const apiManager = new ApiKeyManager('main');
       await apiManager.initialize();
+      
+      const shorteningApiManager = new ApiKeyManager('shortening');
+      await shorteningApiManager.initialize();
       
       const generator = new ClaudeFirstGenerator(
         congressApiKey,
         guardianApiKey,
         nytApiKey,
-        apiManager
+        apiManager,
+        shorteningApiManager
       );
       
       // Transform app input to claude-first-system format
