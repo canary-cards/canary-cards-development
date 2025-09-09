@@ -940,45 +940,13 @@ Make the message personal, urgent, and actionable within the character limit.`;
 }
 
 private filterNewsArticles(sources: RelevantSource[]): RelevantSource[] {
-  // Separate news articles (Guardian & NYT) from other sources (Congress bills, etc.)
-  const newsArticles = sources.filter(source => 
-    source.type === 'guardian' || source.type === 'nyt'
-  );
-  const otherSources = sources.filter(source => 
-    source.type !== 'guardian' && source.type !== 'nyt'
-  );
+  // Limit to top 3 sources total (combining all source types)
+  const sortedSources = sources.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  const limitedSources = sortedSources.slice(0, 3);
   
-  // If no news articles, return all sources as-is
-  if (newsArticles.length === 0) {
-    return sources;
-  }
+  console.log(`   📰 Final sources: ${limitedSources.length} total (limited to top 3 by relevance)`);
   
-  let filteredNews: RelevantSource[] = [];
-  
-  // Check if we have articles from both Guardian and NYT
-  const guardianArticles = newsArticles.filter(source => source.type === 'guardian');
-  const nytArticles = newsArticles.filter(source => source.type === 'nyt');
-  
-  if (guardianArticles.length > 0 && nytArticles.length > 0) {
-    // Prioritize one from each organization
-    // Take the highest relevance score from each
-    const bestGuardian = guardianArticles.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
-    const bestNYT = nytArticles.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
-    
-    filteredNews = [bestGuardian, bestNYT];
-    console.log(`   🎯 Selected 1 Guardian + 1 NYT article (prioritizing diversity)`);
-  } else {
-    // Only articles from one organization, take max 2
-    const allNews = newsArticles.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    filteredNews = allNews.slice(0, 2);
-    console.log(`   🎯 Selected ${filteredNews.length} articles from single source (max 2)`);
-  }
-  
-  // Combine filtered news articles with other sources
-  const finalSources = [...otherSources, ...filteredNews];
-  console.log(`   📰 Final sources: ${finalSources.length} total (${filteredNews.length} news articles)`);
-  
-  return finalSources;
+  return limitedSources;
   }
 
   private async shortenPostcard(longPostcard: string): Promise<{postcard: string, tokensUsed: number}> {
@@ -1268,6 +1236,16 @@ serve(async (req) => {
       if (sourcesError) {
         console.error("Error inserting sources:", sourcesError);
         // Don't fail the request for sources error, just log it
+      } else {
+        // Update the sources_count in postcard_drafts
+        const { error: countError } = await supabaseClient
+          .from('postcard_drafts')
+          .update({ sources_count: finalResult.sources.length })
+          .eq('id', postcardDraft.id);
+        
+        if (countError) {
+          console.error("Error updating sources count:", countError);
+        }
       }
     }
     
