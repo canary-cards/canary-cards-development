@@ -66,7 +66,7 @@ export function CivicPostcardApp() {
       <Header isDark={state.currentStep === 7} />
       
       {/* Standard spacing after header */}
-      <div className={`pt-3 ${state.currentStep === 7 ? 'bg-primary' : ''}`}>
+      <div className={state.currentStep === 7 ? 'bg-primary' : ''}>
         {/* Step dots - show on all screens after onboarding, except drafting screen */}
         {state.currentStep !== 7 && (
           <StepDots currentStep={state.currentStep} totalSteps={7} />
