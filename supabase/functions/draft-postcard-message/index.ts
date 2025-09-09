@@ -1222,7 +1222,7 @@ serve(async (req) => {
     // Insert sources if available and generation was successful
     if (finalResult.sources && finalResult.sources.length > 0) {
       const sourcesData = finalResult.sources.map((source, index) => ({
-        ai_draft_id: postcardDraft.id,
+        postcard_draft_id: postcardDraft.id,
         ordinal: index + 1,
         description: source.description,
         url: source.url,

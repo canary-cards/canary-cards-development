@@ -100,7 +100,7 @@ serve(async (req) => {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          ai_draft_id: draftId || null, // Convert empty string to null for UUID field
+          postcard_draft_id: draftId || null, // Convert empty string to null for UUID field
           customer_id: customer.id,
           email_for_receipt: session.customer_email || metadata.user_email,
           send_option: metadata.send_option || metadata.postcard_sendOption,
@@ -233,7 +233,7 @@ serve(async (req) => {
           await supabase
             .from('orders')
             .insert({
-              ai_draft_id: metadata.postcard_draftId || null,
+              postcard_draft_id: metadata.postcard_draftId || null,
               customer_id: customer.id,
               email_for_receipt: session.customer_email || metadata.user_email,
               send_option: metadata.send_option || metadata.postcard_sendOption || 'single',

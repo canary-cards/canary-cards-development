@@ -70,7 +70,6 @@ export type Database = {
       }
       orders: {
         Row: {
-          ai_draft_id: string | null
           amount_paid: number
           amount_refunded: number
           created_at: string
@@ -82,13 +81,13 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           postcard_count: number
+          postcard_draft_id: string | null
           send_option: Database["public"]["Enums"]["send_option"]
           stripe_customer_id: string | null
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
         }
         Insert: {
-          ai_draft_id?: string | null
           amount_paid: number
           amount_refunded?: number
           created_at?: string
@@ -100,13 +99,13 @@ export type Database = {
           paid_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postcard_count?: number
+          postcard_draft_id?: string | null
           send_option: Database["public"]["Enums"]["send_option"]
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
         }
         Update: {
-          ai_draft_id?: string | null
           amount_paid?: number
           amount_refunded?: number
           created_at?: string
@@ -118,6 +117,7 @@ export type Database = {
           paid_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postcard_count?: number
+          postcard_draft_id?: string | null
           send_option?: Database["public"]["Enums"]["send_option"]
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -126,7 +126,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "orders_ai_draft_id_fkey"
-            columns: ["ai_draft_id"]
+            columns: ["postcard_draft_id"]
             isOneToOne: false
             referencedRelation: "postcard_drafts"
             referencedColumns: ["id"]
