@@ -227,32 +227,32 @@ export default function Onboarding() {
         />
       )}
 
-      {/* X Button - Fixed at very top */}
-      <button
-        onClick={exitToHome}
-        className="fixed right-4 top-6 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
-        style={{ 
-          top: showSharedBanner ? 'calc(3.25rem + 1.5rem)' : '1.5rem'
-        }}
-        aria-label="Skip onboarding"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
-      {/* Progress Strips - Below X button */}
+      {/* Header with X Button and Progress Strips */}
       <div 
-        className="fixed left-0 right-0 z-40"
+        className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
         style={{ 
-          top: showSharedBanner ? 'calc(3.25rem + 3rem)' : '3rem',
+          top: showSharedBanner ? '3.25rem' : 0,
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
-        <ProgressStrips
-          currentSlide={currentSlide}
-          totalSlides={TOTAL_SLIDES}
-          autoplayActive={!autoplayStopped}
-          progress={progress}
-        />
+        {/* Progress Strips - taking most of the width */}
+        <div className="flex-1 mr-4">
+          <ProgressStrips
+            currentSlide={currentSlide}
+            totalSlides={TOTAL_SLIDES}
+            autoplayActive={!autoplayStopped}
+            progress={progress}
+          />
+        </div>
+
+        {/* X Button - aligned to the right */}
+        <button
+          onClick={exitToHome}
+          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          aria-label="Skip onboarding"
+        >
+          <X className="w-6 h-6" />
+        </button>
       </div>
 
       {/* Main Content - Full height container */}
@@ -260,7 +260,7 @@ export default function Onboarding() {
         id="onboarding-container"
         className="relative h-full w-full touch-pan-x select-none group"
         style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 5.5rem)' : '5.5rem'
+          paddingTop: showSharedBanner ? 'calc(3.25rem + 4.5rem)' : '4.5rem'
         }}
         onClick={handleClick}
         onMouseEnter={() => setShowControls(true)}
