@@ -79,8 +79,11 @@ STAGING_PASSWORD_ENCODED=$(url_encode "$STAGING_PASSWORD")
 PRODUCTION_PASSWORD_ENCODED=$(url_encode "$PRODUCTION_PASSWORD")
 
 # Build connection URLs with encoded passwords
-STAGING_URL="postgresql://postgres:${STAGING_PASSWORD_ENCODED}@db.${STAGING_PROJECT_ID}.supabase.co:5432/postgres"
-PRODUCTION_URL="postgresql://postgres:${PRODUCTION_PASSWORD_ENCODED}@db.${PRODUCTION_PROJECT_ID}.supabase.co:5432/postgres"
+# Use the standard Supabase connection format: PROJECT_REF.supabase.co
+STAGING_URL="postgresql://postgres.${STAGING_PROJECT_ID}:${STAGING_PASSWORD_ENCODED}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+PRODUCTION_URL="postgresql://postgres.${PRODUCTION_PROJECT_ID}:${PRODUCTION_PASSWORD_ENCODED}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+
+echo -e "${BLUE}Note: Using Supabase pooler with project-specific user${NC}"
 
 echo -e "${BLUE}🔍 Analyzing schema differences...${NC}"
 
