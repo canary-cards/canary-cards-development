@@ -24,7 +24,7 @@ export function StepDots({ currentStep, totalSteps }: StepDotsProps) {
                 isCompleted 
                   ? 'bg-primary' 
                   : isCurrent 
-                    ? 'bg-accent'
+                    ? 'bg-primary'
                     : 'bg-muted'
               }`}
               style={{
