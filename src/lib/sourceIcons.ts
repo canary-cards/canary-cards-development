@@ -8,19 +8,36 @@ interface SourceIconResult {
   };
 }
 
-// Publication color and icon mapping
+// Publication color and icon mapping with design system colors
 const PUBLICATION_INFO: Record<string, { color: string; icon?: string }> = {
-  'nytimes.com': { color: '#000000', icon: 'https://www.nytimes.com/vi-assets/static-assets/favicon-4bf96cb6a1093748bf5b3c429accb9b4.ico' },
-  'theguardian.com': { color: '#052962', icon: 'https://assets.guim.co.uk/images/favicons/fee5e2d638d1c35f6d501fa397e53329/32x32.ico' },
-  'congress.gov': { color: '#1f4e79' },
-  'house.gov': { color: '#1f4e79' },
-  'senate.gov': { color: '#1f4e79' },
-  'wikipedia.org': { color: '#000000' },
-  'washingtonpost.com': { color: '#000000' },
-  'cnn.com': { color: '#cc0000' },
-  'bbc.com': { color: '#000000' },
-  'reuters.com': { color: '#ff8000' },
-  'apnews.com': { color: '#d73027' },
+  // Government sources (highest credibility)
+  'congress.gov': { color: 'hsl(221, 39%, 11%)', icon: 'https://www.congress.gov/img/favicon.ico' },
+  'house.gov': { color: 'hsl(221, 39%, 11%)' },
+  'senate.gov': { color: 'hsl(221, 39%, 11%)' },
+  
+  // Major news agencies
+  'reuters.com': { color: 'hsl(15, 85%, 50%)' },
+  'apnews.com': { color: 'hsl(0, 60%, 50%)' },
+  'bbc.com': { color: 'hsl(0, 0%, 0%)' },
+  'bbc.co.uk': { color: 'hsl(0, 0%, 0%)' },
+  
+  // Established newspapers
+  'nytimes.com': { color: 'hsl(0, 0%, 0%)' },
+  'washingtonpost.com': { color: 'hsl(0, 0%, 0%)' },
+  'wsj.com': { color: 'hsl(0, 0%, 0%)' },
+  'theguardian.com': { color: 'hsl(207, 90%, 24%)' },
+  'ft.com': { color: 'hsl(339, 89%, 49%)' },
+  
+  // Other news sources
+  'cnn.com': { color: 'hsl(0, 100%, 40%)' },
+  'foxnews.com': { color: 'hsl(0, 60%, 50%)' },
+  'npr.org': { color: 'hsl(213, 100%, 40%)' },
+  'politico.com': { color: 'hsl(0, 85%, 55%)' },
+  'thehill.com': { color: 'hsl(210, 100%, 25%)' },
+  
+  // Reference sources
+  'wikipedia.org': { color: 'hsl(0, 0%, 20%)' },
+  
   'default': { color: 'hsl(var(--muted-foreground))' }
 };
 

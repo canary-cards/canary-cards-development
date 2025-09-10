@@ -69,6 +69,36 @@ interface CollapsibleSourcesProps {
   sources: Source[];
 }
 
+// Source priority system for better credibility
+const getSourcePriority = (url: string): number => {
+  const domain = new URL(url).hostname.toLowerCase();
+  
+  // Government sources (highest priority)
+  if (domain.includes('congress.gov') || domain.includes('house.gov') || domain.includes('senate.gov')) {
+    return 4;
+  }
+  
+  // Major news agencies
+  if (domain.includes('reuters.com') || domain.includes('apnews.com') || domain.includes('bbc.com')) {
+    return 3;
+  }
+  
+  // Established newspapers
+  if (domain.includes('nytimes.com') || domain.includes('washingtonpost.com') || domain.includes('wsj.com')) {
+    return 2;
+  }
+  
+  // Other news sources
+  return 1;
+};
+
+// Smart title truncation for mobile
+const truncateTitle = (title: string, maxWords: number = 8): string => {
+  const words = title.split(' ');
+  if (words.length <= maxWords) return title;
+  return words.slice(0, maxWords).join(' ') + '...';
+};
+
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -76,42 +106,44 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
     return null;
   }
 
-  // Deduplicate sources by domain for preview
-  const uniqueSources = sources.reduce((acc, source) => {
-    const domain = new URL(source.url).hostname;
-    if (!acc.find(s => new URL(s.url).hostname === domain)) {
-      acc.push(source);
-    }
-    return acc;
-  }, [] as Source[]);
+  // Sort sources by priority and deduplicate by domain
+  const prioritizedSources = sources
+    .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url))
+    .reduce((acc, source) => {
+      const domain = new URL(source.url).hostname;
+      if (!acc.find(s => new URL(s.url).hostname === domain)) {
+        acc.push(source);
+      }
+      return acc;
+    }, [] as Source[]);
   
-  const previewSources = uniqueSources.slice(0, 4);
-  const additionalCount = Math.max(0, uniqueSources.length - 4);
+  const previewSources = prioritizedSources.slice(0, 3); // Reduced to 3 for better diversity
+  const additionalCount = Math.max(0, prioritizedSources.length - 3);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <button className="w-full bg-muted hover:bg-disabled border border-border rounded-lg p-3 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <div className="flex items-center gap-3">
+          <button className="w-full bg-muted hover:bg-muted/80 border border-border rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <div className="flex items-center gap-2 sm:gap-3">
               <ChevronRight 
                 className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
                   isOpen ? 'rotate-90' : ''
                 }`} 
               />
-              <span className="eyebrow-lowercase text-muted-foreground">
+              <span className="eyebrow-lowercase text-muted-foreground text-sm">
                 Sources from:
               </span>
-              <div className="flex items-center gap-2 flex-1">
-                <div className="flex gap-1">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex gap-1.5 flex-shrink-0">
                   {previewSources.map((source, index) => (
                     <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
-                      <SourceIcon url={source.url} />
+                      <SourceIcon url={source.url} size={18} />
                     </div>
                   ))}
                 </div>
                 {additionalCount > 0 && (
-                  <span className="body-text text-muted-foreground text-sm">
+                  <span className="body-text text-muted-foreground text-sm whitespace-nowrap">
                     +{additionalCount} more
                   </span>
                 )}
@@ -120,28 +152,29 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           </button>
         </CollapsibleTrigger>
         
-        <CollapsibleContent className="bg-card border border-t-0 border-border rounded-b-lg p-4 space-y-3 animate-accordion-down">
-          {sources.map((source, index) => {
-            // Extract article title from description (first sentence or first 100 chars)
+        <CollapsibleContent className="bg-card border border-t-0 border-border rounded-b-xl p-3 sm:p-4 space-y-3 animate-accordion-down">
+          {prioritizedSources.map((source, index) => {
+            // Extract and clean article title
             const cleanDescription = source.description.replace(/<[^>]*>/g, '');
-            const title = cleanDescription.split('.')[0] || cleanDescription.substring(0, 100);
+            const rawTitle = cleanDescription.split('.')[0] || cleanDescription.substring(0, 100);
+            const title = truncateTitle(rawTitle.trim());
             
             return (
               <div 
                 key={index} 
-                className={`flex items-start gap-3 pb-3 ${
-                  index < sources.length - 1 ? 'border-b border-border/50' : ''
+                className={`flex items-start gap-3 pb-3 min-h-[44px] ${
+                  index < prioritizedSources.length - 1 ? 'border-b border-border/50' : ''
                 }`}
               >
-                <div className="flex-shrink-0 mt-0.5">
-                  <SourceIcon url={source.url} />
+                <div className="flex-shrink-0 mt-1">
+                  <SourceIcon url={source.url} size={18} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
                   <a 
                     href={source.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="body-text text-foreground text-sm font-medium leading-relaxed hover:text-primary transition-colors cursor-pointer underline decoration-1 underline-offset-2"
+                    className="block body-text text-foreground text-sm font-medium leading-snug hover:text-primary transition-colors underline decoration-1 underline-offset-2 hover:decoration-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded-sm"
                   >
                     {title}
                   </a>
