@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Code Quality Check (Production)
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  quality-check:
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
     
@@ -29,23 +29,15 @@ jobs:
     - name: Run linting (warnings allowed)
       run: npm run lint || true
       
-    - name: Database migrations (MANUAL ONLY)
+    - name: Build production (validation)
+      run: npm run build
+      
+    - name: Database migrations reminder
       run: |
         echo "🚨 DATABASE MIGRATIONS MUST BE RUN MANUALLY"
-        echo "💡 After deployment, run: ./scripts/deploy-migrations.sh production"
+        echo "💡 After Vercel deploys, run: ./scripts/deploy-migrations.sh production"
         echo "🔍 Review migrations in: supabase/migrations/"
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
-        
-    - name: Deploy to Vercel (Production)
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      run: |
-        vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-        vercel deploy --prod --token=$VERCEL_TOKEN
+        echo "🚀 Vercel will automatically deploy this merge to production"
         
     - name: Comment on PR
       if: github.event_name == 'pull_request'
@@ -56,5 +48,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '🚀 Successfully deployed to production! Remember to run database migrations manually if needed.'
+            body: '✅ Code quality checks passed! Vercel will automatically deploy to production. Remember to run database migrations manually if needed.'
           })

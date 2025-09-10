@@ -1,4 +1,4 @@
-name: Deploy to Staging
+name: Code Quality Check (Staging)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  quality-check:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,19 +25,11 @@ jobs:
     - name: Run linting (warnings allowed)
       run: npm run lint || true
       
-    - name: Skip database migrations (staging)
-      run: |
-        echo "⚠️  Database migrations skipped for staging auto-deployment"
-        echo "💡 Run migrations manually when needed: ./scripts/deploy-migrations.sh staging"
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
+    - name: Build staging (validation)
+      run: npm run build
       
-    - name: Deploy to Vercel (Staging)
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    - name: Database migrations reminder
       run: |
-        vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-        vercel deploy --token=$VERCEL_TOKEN
+        echo "📋 Code quality checks completed successfully!"
+        echo "🚀 Vercel will automatically deploy this push to staging.canary.cards"
+        echo "💡 Run migrations manually when needed: ./scripts/deploy-migrations.sh staging"
