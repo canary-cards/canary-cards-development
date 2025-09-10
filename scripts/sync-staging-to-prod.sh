@@ -102,8 +102,16 @@ MIGRATION_FILE="supabase/migrations/${TIMESTAMP}_sync_staging_to_prod.sql"
 # Generate diff between staging and production using direct database comparison
 echo -e "${CYAN}Generating schema diff between live databases...${NC}"
 
-# Use supabase db dump (since supabase link worked successfully)
+# Link staging project first
 echo -e "${BLUE}📥 Dumping staging schema using Supabase CLI...${NC}"
+echo -e "${YELLOW}Linking staging project...${NC}"
+if supabase link --project-ref "$STAGING_PROJECT_ID" --password "$STAGING_PASSWORD"; then
+    echo -e "${GREEN}✅ Staging project linked${NC}"
+else
+    echo -e "${RED}❌ Failed to link staging project${NC}"
+    exit 1
+fi
+
 STAGING_SCHEMA="/tmp/staging_schema_${TIMESTAMP}.sql"
 
 # Use supabase db dump with password
