@@ -86,9 +86,9 @@ PRODUCTION_PASSWORD_ENCODED="$PRODUCTION_PASSWORD"
 STAGING_URL="postgresql://postgres.${STAGING_PROJECT_ID}:${STAGING_PASSWORD_ENCODED}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
 PRODUCTION_URL="postgresql://postgres.${PRODUCTION_PROJECT_ID}:${PRODUCTION_PASSWORD_ENCODED}@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
 
-echo -e "${BLUE}Note: Using Session pooler (supports IPv4/IPv6)${NC}"
-echo -e "${BLUE}Staging: aws-0-us-east-1.pooler.supabase.com (East US)${NC}"
-echo -e "${BLUE}Production: aws-0-us-west-1.pooler.supabase.com (West US)${NC}"
+echo -e "${BLUE}Note: Using Supabase CLI for database connections${NC}"
+echo -e "${BLUE}Staging: pugnjgvdisdbdkbofwrc (East US) - Already linked${NC}"
+echo -e "${BLUE}Production: xwsgyxlvxntgpochonwe (West US) - Will link during process${NC}"
 
 echo -e "${BLUE}🔍 Analyzing schema differences...${NC}"
 
@@ -106,8 +106,8 @@ echo -e "${CYAN}Generating schema diff between live databases...${NC}"
 echo -e "${BLUE}📥 Dumping staging schema using Supabase CLI...${NC}"
 STAGING_SCHEMA="/tmp/staging_schema_${TIMESTAMP}.sql"
 
-# Use supabase db dump (default includes schema and structure)
-if supabase db dump --file "$STAGING_SCHEMA"; then
+# Use supabase db dump with password
+if supabase db dump --file "$STAGING_SCHEMA" --password "$STAGING_PASSWORD"; then
     echo -e "${GREEN}✅ Staging schema dumped using Supabase CLI${NC}"
 else
     echo -e "${RED}❌ Failed to dump staging schema${NC}"
@@ -117,21 +117,18 @@ fi
 echo -e "${BLUE}📥 Dumping production schema...${NC}"
 PRODUCTION_SCHEMA="/tmp/production_schema_${TIMESTAMP}.sql"
 
-# Set password environment variable for production
-export PGPASSWORD="$PRODUCTION_PASSWORD"
+# Link production project
+echo -e "${YELLOW}Linking production project...${NC}"
+if supabase link --project-ref "$PRODUCTION_PROJECT_ID" --password "$PRODUCTION_PASSWORD"; then
+    echo -e "${GREEN}✅ Production project linked${NC}"
+else
+    echo -e "${RED}❌ Failed to link production project${NC}"
+    exit 1
+fi
 
-if pg_dump \
-    --host="aws-0-us-west-1.pooler.supabase.com" \
-    --port=5432 \
-    --username="postgres.${PRODUCTION_PROJECT_ID}" \
-    --dbname=postgres \
-    --no-password \
-    --schema-only \
-    --no-owner \
-    --no-privileges \
-    --schema=public \
-    > "$PRODUCTION_SCHEMA"; then
-    echo -e "${GREEN}✅ Production schema dumped${NC}"
+# Use supabase db dump for production (same approach as staging)
+if supabase db dump --file "$PRODUCTION_SCHEMA" --password "$PRODUCTION_PASSWORD"; then
+    echo -e "${GREEN}✅ Production schema dumped using Supabase CLI${NC}"
 else
     echo -e "${RED}❌ Failed to dump production schema${NC}"
     exit 1
