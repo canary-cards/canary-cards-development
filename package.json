@@ -11,8 +11,10 @@
     "preview": "vite preview",
     "migrate:staging": "./scripts/deploy-migrations.sh staging",
     "migrate:production": "./scripts/deploy-migrations.sh production",
+    "migrate:simple": "./scripts/migrate-simple.sh",
+    "sync:staging-to-prod": "./scripts/sync-staging-to-prod.sh",
     "db:status": "supabase status",
-    "deploy:help": "echo '🚀 Deployment Commands:' && echo '  npm run migrate:staging   - Deploy DB changes to staging' && echo '  npm run migrate:production - Deploy DB changes to production' && echo '  npm run db:status         - Check local Supabase status' && echo '' && echo '📝 Deployment Flow:' && echo '  1. Push to main → Vercel deploys to staging' && echo '  2. Merge main → realproduction → Vercel deploys to production' && echo '  3. Run migrations manually when needed'"
+    "deploy:help": "echo '🚀 Deployment Commands:' && echo '  npm run migrate:staging   - Deploy DB changes to staging' && echo '  npm run migrate:production - Deploy DB changes to production' && echo '  npm run sync:staging-to-prod - Sync schema from staging to production' && echo '  npm run db:status         - Check local Supabase status' && echo '' && echo '📝 Deployment Flow:' && echo '  1. Push to main → Vercel deploys to staging' && echo '  2. Merge main → realproduction → Vercel deploys to production' && echo '  3. Run migrations manually when needed' && echo '  4. Use sync:staging-to-prod to copy staging schema to production'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
