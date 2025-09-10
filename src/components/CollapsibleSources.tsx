@@ -167,7 +167,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       <Collapsible open={isOpen} onOpenChange={debouncedToggle}>
         <CollapsibleTrigger asChild>
           <button 
-            className="w-full min-h-[44px] bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="w-full min-h-[44px] bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none"
             aria-expanded={isOpen}
             aria-label={`${isOpen ? 'Collapse' : 'Expand'} sources (${uniqueDomains.length} sources available)`}
           >
