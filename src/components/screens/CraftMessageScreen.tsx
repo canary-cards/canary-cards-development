@@ -332,49 +332,42 @@ export function CraftMessageScreen() {
                       className="input-warm min-h-[60px] resize-none flex-1"
                     />
                     
-                    <Tooltip open={showOnboarding && recordingField !== 'concerns'}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
-                          aria-pressed={isRecording && recordingField === 'concerns'}
-                          onClick={() => {
-                            if (isRecording && recordingField === 'concerns') {
-                              stopRecording();
-                            } else {
-                              startRecording('concerns');
-                              // Hide onboarding when user interacts
-                              if (showOnboarding) {
-                                setShowOnboarding(false);
-                              }
-                            }
-                          }}
-          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
-            showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
-          } ${
-            isRecording && recordingField === 'concerns'
-              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-              : 'bg-primary text-white hover:bg-primary/90'
-          }`}
-                        >
-                          {isRecording && recordingField === 'concerns' ? (
-                            <>
-                              <Square className="w-5 h-5 sm:mr-2" />
-                              <span className="hidden sm:inline">Stop</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic className="w-5 h-5 sm:mr-2" />
-                              <span className="hidden sm:inline">Speak</span>
-                            </>
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-sm">
-                        Try speaking your response
-                      </TooltipContent>
-                    </Tooltip>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
+                      aria-pressed={isRecording && recordingField === 'concerns'}
+                      onClick={() => {
+                        if (isRecording && recordingField === 'concerns') {
+                          stopRecording();
+                        } else {
+                          startRecording('concerns');
+                          // Hide onboarding when user interacts
+                          if (showOnboarding) {
+                            setShowOnboarding(false);
+                          }
+                        }
+                      }}
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+        showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
+      } ${
+        isRecording && recordingField === 'concerns'
+          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+          : 'bg-primary text-white hover:bg-primary/90'
+      }`}
+                    >
+                      {isRecording && recordingField === 'concerns' ? (
+                        <>
+                          <Square className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Speak</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                   
                   {isRecording && recordingField === 'concerns' && (
@@ -417,37 +410,30 @@ export function CraftMessageScreen() {
                       className="input-warm min-h-[70px] resize-none flex-1"
                     />
                     
-                    <Tooltip open={isRecording && recordingField === 'impact'}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
-                          aria-pressed={isRecording && recordingField === 'impact'}
-                          onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-          className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
-            isRecording && recordingField === 'impact'
-              ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-              : 'bg-primary text-white hover:bg-primary/90'
-          }`}
-                        >
-                          {isRecording && recordingField === 'impact' ? (
-                            <>
-                              <Square className="w-5 h-5 sm:mr-2" />
-                              <span className="hidden sm:inline">Stop</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic className="w-5 h-5 sm:mr-2" />
-                              <span className="hidden sm:inline">Speak</span>
-                            </>
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-sm">
-                        {isRecording && recordingField === 'impact' ? 'Recording... tap to stop' : 'Tap to speak'}
-                      </TooltipContent>
-                    </Tooltip>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
+                      aria-pressed={isRecording && recordingField === 'impact'}
+                      onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+        isRecording && recordingField === 'impact'
+          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+          : 'bg-primary text-white hover:bg-primary/90'
+      }`}
+                    >
+                      {isRecording && recordingField === 'impact' ? (
+                        <>
+                          <Square className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Speak</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                   
                   {isRecording && recordingField === 'impact' && (
