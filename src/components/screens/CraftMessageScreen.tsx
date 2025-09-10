@@ -490,7 +490,7 @@ export function CraftMessageScreen() {
                 <Button
                   variant="secondary"
                   onClick={handleSkipAI}
-                  disabled={(!concerns.trim() && !personalImpact.trim()) || isDrafting}
+                  disabled={isDrafting}
                   className="flex-1 button-warm h-10"
                 >
                   {isDrafting ? 'Creating Draft...' : 'Write it myself'}
