@@ -250,7 +250,8 @@ All colors MUST be HSL.
 
   /* Ultra gentle pulse for onboarding */
   .pulse-subtle {
-    animation: pulseSubtle 2s ease-in-out 3;
+    animation: pulseSubtle 2s ease-in-out 3 !important;
+    transition: none !important;
   }
 
   @keyframes pulseSubtle {
