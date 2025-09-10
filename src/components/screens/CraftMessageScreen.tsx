@@ -329,7 +329,7 @@ export function CraftMessageScreen() {
                           }
                         });
                       }}
-                      className="input-warm min-h-[60px] resize-none flex-1"
+                      className="input-warm min-h-[70px] resize-none flex-1"
                     />
                     
                     <Button
