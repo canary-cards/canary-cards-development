@@ -106,19 +106,22 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
     return null;
   }
 
-  // Sort sources by priority and deduplicate by domain
+  // Sort all sources by priority (government > news agencies > newspapers)
   const prioritizedSources = sources
-    .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url))
+    .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
+  
+  // For preview, show diverse sources (deduplicate by domain for collapsed state only)
+  const previewSources = prioritizedSources
     .reduce((acc, source) => {
       const domain = new URL(source.url).hostname;
       if (!acc.find(s => new URL(s.url).hostname === domain)) {
         acc.push(source);
       }
       return acc;
-    }, [] as Source[]);
+    }, [] as Source[])
+    .slice(0, 3);
   
-  const previewSources = prioritizedSources.slice(0, 3); // Reduced to 3 for better diversity
-  const additionalCount = Math.max(0, prioritizedSources.length - 3);
+  const additionalCount = Math.max(0, prioritizedSources.length - previewSources.length);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
