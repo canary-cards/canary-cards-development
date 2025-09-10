@@ -141,7 +141,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                     href={source.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="body-text text-foreground text-sm font-medium leading-relaxed hover:text-primary transition-colors cursor-pointer"
+                    className="body-text text-foreground text-sm font-medium leading-relaxed hover:text-primary transition-colors cursor-pointer underline decoration-1 underline-offset-2"
                   >
                     {title}
                   </a>
