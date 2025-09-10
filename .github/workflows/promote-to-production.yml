@@ -1,0 +1,46 @@
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'PR Title'
+        required: true
+        default: 'Promote staging to production'
+      description:
+        description: 'PR Description'
+        required: false
+        default: 'Automated promotion from staging to production'
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create Pull Request
+      uses: repo-sync/pull-request@v2
+      with:
+        source_branch: main
+        destination_branch: realproduction
+        pr_title: ${{ inputs.title }}
+        pr_body: |
+          ${{ inputs.description }}
+          
+          ## Changes
+          This PR promotes the current staging environment to production.
+          
+          ## Checklist
+          - [ ] Reviewed changes in staging
+          - [ ] Database migrations tested
+          - [ ] Performance tested
+          - [ ] Ready for production
+          
+          ## Database Migrations
+          ⚠️  **Database migrations are disabled by default for safety.**
+          Review the migrations in the `supabase/migrations/` directory and run them manually after deployment if needed.
+        github_token: ${{ secrets.GITHUB_TOKEN }}
