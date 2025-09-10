@@ -18,7 +18,7 @@ export default function PaymentReturn() {
   const { state, dispatch } = useAppContext();
 
   // Enhanced validation for postcard data
-  const validatePostcardData = (data: any): boolean => {
+  const validatePostcardData = (data: unknown): boolean => {
     if (!data) {
       return false;
     }
@@ -62,7 +62,7 @@ export default function PaymentReturn() {
     return null;
   };
 
-  const handlePostcardResults = async (postcardResults: any) => {
+  const handlePostcardResults = async (postcardResults: unknown) => {
     try {
       setStatus('ordering');
       

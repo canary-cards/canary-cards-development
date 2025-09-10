@@ -33,8 +33,12 @@ export default function PaymentRefunded() {
   const displayErrors = urlError ? [urlError] : (errors.length > 0 ? errors : []);
   
   // Process results for detailed display
-  const successfulPostcards = results.filter((r: any) => r.status === 'success');
-  const failedPostcards = results.filter((r: any) => r.status === 'error');
+  interface PostcardResult {
+    status: 'success' | 'error';
+    [key: string]: unknown;
+  }
+  const successfulPostcards = results.filter((r: PostcardResult) => r.status === 'success');
+  const failedPostcards = results.filter((r: PostcardResult) => r.status === 'error');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col">
@@ -82,7 +86,7 @@ export default function PaymentRefunded() {
                         <div className="h-4 w-4 bg-green-500 rounded-full mt-0.5 flex-shrink-0"></div>
                         <div className="text-sm text-green-800 text-left">
                           <p className="font-medium">Sent successfully:</p>
-                          {successfulPostcards.map((result: any, idx: number) => (
+                          {successfulPostcards.map((result: PostcardResult, idx: number) => (
                             <p key={idx} className="mt-1">{result.recipient}</p>
                           ))}
                         </div>
@@ -96,7 +100,7 @@ export default function PaymentRefunded() {
                         <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-destructive text-left">
                           <p className="font-medium">Couldn't send:</p>
-                          {failedPostcards.map((result: any, idx: number) => (
+                          {failedPostcards.map((result: PostcardResult, idx: number) => (
                             <div key={idx} className="mt-1">
                               <p className="font-medium">{result.recipient}</p>
                               {result.error && <p className="text-xs opacity-75">{result.error}</p>}

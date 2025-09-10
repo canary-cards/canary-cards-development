@@ -8,7 +8,7 @@ import { getStripePublishableKey } from '@/lib/environment';
 const stripePromise = loadStripe(getStripePublishableKey());
 
 // Global instance tracker to prevent multiple embedded checkouts
-let globalCheckoutInstance: any = null;
+let globalCheckoutInstance: unknown = null;
 let isInitializing = false;
 
 interface EmbeddedCheckoutProps {
@@ -19,14 +19,14 @@ interface EmbeddedCheckoutProps {
 }
 
 export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: EmbeddedCheckoutProps) {
-  const [checkout, setCheckout] = useState<any>(null);
+  const [checkout, setCheckout] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    let checkoutInstance: any = null;
+    let checkoutInstance: unknown = null;
 
     // Force scroll to top when component mounts
     window.scrollTo(0, 0);
@@ -125,11 +125,12 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
           }
         }, 50);
         
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         console.error('EmbeddedCheckout: Failed to initialize Stripe checkout:', err);
         isInitializing = false;
         if (isMounted) {
-          setError(`Failed to load payment form: ${err.message}`);
+          setError(`Failed to load payment form: ${errorMessage}`);
           setLoading(false);
         }
       }

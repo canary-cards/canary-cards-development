@@ -47,7 +47,7 @@ export default function PaymentSuccess() {
     let currentDate = new Date(today);
 
     while (businessDays < 4) { // 4 business days average
-      currentDate.setDate(currentDate.getDate() + 1);
+      currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
       const dayOfWeek = currentDate.getDay();
       if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not weekend
         businessDays++;
@@ -86,7 +86,12 @@ export default function PaymentSuccess() {
         const recipients = [];
         
         // Helper function to format representative name with title
-        const formatRepName = (rep: any) => {
+        interface Representative {
+          type: string;
+          name: string;
+          [key: string]: unknown;
+        }
+        const formatRepName = (rep: Representative | null) => {
           if (!rep) return '';
           const title = rep.type === 'senator' ? 'Sen.' : 'Rep.';
           return `${title} ${rep.name}`;
