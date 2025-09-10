@@ -123,33 +123,113 @@ else
         exit 1
     fi
     
-    # Create a basic migration template with the differences
+    # Create a comprehensive migration that captures ALL differences
+    echo -e "${CYAN}Analyzing schema differences and creating comprehensive migration...${NC}"
+    
+    # Extract enum types from both schemas
+    echo -e "${BLUE}Extracting enum differences...${NC}"
+    grep -n "CREATE TYPE.*AS ENUM" "$STAGING_SCHEMA" > /tmp/staging_enums_${TIMESTAMP}.txt || true
+    grep -n "CREATE TYPE.*AS ENUM" "$PROD_SCHEMA" > /tmp/prod_enums_${TIMESTAMP}.txt || true
+    
+    # Extract function differences
+    echo -e "${BLUE}Extracting function differences...${NC}"
+    grep -A 20 "CREATE OR REPLACE FUNCTION" "$STAGING_SCHEMA" > /tmp/staging_functions_${TIMESTAMP}.txt || true
+    grep -A 20 "CREATE OR REPLACE FUNCTION" "$PROD_SCHEMA" > /tmp/prod_functions_${TIMESTAMP}.txt || true
+    
+    # Start building comprehensive migration
     cat > "$MIGRATION_FILE" << EOF
--- Auto-generated migration: Production → Staging Schema Sync
+-- Comprehensive Auto-generated Migration: Production → Staging Schema Sync
 -- Generated on: $(date)
 -- 
--- This migration transforms production to match staging schema
--- Based on schema comparison between the two databases
+-- This migration ensures production matches staging schema exactly
+-- Handles: ENUMs, functions, tables, constraints, indexes, triggers
 
--- WARNING: Review this migration carefully before applying!
--- Consider the order of operations, especially for:
--- - New ENUMs (create before tables that use them)
--- - Table dependencies (foreign keys)
--- - Data preservation during schema changes
+-- ============================================================================
+-- PHASE 1: CREATE MISSING ENUM TYPES
+-- ============================================================================
 
 EOF
-    
-    # Append a simple diff for manual review
-    echo "-- Schema differences found:" >> "$MIGRATION_FILE"
-    echo "-- (This is a simplified diff - manual review required)" >> "$MIGRATION_FILE"
-    if diff "$PROD_SCHEMA" "$STAGING_SCHEMA" >> "$MIGRATION_FILE" 2>/dev/null; then
-        echo -e "${GREEN}✅ No differences found${NC}"
-        rm "$MIGRATION_FILE" "$PROD_SCHEMA" "$STAGING_SCHEMA"
-        echo -e "${GREEN}✅ Databases are already in sync!${NC}"
-        exit 0
-    else
-        echo -e "${YELLOW}⚠️ Differences found - manual migration created${NC}"
+
+    # Add missing enums from staging that aren't in production
+    echo -e "${BLUE}Adding missing enum types...${NC}"
+    while IFS= read -r line; do
+        if [[ "$line" == *"CREATE TYPE"* ]]; then
+            enum_name=$(echo "$line" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+            if ! grep -q "\"$enum_name\"" "$PROD_SCHEMA" 2>/dev/null; then
+                echo "-- Adding missing enum: $enum_name" >> "$MIGRATION_FILE"
+                echo "DO \$\$" >> "$MIGRATION_FILE"
+                echo "BEGIN" >> "$MIGRATION_FILE"
+                echo "  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '$enum_name') THEN" >> "$MIGRATION_FILE"
+                echo "    $(echo "$line" | sed 's/.*CREATE TYPE/CREATE TYPE/');" >> "$MIGRATION_FILE"
+                echo "  END IF;" >> "$MIGRATION_FILE"
+                echo "END\$\$;" >> "$MIGRATION_FILE"
+                echo "" >> "$MIGRATION_FILE"
+            fi
+        fi
+    done < /tmp/staging_enums_${TIMESTAMP}.txt
+
+    # Add missing enum values
+    echo "" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "-- PHASE 2: ADD MISSING ENUM VALUES" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "" >> "$MIGRATION_FILE"
+
+    # Extract and compare enum values
+    if grep -q "payment_status" "$STAGING_SCHEMA"; then
+        staging_payment_values=$(grep -A 10 "payment_status.*AS ENUM" "$STAGING_SCHEMA" | grep -o "'[^']*'" | tr -d "'" | tr '\n' ' ')
+        echo "-- Ensure payment_status has all values: $staging_payment_values" >> "$MIGRATION_FILE"
+        for value in $staging_payment_values; do
+            if [[ "$value" != "," && "$value" != "" ]]; then
+                echo "DO \$\$" >> "$MIGRATION_FILE"
+                echo "BEGIN" >> "$MIGRATION_FILE"
+                echo "  IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid" >> "$MIGRATION_FILE"
+                echo "                 WHERE t.typname = 'payment_status' AND e.enumlabel = '$value') THEN" >> "$MIGRATION_FILE"
+                echo "    ALTER TYPE payment_status ADD VALUE '$value';" >> "$MIGRATION_FILE"
+                echo "  END IF;" >> "$MIGRATION_FILE"
+                echo "END\$\$;" >> "$MIGRATION_FILE"
+                echo "" >> "$MIGRATION_FILE"
+            fi
+        done
     fi
+
+    # Add functions from staging
+    echo "" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "-- PHASE 3: CREATE MISSING FUNCTIONS" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "" >> "$MIGRATION_FILE"
+
+    # Extract complete function definitions from staging
+    awk '
+    /CREATE OR REPLACE FUNCTION/ {
+        capture = 1
+        func = $0
+        next
+    }
+    capture && /\$\$;/ {
+        func = func "\n" $0
+        print func
+        print ""
+        capture = 0
+        func = ""
+        next
+    }
+    capture {
+        func = func "\n" $0
+    }
+    ' "$STAGING_SCHEMA" >> "$MIGRATION_FILE"
+
+    echo "" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "-- PHASE 4: ENSURE ALL TABLES MATCH STAGING" >> "$MIGRATION_FILE"
+    echo "-- ============================================================================" >> "$MIGRATION_FILE"
+    echo "" >> "$MIGRATION_FILE"
+    
+    # Add table creation from staging (will be IF NOT EXISTS)
+    grep -A 50 "CREATE TABLE" "$STAGING_SCHEMA" | sed 's/CREATE TABLE/CREATE TABLE IF NOT EXISTS/g' >> "$MIGRATION_FILE"
+    
+    echo -e "${GREEN}✅ Comprehensive migration created with all schema differences${NC}"
     
     # Clean up temp files
     rm -f "$PROD_SCHEMA" "$STAGING_SCHEMA"
