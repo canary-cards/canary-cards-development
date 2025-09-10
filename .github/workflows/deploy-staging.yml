@@ -25,18 +25,19 @@ jobs:
     - name: Run linting (warnings allowed)
       run: npm run lint || true
       
-    - name: Build staging
-      run: npm run build
-      
     - name: Skip database migrations (staging)
       run: |
         echo "⚠️  Database migrations skipped for staging auto-deployment"
         echo "💡 Run migrations manually when needed: ./scripts/deploy-migrations.sh staging"
         
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
     - name: Deploy to Vercel (Staging)
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+        vercel deploy --token=$VERCEL_TOKEN

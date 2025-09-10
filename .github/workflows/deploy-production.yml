@@ -29,23 +29,23 @@ jobs:
     - name: Run linting (warnings allowed)
       run: npm run lint || true
       
-    - name: Build production
-      run: npm run build
-      
     - name: Database migrations (MANUAL ONLY)
       run: |
         echo "🚨 DATABASE MIGRATIONS MUST BE RUN MANUALLY"
         echo "💡 After deployment, run: ./scripts/deploy-migrations.sh production"
         echo "🔍 Review migrations in: supabase/migrations/"
         
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./
-        vercel-args: '--prod'
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+        
+    - name: Deploy to Vercel (Production)
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        vercel deploy --prod --token=$VERCEL_TOKEN
         
     - name: Comment on PR
       if: github.event_name == 'pull_request'
