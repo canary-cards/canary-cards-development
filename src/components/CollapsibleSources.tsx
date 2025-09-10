@@ -112,36 +112,37 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
         </CollapsibleTrigger>
         
         <CollapsibleContent className="bg-card border border-t-0 border-border rounded-b-lg p-4 space-y-3 animate-accordion-down">
-          {sources.map((source, index) => (
-            <div 
-              key={index} 
-              className={`flex items-start gap-3 pb-3 ${
-                index < sources.length - 1 ? 'border-b border-border/50' : ''
-              }`}
-            >
-              <div className="flex-shrink-0 mt-0.5">
-                <SourceIcon url={source.url} />
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="body-text text-foreground text-sm leading-relaxed">
-                  {source.description.replace(/<[^>]*>/g, '')}
+          {sources.map((source, index) => {
+            // Extract article title from description (first sentence or first 100 chars)
+            const cleanDescription = source.description.replace(/<[^>]*>/g, '');
+            const title = cleanDescription.split('.')[0] || cleanDescription.substring(0, 100);
+            
+            return (
+              <div 
+                key={index} 
+                className={`flex items-start gap-3 pb-3 ${
+                  index < sources.length - 1 ? 'border-b border-border/50' : ''
+                }`}
+              >
+                <div className="flex-shrink-0 mt-0.5">
+                  <SourceIcon url={source.url} />
                 </div>
-                <a 
-                  href={source.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  {getSourceDisplayName(source.url)}
-                  {source.dataPointCount > 0 && (
-                    <span className="text-muted-foreground">
-                      • {source.dataPointCount} data points
-                    </span>
-                  )}
-                </a>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="body-text text-foreground text-sm font-medium leading-relaxed">
+                    {title}
+                  </div>
+                  <a 
+                    href={source.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {getSourceDisplayName(source.url)}
+                  </a>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CollapsibleContent>
       </Collapsible>
     </div>
