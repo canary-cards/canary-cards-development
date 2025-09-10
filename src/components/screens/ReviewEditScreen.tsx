@@ -6,6 +6,7 @@ import { useAppContext } from '../../context/AppContext';
 import { ArrowLeft, Edit3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CollapsibleSources } from '@/components/CollapsibleSources';
 
 export function ReviewEditScreen() {
   const { state, dispatch } = useAppContext();
@@ -176,33 +177,7 @@ ${userInfo?.fullName}`;
 
               {/* Sources Section */}
               {state.postcardData.sources && state.postcardData.sources.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-border">
-                  <h4 className="text-sm font-medium text-foreground">Sources</h4>
-                  <ul className="space-y-2">
-                    {state.postcardData.sources.map((source, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                           <span className="text-sm text-muted-foreground leading-relaxed">
-                             {source.description.replace(/<[^>]*>/g, '')}
-                           </span>
-                          {source.url && (
-                            <a 
-                              href={source.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 ml-1 px-3 py-1 text-xs bg-primary/20 text-primary rounded-full transition-colors hover:bg-primary/30 cursor-pointer no-underline"
-                            >
-                              {getDomainLabel(source.url)}
-                              {source.dataPointCount > 0 && (
-                                <span>+{source.dataPointCount}</span>
-                              )}
-                            </a>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <CollapsibleSources sources={state.postcardData.sources} />
               )}
 
               <div className="space-y-3 pt-4">
