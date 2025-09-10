@@ -953,17 +953,39 @@ private filterNewsArticles(sources: RelevantSource[]): RelevantSource[] {
     let currentPostcard = longPostcard;
     let totalTokens = 0;
     const maxRetries = 3;
-    const targetLength = 290;
+    // Use more aggressive target for buffer room
+    const targetLength = 285;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`   🔄 Shortening attempt ${attempt}/${maxRetries} (current: ${currentPostcard.length} chars)`);
       
-      const shortenPrompt = `SHORTEN TO UNDER ${targetLength} CHARACTERS:
+      // Strategic shortening approach that gets more aggressive with each attempt
+      const aggressiveness = attempt === 1 ? "conservative" : attempt === 2 ? "moderate" : "aggressive";
+      
+      const shortenPrompt = `STRATEGIC POSTCARD SHORTENING - ${aggressiveness.toUpperCase()} APPROACH:
 
 "${currentPostcard}"
 
-Current length: ${currentPostcard.length} characters. Must be under ${targetLength} characters.
-Keep core message, personal impact, and call to action. Return only the shortened postcard.`;
+TARGET: Under ${targetLength} characters (current: ${currentPostcard.length})
+
+PRIORITY ORDER (keep in this order):
+1. Representative name & greeting
+2. Core issue/concern (main point only)
+3. Personal impact statement
+4. Specific call to action
+
+SHORTENING STRATEGIES:
+• Remove secondary arguments/points (keep only the strongest one)
+• Use abbreviations: "Representative" → "Rep.", "&" instead of "and"
+• Cut redundant phrases and filler words
+• Combine sentences where possible
+• Remove qualifying words ("very", "really", "quite")
+
+${attempt === 1 ? "Conservative: Trim words and phrases while keeping all main points" : 
+  attempt === 2 ? "Moderate: Remove one secondary point or supporting detail" : 
+  "Aggressive: Keep only the strongest single argument plus call to action"}
+
+Return ONLY the shortened postcard text, no explanations.`;
 
       try {
         const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
@@ -1011,14 +1033,25 @@ Keep core message, personal impact, and call to action. Return only the shortene
   }
 
   private async rewritePostcardUnder295(longPostcard: string, coreTheme: string, representative: any): Promise<{postcard: string, tokensUsed: number}> {
-    const rewritePrompt = `REWRITE UNDER 295 CHARACTERS:
+    const rewritePrompt = `COMPLETE POSTCARD REWRITE - UNDER 290 CHARACTERS:
 
 "${longPostcard}"
 
 CORE THEME: ${coreTheme}
-REPRESENTATIVE: ${representative.title} ${representative.name}
+REPRESENTATIVE: ${representative.name}
 
-Must be under 295 characters. Keep core message and call to action. Return only the rewritten postcard.`;
+REWRITE STRATEGY:
+• Focus on ONE main argument (the strongest one)
+• Remove all secondary points and supporting details
+• Keep: greeting, core issue, personal impact, clear action request
+• Use concise language and abbreviations
+• Ensure it flows as a complete, coherent message
+
+STRUCTURE:
+"Rep. [Name], [Core issue in 1-2 sentences]. [Personal impact]. [Specific action request]."
+
+TARGET: Under 290 characters for safety margin.
+Return ONLY the rewritten postcard, no explanations.`;
 
     try {
       const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
