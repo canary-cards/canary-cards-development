@@ -218,65 +218,25 @@ export function CraftMessageScreen() {
 
 
   const handleSkipAI = async () => {
-    // Clear any existing toasts first
-    const existingToasts = document.querySelectorAll('[data-sonner-toast]');
-    existingToasts.forEach(toast => toast.remove());
-    
     // Convert list-style inputs to sentences first
     const processedConcerns = convertListToSentence(concerns);
     const processedPersonalImpact = convertListToSentence(personalImpact);
     const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
     
-    setIsDrafting(true);
-    
-    try {
-      // Create a new postcard draft for the "Write it myself" flow
-      const { data, error } = await supabase.functions.invoke('postcard-draft', {
-        body: {
-          action: 'create',
-          zipCode: state.postcardData.zipCode,
-          recipientSnapshot: state.postcardData.representative,
-          recipientType: 'representative', // Assuming this is always representative for now
-          concerns: processedConcerns,
-          personalImpact: processedPersonalImpact
-        }
-      });
-
-      if (error || !data?.success) {
-        console.error('Error creating postcard draft:', error || data?.error);
-        toast({
-          title: 'Failed to create draft',
-          description: 'Please try again.',
-          variant: 'destructive',
-        });
-        return;
+    // Update state with any content the user entered (or empty strings)
+    dispatch({ 
+      type: 'UPDATE_POSTCARD_DATA', 
+      payload: { 
+        concerns: processedConcerns,
+        personalImpact: processedPersonalImpact,
+        originalMessage: combinedMessage,
+        draftMessage: combinedMessage,
+        finalMessage: combinedMessage
       }
-
-      // Update the postcard data with the processed inputs and draft ID
-      dispatch({ 
-        type: 'UPDATE_POSTCARD_DATA', 
-        payload: { 
-          concerns: processedConcerns,
-          personalImpact: processedPersonalImpact,
-          originalMessage: combinedMessage,
-          draftMessage: combinedMessage,
-          finalMessage: combinedMessage,
-          draftId: data.draftId
-        }
-      });
-      
-      dispatch({ type: 'SET_STEP', payload: 3 }); // Go to review screen
-
-    } catch (error) {
-      console.error('Error in handleSkipAI:', error);
-      toast({
-        title: 'Failed to create draft',
-        description: 'Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDrafting(false);
-    }
+    });
+    
+    // Navigate directly to the review screen
+    dispatch({ type: 'SET_STEP', payload: 3 });
   };
 
   const goBack = () => {
@@ -481,10 +441,9 @@ export function CraftMessageScreen() {
                 <Button
                   variant="secondary"
                   onClick={handleSkipAI}
-                  disabled={isDrafting}
                   className="flex-1 button-warm h-10"
                 >
-                  {isDrafting ? 'Creating Draft...' : 'Write it myself'}
+                  Write it myself
                 </Button>
               </div>
             </div>
