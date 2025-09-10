@@ -312,7 +312,8 @@ All colors MUST be HSL.
 
   /* Voice recording animations */
   .recording-pulse {
-    animation: recordingPulse 2.5s ease-in-out infinite;
+    animation: pulseSubtle 0.5s ease-in-out infinite !important;
+    transition: none !important;
   }
 
   @keyframes recordingPulse {
