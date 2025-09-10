@@ -110,18 +110,20 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const prioritizedSources = sources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
   
-  // For preview, show diverse sources (deduplicate by domain for collapsed state only)
-  const previewSources = prioritizedSources
-    .reduce((acc, source) => {
-      const domain = new URL(source.url).hostname;
-      if (!acc.find(s => new URL(s.url).hostname === domain)) {
-        acc.push(source);
-      }
-      return acc;
-    }, [] as Source[])
-    .slice(0, 3);
+  // Get unique domains with their highest priority source
+  const uniqueDomains = prioritizedSources.reduce((acc, source) => {
+    const domain = new URL(source.url).hostname;
+    if (!acc.find(s => new URL(s.url).hostname === domain)) {
+      acc.push(source);
+    }
+    return acc;
+  }, [] as Source[]);
   
-  const additionalCount = Math.max(0, prioritizedSources.length - previewSources.length);
+  // For preview, show up to 3 unique publications
+  const previewSources = uniqueDomains.slice(0, 3);
+  
+  // Count additional unique publications (not articles)
+  const additionalCount = Math.max(0, uniqueDomains.length - previewSources.length);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
