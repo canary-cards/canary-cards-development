@@ -75,17 +75,19 @@ url_encode() {
     echo "${encoded}"
 }
 
-STAGING_PASSWORD_ENCODED=$(url_encode "$STAGING_PASSWORD")
-PRODUCTION_PASSWORD_ENCODED=$(url_encode "$PRODUCTION_PASSWORD")
+# Temporarily disable URL encoding to test username format
+STAGING_PASSWORD_ENCODED="$STAGING_PASSWORD"
+PRODUCTION_PASSWORD_ENCODED="$PRODUCTION_PASSWORD"
 
 # Build connection URLs with encoded passwords
-# Use original working direct connection format
-STAGING_URL="postgresql://postgres:${STAGING_PASSWORD_ENCODED}@db.${STAGING_PROJECT_ID}.supabase.co:5432/postgres"
-PRODUCTION_URL="postgresql://postgres:${PRODUCTION_PASSWORD_ENCODED}@db.${PRODUCTION_PROJECT_ID}.supabase.co:5432/postgres"
+# Use Session pooler (supports IPv4/IPv6) since direct connection is IPv6 only  
+# Different regions: Staging=us-east-1, Production=us-west-1
+STAGING_URL="postgresql://postgres.${STAGING_PROJECT_ID}:${STAGING_PASSWORD_ENCODED}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+PRODUCTION_URL="postgresql://postgres.${PRODUCTION_PROJECT_ID}:${PRODUCTION_PASSWORD_ENCODED}@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
 
-echo -e "${BLUE}Note: Using direct database connection (original working format)${NC}"
-echo -e "${BLUE}Staging: db.${STAGING_PROJECT_ID}.supabase.co${NC}"
-echo -e "${BLUE}Production: db.${PRODUCTION_PROJECT_ID}.supabase.co${NC}"
+echo -e "${BLUE}Note: Using Session pooler (supports IPv4/IPv6)${NC}"
+echo -e "${BLUE}Staging: aws-0-us-east-1.pooler.supabase.com (East US)${NC}"
+echo -e "${BLUE}Production: aws-0-us-west-1.pooler.supabase.com (West US)${NC}"
 
 echo -e "${BLUE}🔍 Analyzing schema differences...${NC}"
 
