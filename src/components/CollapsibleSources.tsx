@@ -76,8 +76,17 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
     return null;
   }
 
-  const previewSources = sources.slice(0, 4);
-  const additionalCount = Math.max(0, sources.length - 4);
+  // Deduplicate sources by domain for preview
+  const uniqueSources = sources.reduce((acc, source) => {
+    const domain = new URL(source.url).hostname;
+    if (!acc.find(s => new URL(s.url).hostname === domain)) {
+      acc.push(source);
+    }
+    return acc;
+  }, [] as Source[]);
+  
+  const previewSources = uniqueSources.slice(0, 4);
+  const additionalCount = Math.max(0, uniqueSources.length - 4);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
@@ -128,17 +137,17 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                   <SourceIcon url={source.url} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
-                  <div className="body-text text-foreground text-sm font-medium leading-relaxed">
-                    {title}
-                  </div>
                   <a 
                     href={source.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    className="body-text text-foreground text-sm font-medium leading-relaxed hover:text-primary transition-colors cursor-pointer"
                   >
-                    {getSourceDisplayName(source.url)}
+                    {title}
                   </a>
+                  <div className="text-xs text-muted-foreground">
+                    {getSourceDisplayName(source.url)}
+                  </div>
                 </div>
               </div>
             );
