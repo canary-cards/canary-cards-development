@@ -66,7 +66,7 @@ MIGRATION_FILE="supabase/migrations/${TIMESTAMP}_sync_staging_to_prod.sql"
 
 # Generate diff between staging and production
 echo -e "${CYAN}Generating schema diff...${NC}"
-if supabase db diff --db-url "$STAGING_URL" --linked --schema public > "$MIGRATION_FILE"; then
+if supabase db diff --db-url "$STAGING_URL" --schema public > "$MIGRATION_FILE"; then
     echo -e "${GREEN}✅ Schema diff generated:${NC} $MIGRATION_FILE"
 else
     echo -e "${RED}❌ Failed to generate schema diff${NC}"
