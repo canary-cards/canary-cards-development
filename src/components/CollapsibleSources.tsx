@@ -127,7 +127,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
     <div className="space-y-3 pt-4 border-t border-border">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <button className="w-full bg-background hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+          <button className="w-full bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none">
             <div className="flex items-center gap-2 sm:gap-3">
               <ChevronRight 
                 className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
@@ -155,7 +155,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           </button>
         </CollapsibleTrigger>
         
-        <CollapsibleContent className="bg-background border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 animate-accordion-down">
+        <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 animate-accordion-down">
           {prioritizedSources.map((source, index) => {
             // Extract and clean article title
             const cleanDescription = source.description.replace(/<[^>]*>/g, '');
