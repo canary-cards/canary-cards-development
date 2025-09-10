@@ -23,10 +23,12 @@ echo -e "${BLUE}═════════════════════�
 # Environment configuration
 if [ "$ENVIRONMENT" = "production" ]; then
     PROJECT_ID="xwsgyxlvxntgpochonwe"
+    DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_ID}.supabase.co:5432/postgres"
     echo -e "${RED}🚨 PRODUCTION ENVIRONMENT${NC}"
     echo -e "📍 Target: ${YELLOW}Canary Cards Prod${NC} ($PROJECT_ID)"
 elif [ "$ENVIRONMENT" = "staging" ]; then
     PROJECT_ID="pugnjgvdisdbdkbofwrc"
+    DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_ID}.supabase.co:5432/postgres"
     echo -e "${GREEN}🧪 STAGING ENVIRONMENT${NC}"
     echo -e "📍 Target: ${YELLOW}Canary Cards Staging${NC} ($PROJECT_ID)"
 else
@@ -44,6 +46,24 @@ if ! command -v supabase &> /dev/null; then
     exit 1
 fi
 
+# Check for database password
+if [ -z "$DB_PASSWORD" ]; then
+    echo -e "${YELLOW}🔑 Database password required${NC}"
+    echo -e "${BLUE}Get your password from Supabase Dashboard → Settings → Database${NC}"
+    read -s -p "Enter database password: " DB_PASSWORD
+    echo ""
+    if [ -z "$DB_PASSWORD" ]; then
+        echo -e "${RED}❌ Password is required${NC}"
+        exit 1
+    fi
+    # Update the DB_URL with the provided password
+    if [ "$ENVIRONMENT" = "production" ]; then
+        DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_ID}.supabase.co:5432/postgres"
+    else
+        DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_ID}.supabase.co:5432/postgres"
+    fi
+fi
+
 # Production safety check
 if [ "$ENVIRONMENT" = "production" ]; then
     echo -e "${YELLOW}⚠️  Production migration requires confirmation${NC}"
@@ -57,7 +77,7 @@ if [ "$ENVIRONMENT" = "production" ]; then
     echo -e "${PURPLE}📦 Creating backup...${NC}"
     TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
     mkdir -p backups
-    if supabase db dump --project-id "$PROJECT_ID" --data-only > "backups/backup_production_${TIMESTAMP}.sql"; then
+    if supabase db dump --db-url "$DB_URL" --data-only > "backups/backup_production_${TIMESTAMP}.sql"; then
         echo -e "${GREEN}✅ Backup created:${NC} backups/backup_production_${TIMESTAMP}.sql"
     else
         echo -e "${RED}❌ Backup failed - aborting migration${NC}"
@@ -72,12 +92,12 @@ echo -e "${CYAN}Found ${MIGRATION_COUNT} migration files${NC}"
 
 # Run migrations
 echo -e "${BLUE}🔄 Running migrations...${NC}"
-if supabase db push --project-id "$PROJECT_ID"; then
+if supabase db push --db-url "$DB_URL"; then
     echo -e "${GREEN}✅ Migrations completed successfully!${NC}"
     
     # Verify
     echo -e "${BLUE}🔍 Verifying schema...${NC}"
-    supabase db diff --project-id "$PROJECT_ID" --use-migra || echo -e "${YELLOW}⚠️  Schema verification completed${NC}"
+    supabase db diff --db-url "$DB_URL" || echo -e "${YELLOW}⚠️  Schema verification completed${NC}"
     
     echo -e "${GREEN}🎉 Migration to $ENVIRONMENT completed!${NC}"
     
