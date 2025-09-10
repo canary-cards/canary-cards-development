@@ -8,7 +8,11 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "migrate:staging": "./scripts/deploy-migrations.sh staging",
+    "migrate:production": "./scripts/deploy-migrations.sh production",
+    "db:status": "supabase status",
+    "deploy:help": "echo '🚀 Deployment Commands:' && echo '  npm run migrate:staging   - Deploy DB changes to staging' && echo '  npm run migrate:production - Deploy DB changes to production' && echo '  npm run db:status         - Check local Supabase status' && echo '' && echo '📝 Deployment Flow:' && echo '  1. Push to main → Vercel deploys to staging' && echo '  2. Merge main → realproduction → Vercel deploys to production' && echo '  3. Run migrations manually when needed'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

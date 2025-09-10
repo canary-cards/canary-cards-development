@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { load } from "https://deno.land/std@0.208.0/dotenv/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 // =============================================================================
 // API KEY MANAGER
@@ -21,9 +22,11 @@ class ApiKeyManager {
   private keyReuseDelay = 60000; // 60 seconds between reusing same key
   private maxRequestsPerMinute = 50; // Conservative limit
   private initialized = false;
+  private keyType: string;
 
-  constructor() {
+  constructor(keyType: 'main' | 'shortening' = 'main') {
     this.rateLimitDelay = parseInt(Deno.env.get('RATE_LIMIT_DELAY_MS') || '1500');
+    this.keyType = keyType;
   }
 
   public async initialize(): Promise<void> {
@@ -37,8 +40,13 @@ class ApiKeyManager {
     // Load environment variables
     const env = await load();
     
-    // Extract Anthropic API keys
-    const keyPatterns = [
+    // Extract Anthropic API keys based on type
+    const keyPatterns = this.keyType === 'shortening' ? [
+      'ANTHROPIC_SHORTENING_KEY_1',
+      'ANTHROPIC_SHORTENING_KEY_2', 
+      'ANTHROPIC_SHORTENING_KEY_3',
+    ] : [
+      'anthropickey', // This appears to be the actual secret name in your Supabase
       'ANTHROPIC_API_KEY_1',
       'ANTHROPIC_API_KEY_2', 
       'ANTHROPIC_API_KEY_3',
@@ -60,10 +68,13 @@ class ApiKeyManager {
       }
     }
 
-    console.log(`🔑 Loaded ${this.keys.length} API keys for rotation`);
+    console.log(`🔑 Loaded ${this.keys.length} ${this.keyType} API keys for rotation`);
     
     if (this.keys.length === 0) {
-      throw new Error('No Anthropic API keys found. Please set ANTHROPIC_API_KEY_1 in .env file.');
+      const errorMsg = this.keyType === 'shortening' 
+        ? 'No shortening API keys found. Please set ANTHROPIC_SHORTENING_KEY_1 in .env file.'
+        : 'No main API keys found. Please set ANTHROPIC_API_KEY_1 in .env file.';
+      throw new Error(errorMsg);
     }
   }
 
@@ -537,17 +548,20 @@ class ClaudeFirstGenerator {
   private guardianApi: GuardianApi;
   private nytApi: NYTApi;
   private apiManager: ApiKeyManager;
+  private shorteningApiManager: ApiKeyManager;
 
   constructor(
     congressApiKey: string, 
     guardianApiKey: string, 
-    nytApiKey: string, 
-    apiManager: ApiKeyManager
+    nytApiKey: string,
+    apiManager: ApiKeyManager,
+    shorteningApiManager: ApiKeyManager
   ) {
     this.congressFinder = new CongressBillFinder(congressApiKey);
     this.guardianApi = new GuardianApi(guardianApiKey);
     this.nytApi = new NYTApi(nytApiKey);
     this.apiManager = apiManager;
+    this.shorteningApiManager = shorteningApiManager;
   }
 
   async generatePostcard(request: {
@@ -588,17 +602,20 @@ class ClaudeFirstGenerator {
       nytArticles
     );
     
-    // Transform to app's expected format
-    const appSources = postcardResult.relevantSources.map(source => ({
-      description: source.description,
-      url: source.url,
-      dataPointCount: source.relevanceScore
-    }));
-    
-    return {
-      postcard: postcardResult.postcard,
-      sources: appSources
-    };
+  // Apply filtering for Guardian and NYT articles (max 2 total, prioritize one from each)
+  const filteredSources = this.filterNewsArticles(postcardResult.relevantSources);
+  
+  // Transform to app's expected format
+  const appSources = filteredSources.map(source => ({
+    description: source.description,
+    url: source.url,
+    dataPointCount: source.relevanceScore
+  }));
+  
+  return {
+    postcard: postcardResult.postcard,
+    sources: appSources
+  };
   }
 
   private async analyzeUserConcern(request: {
@@ -918,28 +935,60 @@ Make the message personal, urgent, and actionable within the character limit.`;
       }
     });
     
-    console.log(`   📋 Identified ${sources.length} relevant sources`);
-    return sources;
+  console.log(`   📋 Identified ${sources.length} relevant sources`);
+  return sources;
+}
+
+private filterNewsArticles(sources: RelevantSource[]): RelevantSource[] {
+  // Limit to top 3 sources total (combining all source types)
+  const sortedSources = sources.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  const limitedSources = sortedSources.slice(0, 3);
+  
+  console.log(`   📰 Final sources: ${limitedSources.length} total (limited to top 3 by relevance)`);
+  
+  return limitedSources;
   }
 
   private async shortenPostcard(longPostcard: string): Promise<{postcard: string, tokensUsed: number}> {
     let currentPostcard = longPostcard;
     let totalTokens = 0;
     const maxRetries = 3;
-    const targetLength = 290;
+    // Use more aggressive target for buffer room
+    const targetLength = 285;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`   🔄 Shortening attempt ${attempt}/${maxRetries} (current: ${currentPostcard.length} chars)`);
       
-      const shortenPrompt = `SHORTEN TO UNDER ${targetLength} CHARACTERS:
+      // Strategic shortening approach that gets more aggressive with each attempt
+      const aggressiveness = attempt === 1 ? "conservative" : attempt === 2 ? "moderate" : "aggressive";
+      
+      const shortenPrompt = `STRATEGIC POSTCARD SHORTENING - ${aggressiveness.toUpperCase()} APPROACH:
 
 "${currentPostcard}"
 
-Current length: ${currentPostcard.length} characters. Must be under ${targetLength} characters.
-Keep core message, personal impact, and call to action. Return only the shortened postcard.`;
+TARGET: Under ${targetLength} characters (current: ${currentPostcard.length})
+
+PRIORITY ORDER (keep in this order):
+1. Representative name & greeting
+2. Core issue/concern (main point only)
+3. Personal impact statement
+4. Specific call to action
+
+SHORTENING STRATEGIES:
+• Remove secondary arguments/points (keep only the strongest one)
+• Use abbreviations: "Representative" → "Rep.", "&" instead of "and"
+• Cut redundant phrases and filler words
+• Combine sentences where possible
+• Remove qualifying words ("very", "really", "quite")
+
+${attempt === 1 ? "Conservative: Trim words and phrases while keeping all main points" : 
+  attempt === 2 ? "Moderate: Remove one secondary point or supporting detail" : 
+  "Aggressive: Keep only the strongest single argument plus call to action"}
+
+Return ONLY the shortened postcard text, no explanations.`;
 
       try {
-        const response = await this.apiManager.makeAnthropicRequestWithCycling({
+        const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 150,
           temperature: 0.1,
@@ -984,17 +1033,28 @@ Keep core message, personal impact, and call to action. Return only the shortene
   }
 
   private async rewritePostcardUnder295(longPostcard: string, coreTheme: string, representative: any): Promise<{postcard: string, tokensUsed: number}> {
-    const rewritePrompt = `REWRITE UNDER 295 CHARACTERS:
+    const rewritePrompt = `COMPLETE POSTCARD REWRITE - UNDER 290 CHARACTERS:
 
 "${longPostcard}"
 
 CORE THEME: ${coreTheme}
-REPRESENTATIVE: ${representative.title} ${representative.name}
+REPRESENTATIVE: ${representative.name}
 
-Must be under 295 characters. Keep core message and call to action. Return only the rewritten postcard.`;
+REWRITE STRATEGY:
+• Focus on ONE main argument (the strongest one)
+• Remove all secondary points and supporting details
+• Keep: greeting, core issue, personal impact, clear action request
+• Use concise language and abbreviations
+• Ensure it flows as a complete, coherent message
+
+STRUCTURE:
+"Rep. [Name], [Core issue in 1-2 sentences]. [Personal impact]. [Specific action request]."
+
+TARGET: Under 290 characters for safety margin.
+Return ONLY the rewritten postcard, no explanations.`;
 
     try {
-      const response = await this.apiManager.makeAnthropicRequestWithCycling({
+      const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
         temperature: 0.1,
@@ -1034,7 +1094,7 @@ Core theme: ${coreTheme}
 Add detail or urgency to reach 280 characters. Keep format and tone. Return only the expanded postcard.`;
 
     try {
-      const response = await this.apiManager.makeAnthropicRequestWithCycling({
+      const response = await this.shorteningApiManager.makeAnthropicRequestWithCycling({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 150,
         temperature: 0.1,
@@ -1079,62 +1139,154 @@ serve(async (req) => {
   
   try {
     const requestBody = await req.json();
-    const { concerns, personalImpact, representative, zipCode } = requestBody;
+    const { concerns, personalImpact, representative, zipCode, inviteCode } = requestBody;
     
-    if (!concerns || !representative) {
+    if (!concerns || !representative || !zipCode) {
       return new Response(JSON.stringify({
-        error: 'Missing required fields: concerns or representative'
+        error: 'Missing required fields: concerns, representative, or zipCode'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     
-    // Get API keys from environment
-    const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
-    const guardianApiKey = Deno.env.get('GUARDIAN_API_KEY');
-    const nytApiKey = Deno.env.get('NYT_API_KEY');
-    
-    if (!congressApiKey || !guardianApiKey || !nytApiKey) {
+    // Create Supabase client with service role key
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // First, always insert the postcard draft with pending status and user inputs
+    const { data: postcardDraft, error: draftError } = await supabaseClient
+      .from('postcard_drafts')
+      .insert({
+        invite_code: inviteCode,
+        zip_code: zipCode,
+        concerns: concerns,
+        personal_impact: personalImpact,
+        generation_status: 'pending',
+        recipient_type: representative.type === 'representative' ? 'representative' : 'senator',
+        recipient_snapshot: representative
+      })
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error("Error inserting postcard draft:", draftError);
       return new Response(JSON.stringify({
-        error: 'Missing required API keys. Please configure CONGRESS_API_KEY, GUARDIAN_API_KEY, and NYT_API_KEY'
+        error: 'Failed to save draft record'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    
-    // Initialize API key manager and generator
-    const apiManager = new ApiKeyManager();
-    await apiManager.initialize();
-    
-    const generator = new ClaudeFirstGenerator(
-      congressApiKey,
-      guardianApiKey,
-      nytApiKey,
-      apiManager
-    );
-    
-    // Transform app input to claude-first-system format
-    const claudeRequest = {
-      concern: concerns,
-      personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
-      zipCode: zipCode || 'Not provided',
-      representative: {
-        name: representative.name,
-        title: representative.type?.toLowerCase() === 'representative' ? 'Rep.' : 'Sen.'
+
+    let finalResult = { postcard: '', sources: [] };
+    let apiStatusCode = 200;
+    let apiStatusMessage = 'Success';
+    let generationStatus = 'success';
+
+    try {
+      // Get API keys from environment
+      const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
+      const guardianApiKey = Deno.env.get('GUARDIAN_API_KEY');
+      const nytApiKey = Deno.env.get('NYT_API_KEY');
+      
+      if (!congressApiKey || !guardianApiKey || !nytApiKey) {
+        throw new Error('Missing required API keys. Please configure CONGRESS_API_KEY, GUARDIAN_API_KEY, and NYT_API_KEY');
       }
-    };
+      
+      // Initialize API key managers
+      const apiManager = new ApiKeyManager('main');
+      await apiManager.initialize();
+      
+      const shorteningApiManager = new ApiKeyManager('shortening');
+      await shorteningApiManager.initialize();
+      
+      const generator = new ClaudeFirstGenerator(
+        congressApiKey,
+        guardianApiKey,
+        nytApiKey,
+        apiManager,
+        shorteningApiManager
+      );
+      
+      // Transform app input to claude-first-system format
+      const claudeRequest = {
+        concern: concerns,
+        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
+        zipCode: zipCode || 'Not provided',
+        representative: {
+          name: representative.name,
+          title: representative.type?.toLowerCase() === 'representative' ? 'Rep.' : 'Sen.'
+        }
+      };
+      
+      // Generate postcard using complete claude-first-system
+      finalResult = await generator.generatePostcard(claudeRequest);
+      
+      console.log(`Final message (${finalResult.postcard.length} chars):`, finalResult.postcard);
+      
+    } catch (error) {
+      console.error('AI generation error:', error);
+      generationStatus = 'error';
+      apiStatusCode = 500;
+      apiStatusMessage = error.message || 'AI generation failed';
+      // finalResult remains empty but we continue to save the record
+    }
+
+    // Update the postcard draft with results (success or failure)
+    const { error: updateError } = await supabaseClient
+      .from('postcard_drafts')
+      .update({
+        ai_drafted_message: finalResult.postcard || null,
+        generation_status: generationStatus,
+        api_status_code: apiStatusCode,
+        api_status_message: apiStatusMessage
+      })
+      .eq('id', postcardDraft.id);
+
+    if (updateError) {
+      console.error("Error updating postcard draft:", updateError);
+      // Continue anyway since we already have the draft saved
+    }
+
+    // Insert sources if available and generation was successful
+    if (finalResult.sources && finalResult.sources.length > 0) {
+      const sourcesData = finalResult.sources.map((source, index) => ({
+        postcard_draft_id: postcardDraft.id,
+        ordinal: index + 1,
+        description: source.description,
+        url: source.url,
+        data_point_count: source.dataPointCount || 0
+      }));
+
+      const { error: sourcesError } = await supabaseClient
+        .from('postcard_draft_sources')
+        .insert(sourcesData);
+
+      if (sourcesError) {
+        console.error("Error inserting sources:", sourcesError);
+        // Don't fail the request for sources error, just log it
+      } else {
+        // Update the sources_count in postcard_drafts
+        const { error: countError } = await supabaseClient
+          .from('postcard_drafts')
+          .update({ sources_count: finalResult.sources.length })
+          .eq('id', postcardDraft.id);
+        
+        if (countError) {
+          console.error("Error updating sources count:", countError);
+        }
+      }
+    }
     
-    // Generate postcard using complete claude-first-system
-    const result = await generator.generatePostcard(claudeRequest);
-    
-    console.log(`Final message (${result.postcard.length} chars):`, result.postcard);
-    
-    // Return in app's expected format
+    // Return in app's expected format with draft ID (even if AI generation failed)
     return new Response(JSON.stringify({ 
-      draftMessage: result.postcard,
-      sources: result.sources
+      draftMessage: finalResult.postcard,
+      sources: finalResult.sources,
+      draftId: postcardDraft.id
     }), {
       headers: {
         ...corsHeaders,

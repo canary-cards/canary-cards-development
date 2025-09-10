@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('IgnitePostAPI');
+    const apiKey = Deno.env.get('IGNITE_POST');
     if (!apiKey) {
       console.error('IgnitePost API key not found');
       return new Response(
@@ -24,12 +25,12 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData } = await req.json();
+    const { postcardData, orderId } = await req.json();
     console.log('Received postcard data:', JSON.stringify(postcardData, null, 2));
 
-    if (!postcardData) {
+    if (!postcardData || !orderId) {
       return new Response(
-        JSON.stringify({ error: 'Postcard data required' }),
+        JSON.stringify({ error: 'Postcard data and order ID required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -37,7 +38,15 @@ serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
     const { userInfo, representative, senators, finalMessage, sendOption } = postcardData;
+    const userEmail = postcardData.email; // Extract email to avoid variable shadowing issues
 
     // Validate required fields with detailed error messages
     if (!userInfo) {
@@ -179,30 +188,46 @@ serve(async (req) => {
       return selectedTemplate;
     };
 
+    // Simple helper to derive office address - use exact contact.address with standardized city/state
+    const deriveOfficeAddress = (recipient: any, recipientType: 'representative' | 'senator') => {
+      console.log(`Deriving address for ${recipientType}:`, recipient);
+      
+      const contactAddress = recipient.address || recipient.contact?.address;
+      
+      if (contactAddress && typeof contactAddress === 'string') {
+        console.log(`Using contact address: ${contactAddress}`);
+        
+        // Extract ZIP code from the address string if present
+        const zipMatch = contactAddress.match(/(\d{5}(?:-\d{4})?)/);
+        const zip = zipMatch ? zipMatch[1] : (recipientType === 'representative' ? '20515' : '20510');
+        
+        return {
+          address_one: contactAddress,
+          city: 'Washington',
+          state: 'DC',
+          zip: zip
+        };
+      }
+      
+      console.log(`No contact address found for ${recipientType}, using default`);
+      
+      // Default fallback
+      return {
+        address_one: recipientType === 'representative' ? '2157 Rayburn House Office Building' : 'U.S. Senate',
+        city: 'Washington',
+        state: 'DC',
+        zip: recipientType === 'representative' ? '20515' : '20510'
+      };
+    };
+
     // Function to create a postcard order
     const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string) => {
       const recipientName = recipientType === 'representative' 
         ? `Rep. ${recipient.name.split(' ').pop()}` 
         : `Sen. ${recipient.name.split(' ').pop()}`;
 
-      // Use representative address from Geocodio data, or default Senate address for senators
-      let recipientAddress;
-      if (recipientType === 'representative' && recipient.address) {
-        recipientAddress = {
-          address_one: recipient.address,
-          city: recipient.city,
-          state: recipient.state,
-          zip: recipient.district ? '20515' : '20510' // House vs Senate default
-        };
-      } else {
-        // Default Senate address for senators without specific addresses
-        recipientAddress = {
-          address_one: 'U.S. Senate',
-          city: 'Washington',
-          state: 'DC',
-          zip: '20510'
-        };
-      }
+      // Get recipient address using the helper function
+      const recipientAddress = deriveOfficeAddress(recipient, recipientType);
 
       const orderData = {
         letter_template_id: templateId, // Use selected template instead of hardcoded font/image
@@ -221,29 +246,84 @@ serve(async (req) => {
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[userEmail]': postcardData.email,
+        'metadata[userEmail]': userEmail,
         'metadata[uid]': `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`
       };
 
       console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));
 
-      const response = await fetch('https://dashboard.ignitepost.com/api/v1/orders', {
-        method: 'POST',
-        headers: {
-          'X-TOKEN': apiKey,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams(orderData).toString()
-      });
+      let ignitepostResult = null;
+      let deliveryStatus = 'failed';
+      let ignitepostError = null;
 
-      const result = await response.json();
-      console.log(`${recipientType} order response:`, JSON.stringify(result, null, 2));
+      try {
+        const response = await fetch('https://dashboard.ignitepost.com/api/v1/orders', {
+          method: 'POST',
+          headers: {
+            'X-TOKEN': apiKey,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams(orderData).toString()
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create ${recipientType} postcard: ${JSON.stringify(result)}`);
+        ignitepostResult = await response.json();
+        console.log(`${recipientType} order response:`, JSON.stringify(ignitepostResult, null, 2));
+
+        if (!response.ok) {
+          ignitepostError = `IgnitePost API error: ${JSON.stringify(ignitepostResult)}`;
+          throw new Error(ignitepostError);
+        } else {
+          deliveryStatus = 'submitted';
+        }
+      } catch (error) {
+        ignitepostError = error.message;
+        console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
-      return result;
+      // Create postcard record in database
+      const postcardRecord = {
+        order_id: orderId,
+        recipient_type: recipientType,
+        recipient_snapshot: recipient,
+        recipient_name: recipientName,
+        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
+        recipient_office_address: recipientAddress.address_one,
+        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
+        message_text: message,
+        ignitepost_template_id: templateId,
+        ignitepost_order_id: ignitepostResult?.id || null,
+        ignitepost_send_on: ignitepostResult?.send_on || null,
+        ignitepost_created_at: ignitepostResult?.created_at ? new Date(ignitepostResult.created_at).toISOString() : null,
+        ignitepost_error: ignitepostError,
+        sender_snapshot: {
+          fullName: userInfo.fullName,
+          streetAddress: senderAddress.streetAddress,
+          city: senderAddress.city,
+          state: senderAddress.state,
+          zipCode: senderAddress.zip
+        },
+        delivery_status: deliveryStatus
+      };
+
+      const { data: insertedPostcard, error: postcardError } = await supabase
+        .from('postcards')
+        .insert(postcardRecord)
+        .select()
+        .single();
+
+      if (postcardError) {
+        console.error('Error creating postcard record:', postcardError);
+      }
+
+      if (deliveryStatus === 'failed') {
+        throw new Error(ignitepostError);
+      }
+
+      return { 
+        ...ignitepostResult, 
+        postcard_id: insertedPostcard?.id,
+        delivery_status: deliveryStatus 
+      };
     };
 
     const results = [];
@@ -335,13 +415,13 @@ serve(async (req) => {
     // Debug email sending
     console.log('Email sending debug:', {
       successCount,
-      hasEmail: !!postcardData.email,
-      email: postcardData.email,
-      shouldSendEmail: successCount > 0 && postcardData.email
+      hasEmail: !!userEmail,
+      email: userEmail,
+      shouldSendEmail: successCount > 0 && userEmail
     });
 
     // Send confirmation email if any postcards succeeded and email is provided
-    if (successCount > 0 && postcardData.email) {
+    if (successCount > 0 && userEmail) {
       try {
         console.log('Triggering order confirmation email...');
         
@@ -361,7 +441,7 @@ serve(async (req) => {
           body: JSON.stringify({
             userInfo: {
               fullName: userInfo.fullName,
-              email: postcardData.email,
+              email: userEmail,
               streetAddress: userInfo.streetAddress,
               city: userInfo.city,
               state: userInfo.state,

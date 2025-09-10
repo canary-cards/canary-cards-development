@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { Slide } from '../components/onboarding/Slide';
 
-const SLIDE_DURATION = 4500;
+const SLIDE_DURATION = 6500;
 const TOTAL_SLIDES = 4;
 
 const slides = [
@@ -14,14 +14,14 @@ const slides = [
     subtitle: "15× more likely to have influence than form emails*.",
     finePrint: "* 2019 Congressional Management Foundation study",
     iconPlaceholder: "ICON / WHY POSTCARDS",
-    assetName: "onboarding-icon-1-v4",
+    assetName: "onboarding_icon_1.svg",
     imageAlt: "Why postcards are effective in D.C."
   },
   {
     title: "Canary does the hard work for you.",
     subtitle: "It researches the issues you care about — then writes a clear, persuasive postcard in seconds.",
     iconPlaceholder: "ICON / CANARY RESEARCH",
-    assetName: "onboarding-icon-2-v4",
+    assetName: "onboarding_icon_2.svg",
     imageAlt: "Canary research process"
   },
   {
@@ -29,14 +29,14 @@ const slides = [
     subtitle: "Indistinguishable from human handwriting. Authentic and personal.",
     finePrint: "Written by a robot holding a blue ballpoint. Authentic & affordable",
     iconPlaceholder: "ICON / REAL INK HANDWRITING",
-    assetName: "onboarding-icon-3-v4",
+    assetName: "onboarding_icon_3.svg",
     imageAlt: "Real handwriting with ink and pen"
   },
   {
     title: "No stamps. No hassle.",
     subtitle: "Your postcard is mailed straight to your representative's desk.",
     iconPlaceholder: "ICON / MAILED FOR YOU",
-    assetName: "onboarding-icon-4-v4",
+    assetName: "onboarding_icon_4.svg",
     imageAlt: "Postcard delivery service"
   }
 ];
@@ -49,6 +49,7 @@ export default function Onboarding() {
   const [progress, setProgress] = useState(0);
   const [showSharedBanner, setShowSharedBanner] = useState(false);
   const [sharedBy, setSharedBy] = useState('');
+  const [showControls, setShowControls] = useState(false);
 
 
   // Check for shared link
@@ -127,26 +128,23 @@ export default function Onboarding() {
     goToSlide(currentSlide - 1);
   }, [currentSlide, goToSlide]);
 
-  // Touch and click handlers
+  // Touch and click handlers - Instagram Stories pattern
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // If autoplay is active, first tap should just pause it
-    if (!autoplayStopped) {
-      setAutoplayStopped(true);
-      setProgress(100); // Fill current bar completely when paused
-      return;
-    }
-    
-    // If autoplay is already paused, handle navigation
+    // Direct navigation like Instagram Stories
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
+    
+    // Stop autoplay on any interaction
+    setAutoplayStopped(true);
+    setProgress(100);
     
     if (clickX < width / 2) {
       prevSlide();
     } else {
       nextSlide();
     }
-  }, [autoplayStopped, prevSlide, nextSlide]);
+  }, [prevSlide, nextSlide]);
 
   // Swipe handling
   useEffect(() => {
@@ -229,43 +227,101 @@ export default function Onboarding() {
         />
       )}
 
-      {/* Progress Strips - Fixed at top */}
+      {/* Header with X Button and Progress Strips */}
       <div 
-        className="fixed left-0 right-0 z-40 bg-foreground/90 text-background"
+        className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
         style={{ 
           top: showSharedBanner ? '3.25rem' : 0,
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
-        <ProgressStrips
-          currentSlide={currentSlide}
-          totalSlides={TOTAL_SLIDES}
-          autoplayActive={!autoplayStopped}
-          progress={progress}
-        />
-      </div>
+        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
+        <div className="flex-1 ml-2 mr-3">
+          <ProgressStrips
+            currentSlide={currentSlide}
+            totalSlides={TOTAL_SLIDES}
+            autoplayActive={!autoplayStopped}
+            progress={progress}
+          />
+        </div>
 
-      {/* X Button - Fixed */}
-      <button
-        onClick={exitToHome}
-        className="fixed right-4 z-50 w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
-        style={{ 
-          top: showSharedBanner ? 'calc(3.25rem + 1rem)' : '1rem'
-        }}
-        aria-label="Skip onboarding"
-      >
-        <X className="w-6 h-6" />
-      </button>
+        {/* X Button - aligned to the right */}
+        <button
+          onClick={exitToHome}
+          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          aria-label="Skip onboarding"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
 
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative h-full w-full touch-pan-x select-none"
+        className="relative h-full w-full touch-pan-x select-none group"
         style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 5.5rem)' : '5.75rem'
+          paddingTop: showSharedBanner ? 'calc(3.25rem + 4.5rem)' : '4.5rem'
         }}
         onClick={handleClick}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
       >
+        {/* Desktop Hover Navigation Controls */}
+        <div className={`hidden md:block transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Left Navigation Area */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setAutoplayStopped(true);
+              setProgress(100);
+              prevSlide();
+            }}
+            disabled={currentSlide === 0}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/40 transition-all ${
+              currentSlide === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'
+            }`}
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          
+          {/* Right Navigation Area */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setAutoplayStopped(true);
+              setProgress(100);
+              nextSlide();
+            }}
+            disabled={currentSlide === TOTAL_SLIDES - 1}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/40 transition-all ${
+              currentSlide === TOTAL_SLIDES - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'
+            }`}
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Slide Indicator Dots */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+            {Array.from({ length: TOTAL_SLIDES }, (_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToSlide(index);
+                }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentSlide 
+                    ? 'bg-white scale-125' 
+                    : 'bg-white/50 hover:bg-white/75'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="h-full max-w-lg mx-auto w-full">
           <Slide 
             {...slides[currentSlide]} 

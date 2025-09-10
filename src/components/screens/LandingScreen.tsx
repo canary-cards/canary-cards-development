@@ -14,6 +14,7 @@ import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
 import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target } from 'lucide-react';
 import { Logo } from '../Logo';
+import { DynamicSvg } from '../DynamicSvg';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 
 export function LandingScreen() {
@@ -116,7 +117,7 @@ export function LandingScreen() {
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} />}
 
       <div className={`min-h-screen bg-background ${showSharedDialog ? 'pt-16' : ''}`}>
-      <div className="container mx-auto px-4 max-w-2xl">        
+      <div className="mx-auto px-4 max-w-2xl pb-1">
         {/* Mobile-First Hero Section */}
         <div className="text-center">
           {/* Hero Text */}
@@ -132,8 +133,12 @@ export function LandingScreen() {
 
         {/* Icon between title and form */}
         <div className="flex justify-center mb-2">
-          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 bg-muted/20 rounded-lg flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">Icon Placeholder</span>
+          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 flex items-center justify-center">
+            <DynamicSvg 
+              assetName="zip_code_page_icon.svg"
+              alt="Enter your zip code"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 
@@ -200,14 +205,14 @@ export function LandingScreen() {
             <Skeleton className="h-20 w-full rounded-xl" />
           </div>}
 
-        {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-6 space-y-4">
+        {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-3 space-y-4">
             {representatives.length > 1 && <p className="text-center text-sm text-muted-foreground px-4">
                 Multiple representatives found. Select yours:
               </p>}
             
             {representatives.map(rep => <RepresentativeCard key={rep.id} representative={rep} isSelected={selectedRep?.id === rep.id} showBadge={true} onClick={() => handleRepSelect(rep)} />)}
             
-            {selectedRep && <Button ref={continueButtonRef} onClick={handleContinue} className="w-full h-12 text-base font-medium">
+            {selectedRep && <Button ref={continueButtonRef} onClick={handleContinue} className="w-full h-12 text-base font-medium mb-3">
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>}

@@ -91,46 +91,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Fallback: Try to get logo from Supabase Storage
-    if (!logoUrl) {
-      try {
-        console.log('Attempting to fetch files from Email logo bucket...');
-        const { data: files, error } = await supabase.storage
-          .from('svg-assets')
-          .list('', {
-            limit: 100,
-            offset: 0
-          });
 
-        console.log('Storage response:', { files, error });
-
-        if (!error && files && files.length > 0) {
-          console.log('Found files:', files.map(f => f.name));
-          
-          // Look for PNG files containing 'logo' or 'canary', or use the first PNG
-          const logoFile = files.find(file => 
-            file.name.toLowerCase().endsWith('.png') && 
-            (file.name.toLowerCase().includes('logo') || file.name.toLowerCase().includes('canary'))
-          ) || files.find(file => file.name.toLowerCase().endsWith('.png'));
-
-          if (logoFile) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('svg-assets')
-              .getPublicUrl(logoFile.name);
-            logoUrl = publicUrl;
-            console.log('Using logo from storage:', logoUrl);
-          } else {
-            console.log('No PNG files found in bucket');
-          }
-        } else {
-          console.log('Storage error or no files:', error);
-        }
-      } catch (storageError) {
-        console.log('Failed to fetch logo from storage:', storageError);
-      }
-    }
-
-    // Fallback to SVG if storage fetch fails
+    // Fallback to SVG if no EMAIL_LOGO_URL configured
     if (!logoUrl) {
       logoUrl = 'https://www.canary.cards/postallogov1.svg';
       console.log('Using fallback SVG logo');

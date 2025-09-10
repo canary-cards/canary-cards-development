@@ -124,7 +124,7 @@ export function restoreStateFromStorage(dispatch: React.Dispatch<AppAction>): bo
   console.log('🔍 Payment return: attempting to restore state from storage...');
   
   // Validation function
-  const validateRestoredState = (data: any): boolean => {
+  const validateRestoredState = (data: unknown): boolean => {
     console.log('🔍 Validating restored state:', data);
     
     if (!data || typeof data !== 'object') {

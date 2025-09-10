@@ -9,19 +9,19 @@ interface ProgressStripsProps {
 
 export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, progress }: ProgressStripsProps) {
   return (
-    <div className="flex gap-1 px-4 py-2">
+    <div className="flex gap-1 py-2">
       {Array.from({ length: totalSlides }, (_, index) => (
         <div
           key={index}
-          className="flex-1 h-2 bg-disabled rounded-full overflow-hidden"
+          className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
         >
           <div
-            className={`h-full transition-all duration-200 ease-out ${
+            className={`h-full transition-all duration-300 ease-out ${
               index < currentSlide 
-                ? 'bg-white' 
+                ? 'bg-primary' 
                 : index === currentSlide 
                   ? 'bg-accent'
-                  : 'bg-disabled'
+                  : 'bg-muted'
             }`}
             style={{
               width: index < currentSlide 

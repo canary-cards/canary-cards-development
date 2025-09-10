@@ -66,6 +66,13 @@ export function DraftingScreen() {
           return;
         }
 
+        console.log('🎯 DraftingScreen: Calling draft-postcard-message with:', {
+          concerns,
+          personalImpact,
+          representative: state.postcardData.representative,
+          zipCode: state.postcardData.zipCode
+        });
+
         // Call the edge function to draft the message
         const { data, error } = await supabase.functions.invoke('draft-postcard-message', {
           body: {
@@ -76,15 +83,24 @@ export function DraftingScreen() {
           }
         });
 
+        console.log('🎯 DraftingScreen: Edge function response:', { data, error });
+
         if (error) {
           console.error('Error drafting message:', error);
-          dispatch({ type: 'SET_ERROR', payload: 'Failed to draft message' });
+          dispatch({ type: 'SET_ERROR', payload: `Failed to draft message: ${error.message}` });
           return;
         }
 
-        if (!data?.draftMessage) {
-          console.error('No draft message in response:', data);
-          dispatch({ type: 'SET_ERROR', payload: 'No draft message received from AI' });
+        if (!data) {
+          console.error('No data in response');
+          dispatch({ type: 'SET_ERROR', payload: 'No response from AI service' });
+          return;
+        }
+
+        // Note: draftMessage might be empty if AI generation failed, but we still have a draftId
+        if (!data.draftMessage && !data.draftId) {
+          console.error('No draft message or draft ID in response:', data);
+          dispatch({ type: 'SET_ERROR', payload: 'Invalid response from AI service' });
           return;
         }
 
@@ -98,13 +114,14 @@ export function DraftingScreen() {
           console.log('🎯 DraftingScreen: Draft message:', data.draftMessage);
           console.log('🎯 DraftingScreen: Sources:', data.sources);
           
-          // Update the postcard data with the drafted message
+          // Update the postcard data with the drafted message and draft ID
           dispatch({
             type: 'UPDATE_POSTCARD_DATA',
             payload: {
               originalMessage: `${concerns}\n\n${personalImpact}`,
-              draftMessage: data.draftMessage,
-              sources: data.sources || []
+              draftMessage: data.draftMessage || '', // Empty if AI generation failed
+              sources: data.sources || [],
+              draftId: data.draftId // Store the draft ID for later updates
             }
           });
 
@@ -136,7 +153,7 @@ export function DraftingScreen() {
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
           <DynamicSvg 
-            assetName="onboarding-icon-2-v4"
+            assetName="onboarding_icon_2.svg"
             alt="Canary research process"
             className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
           />

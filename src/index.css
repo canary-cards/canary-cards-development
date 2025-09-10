@@ -234,12 +234,75 @@ All colors MUST be HSL.
   }
 
   .pulse-gentle {
-    animation: pulseGentle 2s infinite;
+    animation: pulseGentle 8s infinite ease-in-out;
   }
 
   @keyframes pulseGentle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%, 100% { 
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 0 4px hsl(var(--primary) / 0);
+      transform: scale(1.01);
+    }
+  }
+
+  /* Ultra gentle pulse for onboarding */
+  .pulse-subtle {
+    animation: pulseSubtle 1s ease-in-out 5 !important;
+    transition: none !important;
+  }
+
+  @keyframes pulseSubtle {
+    0% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    25% { 
+      opacity: 0.85;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.9;
+      transform: scale(1.01);
+    }
+    75% { 
+      opacity: 0.85;
+      transform: scale(1);
+    }
+    100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Extremely gentle page load pulse - solid to slight to one pulse and back over 2s */
+  .pulse-page-load {
+    animation: pulsePageLoad 2s ease-in-out;
+  }
+
+  @keyframes pulsePageLoad {
+    0% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    25% { 
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.9;
+      transform: scale(1.005);
+    }
+    75% { 
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   /* Mobile-first touch targets */
@@ -249,7 +312,8 @@ All colors MUST be HSL.
 
   /* Voice recording animations */
   .recording-pulse {
-    animation: recordingPulse 1.5s infinite;
+    animation: pulseSubtle 0.5s ease-in-out infinite !important;
+    transition: none !important;
   }
 
   @keyframes recordingPulse {
@@ -288,12 +352,12 @@ All colors MUST be HSL.
 
   /* Scale-in animation for messages */
   .animate-scale-in {
-    animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: scale-in 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   @keyframes scale-in {
     0% {
-      transform: scale(0.8);
+      transform: scale(0.95);
       opacity: 0;
     }
     100% {

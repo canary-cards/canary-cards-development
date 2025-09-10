@@ -4,11 +4,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAppContext } from '../../context/AppContext';
 import { ArrowLeft, Edit3 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { CollapsibleSources } from '@/components/CollapsibleSources';
+
 export function ReviewEditScreen() {
-  const {
-    state,
-    dispatch
-  } = useAppContext();
+  const { state, dispatch } = useAppContext();
+  const { toast } = useToast();
   
   // Debug logging
   console.log('🎯 ReviewEditScreen: Full state:', state);
@@ -18,6 +20,7 @@ export function ReviewEditScreen() {
   
   const [editedMessage, setEditedMessage] = useState(state.postcardData.draftMessage || '');
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const charCount = editedMessage.length;
   const maxChars = 300;
@@ -43,17 +46,71 @@ ${userInfo?.fullName}`;
       setIsRegenerating(false);
     }, 2000);
   };
-  const handleContinue = () => {
-    dispatch({
-      type: 'UPDATE_POSTCARD_DATA',
-      payload: {
-        finalMessage: editedMessage
+  const handleContinue = async () => {
+    if (!state.postcardData.draftId) {
+      toast({
+        title: 'Error',
+        description: 'No draft found. Please try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      // Call the postcard-draft edge function to approve the draft
+      const { data, error } = await supabase.functions.invoke('postcard-draft', {
+        body: {
+          action: 'approve',
+          draftId: state.postcardData.draftId,
+          humanApprovedMessage: editedMessage
+        }
+      });
+
+      if (error) {
+        console.error('Error approving postcard draft:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save your changes. Please try again.',
+          variant: 'destructive'
+        });
+        return;
       }
-    });
-    dispatch({
-      type: 'SET_STEP',
-      payload: 4
-    });
+
+      if (!data?.success) {
+        console.error('Failed to approve postcard draft:', data?.error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save your changes. Please try again.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('Draft approved successfully, human_approved_message:', data?.humanApprovedMessage ? 'saved' : 'missing');
+
+      // Update local state and continue
+      dispatch({
+        type: 'UPDATE_POSTCARD_DATA',
+        payload: {
+          finalMessage: editedMessage
+        }
+      });
+      dispatch({
+        type: 'SET_STEP',
+        payload: 4
+      });
+    } catch (error) {
+      console.error('Error calling postcard-draft:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save your changes. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
   const goBack = () => {
     dispatch({
@@ -120,38 +177,12 @@ ${userInfo?.fullName}`;
 
               {/* Sources Section */}
               {state.postcardData.sources && state.postcardData.sources.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-border">
-                  <h4 className="text-sm font-medium text-foreground">Sources</h4>
-                  <ul className="space-y-2">
-                    {state.postcardData.sources.map((source, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                           <span className="text-sm text-muted-foreground leading-relaxed">
-                             {source.description.replace(/<[^>]*>/g, '')}
-                           </span>
-                          {source.url && (
-                            <a 
-                              href={source.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 ml-1 px-3 py-1 text-xs bg-primary/20 text-primary rounded-full transition-colors hover:bg-primary/30 cursor-pointer no-underline"
-                            >
-                              {getDomainLabel(source.url)}
-                              {source.dataPointCount > 0 && (
-                                <span>+{source.dataPointCount}</span>
-                              )}
-                            </a>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <CollapsibleSources sources={state.postcardData.sources} />
               )}
 
               <div className="space-y-3 pt-4">
-                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars} className="w-full button-warm h-12 text-base">
-                  <span>Looks Good, Continue</span>
+                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || isUpdating} className="w-full button-warm h-12 text-base">
+                  <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
                 <Button type="button" variant="secondary" onClick={goBack} className="w-full button-warm h-12 text-base">

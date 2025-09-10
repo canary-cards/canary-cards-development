@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,12 +10,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
 import { EmbeddedCheckout } from '../EmbeddedCheckout';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, Check, MapPin, IdCard } from 'lucide-react';
+import { ArrowLeft, Shield, ChevronDown, ChevronUp, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTotalPriceDollars } from '@/lib/pricing';
+import { validateEmailWithSuggestion, normalizeEmail } from '@/lib/emailUtils';
 type RecipientSelection = 'rep-only' | 'all-three' | 'custom';
 export function CheckoutScreen() {
   const {
@@ -25,6 +26,10 @@ export function CheckoutScreen() {
   const isMobile = useIsMobile(); // Fixed mobile hook import
   const [email, setEmail] = useState(state.postcardData.email || '');
   const [emailError, setEmailError] = useState('');
+  const [emailSuggestion, setEmailSuggestion] = useState('');
+  const [emailValid, setEmailValid] = useState(false);
+  const [hasBeenValidated, setHasBeenValidated] = useState(false);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
   const [selection, setSelection] = useState<RecipientSelection>('rep-only'); // Default to "Just your Representative"
@@ -61,14 +66,79 @@ export function CheckoutScreen() {
     };
     fetchSenatorsFromZip();
   }, [userInfo?.zipCode]);
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
+  const validateEmailField = (value: string) => {
+    const validation = validateEmailWithSuggestion(value);
+    
+    if (!validation.isValid) {
+      setEmailError(validation.error || 'Invalid email address');
+      setEmailValid(false);
+    } else {
+      setEmailError('');
+      setEmailValid(true);
+    }
+    setEmailSuggestion(''); // Always clear suggestions
   };
+
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    if (emailError && validateEmail(value)) {
+    
+    // Clear existing timeout
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
+    // Clear validation states on change
+    setEmailError('');
+    setEmailSuggestion('');
+    setEmailValid(false);
+
+    if (!value.trim()) {
+      setHasBeenValidated(false);
+      return;
+    }
+
+    // Hybrid approach: delayed for first validation, immediate for subsequent
+    if (hasBeenValidated) {
+      // Immediate validation for subsequent edits
+      validateEmailField(value);
+    } else {
+      // Delayed validation for first time
+      validationTimeoutRef.current = setTimeout(() => {
+        validateEmailField(value);
+        setHasBeenValidated(true);
+      }, 750);
+    }
+  };
+
+  const handleEmailBlur = () => {
+    // Clear timeout if user leaves field
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
+    // Validate immediately on blur if there's content
+    if (email.trim()) {
+      validateEmailField(email);
+      setHasBeenValidated(true);
+    }
+  };
+  
+  const applySuggestion = () => {
+    // No longer used since we're removing suggestions
+    if (emailSuggestion) {
+      setEmail(emailSuggestion);
+      setEmailSuggestion('');
       setEmailError('');
+      setEmailValid(true);
     }
   };
   const getSelectedRecipients = () => {
@@ -142,8 +212,9 @@ export function CheckoutScreen() {
     return result;
   };
   const handlePayment = async () => {
-    if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
+    const validation = validateEmailWithSuggestion(email);
+    if (!validation.isValid) {
+      setEmailError(validation.error || 'Please enter a valid email address');
       return;
     }
     if (!validateSelection()) {
@@ -485,11 +556,30 @@ export function CheckoutScreen() {
                 {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} className="bg-white" />
+                  <div className="relative">
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="you@example.com" 
+                      value={email} 
+                      onChange={e => handleEmailChange(e.target.value)}
+                      onBlur={handleEmailBlur}
+                      className={`bg-white pr-10 ${
+                        emailError ? 'border-destructive focus-visible:border-destructive' : ''
+                      }`} 
+                    />
+                    {emailValid && (
+                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  {emailError && (
+                    <div className="text-sm text-destructive">
+                      {emailError}
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     We'll send you an order confirmation here after checkout and when your card is mailed.
                   </p>
-                  {emailError && <p className="text-sm text-destructive">{emailError}</p>}
                 </div>
 
 
@@ -510,7 +600,7 @@ export function CheckoutScreen() {
         {/* Sticky CTA for Both Mobile and Desktop */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40 space-y-2 pb-[env(safe-area-inset-bottom)]">
           <div className="max-w-2xl mx-auto">
-            <Button onClick={handlePayment} disabled={!email || !validateEmail(email) || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium">
+            <Button onClick={handlePayment} disabled={!email || !emailValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium">
               {isProcessing ? <>
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
                   <span>Loading...</span>

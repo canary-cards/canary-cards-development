@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Header } from './Header';
-import { ProgressIndicator } from './ProgressIndicator';
+import { StepDots } from './StepDots';
 import { LandingScreen } from './screens/LandingScreen';
 import { ReturnAddressScreen } from './screens/ReturnAddressScreen';
 import { CraftMessageScreen } from './screens/CraftMessageScreen';
@@ -66,12 +66,10 @@ export function CivicPostcardApp() {
       <Header isDark={state.currentStep === 7} />
       
       {/* Standard spacing after header */}
-      <div className={`pt-3 ${state.currentStep === 7 ? 'bg-primary' : ''}`}>
-        {/* Progress bar - show on all screens after onboarding, except drafting screen */}
+      <div className={state.currentStep === 7 ? 'bg-primary' : ''}>
+        {/* Step dots - show on all screens after onboarding, except drafting screen */}
         {state.currentStep !== 7 && (
-          <div className="px-4 pb-4">
-            <ProgressIndicator currentStep={state.currentStep} totalSteps={7} />
-          </div>
+          <StepDots currentStep={state.currentStep} totalSteps={7} />
         )}
         
         {/* Content */}

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,6 +59,33 @@ serve(async (req) => {
     });
 
     console.log(`[REFUND-PAYMENT] Refund created: ${refund.id}, Status: ${refund.status}, Amount: ${refund.amount}`);
+
+    // Update our database to track the refund
+    try {
+      // Create Supabase client with service role key to bypass RLS
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
+      // Update the order with refund information
+      const { error: updateError } = await supabaseAdmin
+        .from('orders')
+        .update({
+          payment_status: 'refunded',
+          amount_refunded: refund.amount
+        })
+        .eq('stripe_session_id', sessionId);
+
+      if (updateError) {
+        console.error('[REFUND-PAYMENT] Error updating order:', updateError);
+      } else {
+        console.log(`[REFUND-PAYMENT] Updated order for session ${sessionId} with refund amount ${refund.amount}`);
+      }
+    } catch (dbError) {
+      console.error('[REFUND-PAYMENT] Database update error:', dbError);
+    }
 
     return new Response(
       JSON.stringify({

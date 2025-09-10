@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppContext } from '../../context/AppContext';
 import { ProgressIndicator } from '../ProgressIndicator';
 import { Mic, Square, ArrowLeft, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { safeStorage } from '@/lib/safeStorage';
 
 export function CraftMessageScreen() {
   const { state, dispatch } = useAppContext();
@@ -18,8 +20,25 @@ export function CraftMessageScreen() {
   const [recordingField, setRecordingField] = useState<'concerns' | 'impact' | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcribingField, setTranscribingField] = useState<'concerns' | 'impact' | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onboardingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Show onboarding animation on every page load
+  useEffect(() => {
+    setShowOnboarding(true);
+    // Auto-hide onboarding after 3 seconds
+    onboardingTimeoutRef.current = setTimeout(() => {
+      setShowOnboarding(false);
+    }, 3000);
+
+    return () => {
+      if (onboardingTimeoutRef.current) {
+        clearTimeout(onboardingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const startRecording = async (field: 'concerns' | 'impact') => {
     try {
@@ -198,17 +217,26 @@ export function CraftMessageScreen() {
   };
 
 
-  const handleSkipAI = () => {
-    const combinedMessage = [concerns, personalImpact].filter(Boolean).join('. ');
+  const handleSkipAI = async () => {
+    // Convert list-style inputs to sentences first
+    const processedConcerns = convertListToSentence(concerns);
+    const processedPersonalImpact = convertListToSentence(personalImpact);
+    const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
+    
+    // Update state with any content the user entered (or empty strings)
     dispatch({ 
       type: 'UPDATE_POSTCARD_DATA', 
       payload: { 
+        concerns: processedConcerns,
+        personalImpact: processedPersonalImpact,
         originalMessage: combinedMessage,
         draftMessage: combinedMessage,
         finalMessage: combinedMessage
       }
     });
-    dispatch({ type: 'SET_STEP', payload: 3 }); // Go to review screen
+    
+    // Navigate directly to the review screen
+    dispatch({ type: 'SET_STEP', payload: 3 });
   };
 
   const goBack = () => {
@@ -230,126 +258,154 @@ export function CraftMessageScreen() {
               </h3>
             </div>
 
-            {/* Simplified inputs with inline microphone controls */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="field-label">I'm most concerned about:</label>
-                <div className="relative">
-                  <Textarea
-                    placeholder="Immigration..."
-                    value={concerns}
-                    onChange={(e) => {
-                      setConcerns(e.target.value);
-                      dispatch({ 
-                        type: 'UPDATE_POSTCARD_DATA', 
-                        payload: { 
-                          concerns: e.target.value,
-                          // Clear old generated content when user changes input
-                          originalMessage: '',
-                          draftMessage: '',
-                          finalMessage: '',
-                          sources: []
+            {/* External voice button approach with onboarding */}
+            <TooltipProvider>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <label className="field-label">I'm most concerned about:</label>
+                  <div className="flex gap-3 items-stretch">
+                    <Textarea
+                      placeholder="Immigration..."
+                      value={concerns}
+                      onChange={(e) => {
+                        setConcerns(e.target.value);
+                        dispatch({ 
+                          type: 'UPDATE_POSTCARD_DATA', 
+                          payload: { 
+                            concerns: e.target.value,
+                            originalMessage: '',
+                            draftMessage: '',
+                            finalMessage: '',
+                            sources: []
+                          }
+                        });
+                      }}
+                      className="input-warm min-h-[70px] resize-none flex-1"
+                    />
+                    
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
+                      aria-pressed={isRecording && recordingField === 'concerns'}
+                      onClick={() => {
+                        if (isRecording && recordingField === 'concerns') {
+                          stopRecording();
+                        } else {
+                          startRecording('concerns');
+                          // Hide onboarding when user interacts
+                          if (showOnboarding) {
+                            setShowOnboarding(false);
+                          }
                         }
-                      });
-                    }}
-                    className="input-warm min-h-[60px] resize-none pr-16"
-                  />
-                  <button
-                    type="button"
-                    aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
-                    aria-pressed={isRecording && recordingField === 'concerns'}
-                    onClick={() => (isRecording && recordingField === 'concerns') ? stopRecording() : startRecording('concerns')}
-                    className={`absolute right-3 top-3 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm ${
-                      isRecording && recordingField === 'concerns'
-                        ? 'bg-destructive text-destructive-foreground ring-2 ring-destructive/40 shadow-lg animate-pulse'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    }`}
-                  >
-                    {isRecording && recordingField === 'concerns' && (
-                      <span className="absolute inset-0 rounded-full bg-destructive/40 animate-ping sm:hidden" aria-hidden="true" />
-                    )}
-                    {isRecording && recordingField === 'concerns' ? (
-                      <Square className="w-5 h-5" />
-                    ) : (
-                      <Mic className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {isRecording && recordingField === 'concerns' && (
-                  <div className="flex justify-end">
-                    <span aria-live="polite" className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                      {formatTime(recordingTime)}
-                    </span>
+                      }}
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+        showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
+      } ${
+        isRecording && recordingField === 'concerns'
+          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+          : 'bg-primary text-white hover:bg-primary/90'
+      }`}
+                    >
+                      {isRecording && recordingField === 'concerns' ? (
+                        <>
+                          <Square className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Speak</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
-                {transcribingField === 'concerns' && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Transcribing your voice...
-                  </p>
-                )}
-              </div>
+                  
+                  {isRecording && recordingField === 'concerns' && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-destructive font-medium">Recording... tap Stop to finish</span>
+                      <span aria-live="polite" className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                        {formatTime(recordingTime)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {transcribingField === 'concerns' && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      Transcribing your voice...
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <label className="field-label">How it affects me or my community:</label>
-                <div className="relative">
-                  <Textarea
-                    placeholder="I am a parent of two children in public schools..."
-                    value={personalImpact}
-                    onChange={(e) => {
-                      setPersonalImpact(e.target.value);
-                      dispatch({ 
-                        type: 'UPDATE_POSTCARD_DATA', 
-                        payload: { 
-                          personalImpact: e.target.value,
-                          // Clear old generated content when user changes input
-                          originalMessage: '',
-                          draftMessage: '',
-                          finalMessage: '',
-                          sources: []
-                        }
-                      });
-                    }}
-                    className="input-warm min-h-[70px] resize-none pr-16"
-                  />
-                  <button
-                    type="button"
-                    aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
-                    aria-pressed={isRecording && recordingField === 'impact'}
-                    onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-                    className={`absolute right-3 top-3 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm ${
-                      isRecording && recordingField === 'impact'
-                        ? 'bg-destructive text-destructive-foreground ring-2 ring-destructive/40 shadow-lg animate-pulse'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    }`}
-                  >
-                    {isRecording && recordingField === 'impact' && (
-                      <span className="absolute inset-0 rounded-full bg-destructive/40 animate-ping sm:hidden" aria-hidden="true" />
-                    )}
-                    {isRecording && recordingField === 'impact' ? (
-                      <Square className="w-4 h-4" />
-                    ) : (
-                      <Mic className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {isRecording && recordingField === 'impact' && (
-                  <div className="flex justify-end">
-                    <span aria-live="polite" className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                      {formatTime(recordingTime)}
-                    </span>
+                <div className="space-y-3">
+                  <label className="field-label">How it affects me or my community:</label>
+                  <div className="flex gap-3 items-stretch">
+                    <Textarea
+                      placeholder="I am a parent of two children in public schools..."
+                      value={personalImpact}
+                      onChange={(e) => {
+                        setPersonalImpact(e.target.value);
+                        dispatch({ 
+                          type: 'UPDATE_POSTCARD_DATA', 
+                          payload: { 
+                            personalImpact: e.target.value,
+                            originalMessage: '',
+                            draftMessage: '',
+                            finalMessage: '',
+                            sources: []
+                          }
+                        });
+                      }}
+                      className="input-warm min-h-[70px] resize-none flex-1"
+                    />
+                    
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
+                      aria-pressed={isRecording && recordingField === 'impact'}
+                      onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+        isRecording && recordingField === 'impact'
+          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
+          : 'bg-primary text-white hover:bg-primary/90'
+      }`}
+                    >
+                      {isRecording && recordingField === 'impact' ? (
+                        <>
+                          <Square className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5 sm:mr-2" />
+                          <span className="hidden sm:inline">Speak</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
-                {transcribingField === 'impact' && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Transcribing your voice...
-                  </p>
-                )}
+                  
+                  {isRecording && recordingField === 'impact' && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-destructive font-medium">Recording... tap Stop to finish</span>
+                      <span aria-live="polite" className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                        {formatTime(recordingTime)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {transcribingField === 'impact' && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      Transcribing your voice...
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            </TooltipProvider>
 
             <div className="space-y-4 pt-4">
               <Button

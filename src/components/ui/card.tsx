@@ -60,7 +60,7 @@ const CardDescription = React.forwardRef<
   
   return (
     <Component
-      ref={ref as any}
+      ref={ref}
       className={cn(baseClasses, className)}
       {...props}
     />

@@ -38,6 +38,7 @@ export interface PostcardData {
   email: string;
   senators?: Representative[];
   sources?: Source[];
+  draftId?: string; // UUID of the postcard draft in the database
 }
 
 export interface AppState {

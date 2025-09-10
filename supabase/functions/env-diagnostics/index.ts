@@ -45,7 +45,7 @@ serve(async (req) => {
         
         // Other
         RESEND_API_KEY: Deno.env.get("RESEND_API_KEY") ? "✓ Present" : "✗ Missing",
-        IgnitePostAPI: Deno.env.get("IgnitePostAPI") ? "✓ Present" : "✗ Missing",
+        IGNITE_POST: Deno.env.get("IGNITE_POST") ? "✓ Present" : "✗ Missing",
         
         // Supabase
         SUPABASE_URL: Deno.env.get("SUPABASE_URL") ? "✓ Present" : "✗ Missing",
