@@ -227,15 +227,6 @@ export function CraftMessageScreen() {
     const processedPersonalImpact = convertListToSentence(personalImpact);
     const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
     
-    if (!combinedMessage.trim()) {
-      toast({
-        title: 'Please add your concerns',
-        description: 'You need to provide some content before continuing.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsDrafting(true);
     
     try {
