@@ -55,25 +55,39 @@ function getPublicationInfo(url: string): { domain: string; name: string; initia
   }
 }
 
-// Get favicon URL for a domain
-function getFaviconUrl(domain: string): string {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+// Get favicon URLs for a domain (try multiple sources)
+function getFaviconUrls(domain: string): string[] {
+  return [
+    `https://${domain}/favicon.ico`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`
+  ];
 }
 
-// Check if favicon exists and is accessible
-async function checkFaviconExists(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.ok;
-  } catch {
-    return false;
+// Check multiple favicon URLs until one works
+async function findWorkingFavicon(urls: string[]): Promise<string | null> {
+  for (const url of urls) {
+    try {
+      const response = await Promise.race([
+        fetch(url, { method: 'HEAD' }),
+        new Promise<Response>((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 1000)
+        )
+      ]);
+      if (response.ok) {
+        return url;
+      }
+    } catch {
+      // Try next URL
+    }
   }
+  return null;
 }
 
 // Main function to get source icon information
 export async function getSourceIcon(sourceUrl: string): Promise<SourceIconResult> {
   const { domain, initials } = getPublicationInfo(sourceUrl);
-  const faviconUrl = getFaviconUrl(domain);
+  const faviconUrls = getFaviconUrls(domain);
   
   const color = PUBLICATION_COLORS[domain] || PUBLICATION_COLORS.default;
   
@@ -81,15 +95,11 @@ export async function getSourceIcon(sourceUrl: string): Promise<SourceIconResult
     fallback: { initials, color }
   };
 
-  // Try to fetch favicon (with timeout to avoid hanging)
+  // Try to find a working favicon from multiple sources
   try {
-    const faviconExists = await Promise.race([
-      checkFaviconExists(faviconUrl),
-      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000))
-    ]);
-
-    if (faviconExists) {
-      result.src = faviconUrl;
+    const workingFavicon = await findWorkingFavicon(faviconUrls);
+    if (workingFavicon) {
+      result.src = workingFavicon;
     }
   } catch {
     // Use fallback if favicon check fails
