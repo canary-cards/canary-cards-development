@@ -33,13 +33,10 @@ jobs:
       with:
         version: latest
         
-    - name: Run database migrations (staging)
-      env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
+    - name: Skip database migrations (staging)
       run: |
-        echo "Running database migrations for staging..."
-        supabase db push --project-id $SUPABASE_PROJECT_ID
+        echo "⚠️  Database migrations skipped for staging auto-deployment"
+        echo "💡 Run migrations manually when needed: ./scripts/deploy-migrations.sh staging"
         
     - name: Deploy to Vercel (Staging)
       uses: amondnet/vercel-action@v25

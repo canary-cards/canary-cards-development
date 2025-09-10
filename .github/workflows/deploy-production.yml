@@ -46,14 +46,12 @@ jobs:
       with:
         version: latest
         
-    - name: Run database migrations
-      if: inputs.skip_migrations != 'true'
-      env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
+    - name: Database migrations (MANUAL ONLY)
       run: |
-        echo "Running database migrations for production..."
-        supabase db push --project-id $SUPABASE_PROJECT_ID
+        echo "🚨 DATABASE MIGRATIONS DISABLED FOR SAFETY"
+        echo "📋 29 migrations need to be applied manually to production"
+        echo "💡 After deployment, run: ./scripts/deploy-migrations.sh production"
+        echo "🔍 Review migrations in: supabase/migrations/"
         
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
