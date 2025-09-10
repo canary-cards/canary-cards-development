@@ -262,6 +262,34 @@ All colors MUST be HSL.
     }
   }
 
+  /* Extremely gentle page load pulse - solid to slight to one pulse and back over 2s */
+  .pulse-page-load {
+    animation: pulsePageLoad 2s ease-in-out;
+  }
+
+  @keyframes pulsePageLoad {
+    0% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    25% { 
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.9;
+      transform: scale(1.005);
+    }
+    75% { 
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   /* Mobile-first touch targets */
   button, input[type="button"], input[type="submit"] {
     min-height: 44px;

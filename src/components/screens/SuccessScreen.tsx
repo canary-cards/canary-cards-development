@@ -132,7 +132,7 @@ export function SuccessScreen() {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Success Animation */}
         <div className="text-center mb-8">
-          <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+          <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 pulse-page-load">
             <CheckCircle className="w-12 h-12 text-secondary-foreground" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
