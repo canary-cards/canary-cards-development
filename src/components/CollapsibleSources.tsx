@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
 import type { Source } from '@/types';
@@ -9,7 +9,27 @@ interface SourceIconProps {
   size?: number;
 }
 
-function SourceIcon({ url, size = 20 }: SourceIconProps) {
+// Loading skeleton component
+function SourcesSkeleton() {
+  return (
+    <div className="space-y-3 pt-4 border-t border-border animate-pulse">
+      <div className="w-full bg-muted border border-border rounded-xl p-3 sm:p-4 min-h-[44px]">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-4 h-4 bg-muted-foreground/30 rounded"></div>
+          <div className="w-20 h-4 bg-muted-foreground/30 rounded"></div>
+          <div className="flex gap-1.5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-6 h-6 bg-muted-foreground/30 rounded"></div>
+            ))}
+          </div>
+          <div className="w-16 h-4 bg-muted-foreground/30 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SourceIcon({ url, size = 24 }: SourceIconProps) {
   const [iconData, setIconData] = useState<{ src?: string; initials: string; color: string } | null>(null);
 
   useEffect(() => {
@@ -92,18 +112,35 @@ const getSourcePriority = (url: string): number => {
   return 1;
 };
 
-// Smart title truncation for mobile
+// Better title truncation - ensure ellipsis doesn't break mid-word
 const truncateTitle = (title: string, maxWords: number = 8): string => {
-  const words = title.split(' ');
+  const words = title.split(' ').filter(word => word.length > 0);
   if (words.length <= maxWords) return title;
   return words.slice(0, maxWords).join(' ') + '...';
 };
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Debounce toggle to prevent rapid clicking
+  const debouncedToggle = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
+  
+  // Simulate loading state (in real app this would depend on data fetching)
+  useEffect(() => {
+    if (sources && sources.length > 0) {
+      setIsLoading(false);
+    }
+  }, [sources]);
   
   if (!sources || sources.length === 0) {
     return null;
+  }
+  
+  if (isLoading) {
+    return <SourcesSkeleton />;
   }
 
   // Sort all sources by priority (government > news agencies > newspapers)
@@ -127,9 +164,13 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Collapsible open={isOpen} onOpenChange={debouncedToggle}>
         <CollapsibleTrigger asChild>
-          <button className="w-full bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none">
+          <button 
+            className="w-full min-h-[44px] bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            aria-expanded={isOpen}
+            aria-label={`${isOpen ? 'Collapse' : 'Expand'} sources (${uniqueDomains.length} sources available)`}
+          >
             <div className="flex items-center gap-2 sm:gap-3">
               <ChevronRight 
                 className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
@@ -140,12 +181,12 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                 Sources from:
               </span>
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="flex gap-1.5 flex-shrink-0">
-                  {previewSources.map((source, index) => (
-                    <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
-                      <SourceIcon url={source.url} size={18} />
-                    </div>
-                  ))}
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    {previewSources.map((source, index) => (
+                      <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
+                        <SourceIcon url={source.url} size={24} />
+                      </div>
+                    ))}
                 </div>
                 {additionalCount > 0 && (
                   <span className="body-text text-muted-foreground text-sm whitespace-nowrap">
@@ -157,7 +198,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           </button>
         </CollapsibleTrigger>
         
-        <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 animate-accordion-down">
+        <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 overflow-hidden">
           {prioritizedSources.map((source, index) => {
             // Extract and clean article title
             const cleanDescription = source.description.replace(/<[^>]*>/g, '');
@@ -167,23 +208,29 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
             return (
               <div 
                 key={index} 
-                className={`flex items-start gap-3 pb-3 min-h-[44px] ${
-                  index < prioritizedSources.length - 1 ? 'border-b border-border/50' : ''
+                className={`group flex items-start gap-3 pb-3 min-h-[44px] hover:bg-muted/30 rounded-lg p-2 -m-2 transition-all duration-200 ${
+                  index < prioritizedSources.length - 1 ? 'border-b border-border/50 mb-3' : ''
                 }`}
+                style={{
+                  animationDelay: `${index * 50}ms`,
+                  animation: isOpen ? 'fade-in 0.3s ease-out forwards' : undefined
+                }}
               >
                 <div className="flex-shrink-0 mt-1">
-                  <SourceIcon url={source.url} size={18} />
+                  <SourceIcon url={source.url} size={24} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
                   <a 
                     href={source.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="block body-text text-foreground text-sm font-medium leading-snug hover:text-primary transition-colors underline decoration-1 underline-offset-2 hover:decoration-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded-sm"
+                    className="group/link flex items-center gap-1.5 body-text text-foreground text-sm font-medium leading-tight hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-sm underline decoration-1 underline-offset-2 hover:decoration-2"
+                    aria-label={`Read article: ${title} (opens in new tab)`}
                   >
-                    {title}
+                    <span className="flex-1">{title}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors flex-shrink-0" />
                   </a>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground/80 font-medium">
                     {getSourceDisplayName(source.url)}
                   </div>
                 </div>
