@@ -13,6 +13,10 @@ CREATE POLICY "customers_service_role_access" ON public.customers
   USING (true)
   WITH CHECK (true);
 
+-- Add auth_user_id column for future authentication linking (must come before policy that references it)
+ALTER TABLE public.customers 
+ADD COLUMN auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
 -- Policy 3: Prepare for future authentication - users can only see their own data
 -- Note: This will only work when authentication is implemented
 CREATE POLICY "customers_own_data_access" ON public.customers
@@ -21,10 +25,6 @@ CREATE POLICY "customers_own_data_access" ON public.customers
   USING (auth.uid()::text IN (
     SELECT auth_user_id::text FROM public.customers WHERE id = customers.id
   ));
-
--- Add auth_user_id column for future authentication linking
-ALTER TABLE public.customers 
-ADD COLUMN auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 
 -- AI_DRAFTS table policies
 CREATE POLICY "ai_drafts_service_role_access" ON public.ai_drafts
