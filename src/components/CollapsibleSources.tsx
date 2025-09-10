@@ -103,9 +103,9 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                 Sources from:
               </span>
               <div className="flex items-center gap-2 flex-1">
-                <div className="flex -space-x-1">
+                <div className="flex gap-1">
                   {previewSources.map((source, index) => (
-                    <div key={index} className="relative">
+                    <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
                       <SourceIcon url={source.url} />
                     </div>
                   ))}

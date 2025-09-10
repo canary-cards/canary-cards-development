@@ -8,15 +8,20 @@ interface SourceIconResult {
   };
 }
 
-// Publication color mapping using existing design system colors
-const PUBLICATION_COLORS: Record<string, string> = {
-  'nytimes.com': 'hsl(var(--primary))', // Uses existing primary color
-  'theguardian.com': 'hsl(var(--primary))', // Uses existing primary color
-  'congress.gov': 'hsl(var(--primary))', // Uses existing primary color
-  'house.gov': 'hsl(var(--primary))', // Uses existing primary color
-  'senate.gov': 'hsl(var(--primary))', // Uses existing primary color
-  'wikipedia.org': 'hsl(var(--muted-foreground))', // Uses existing muted color
-  'default': 'hsl(var(--muted-foreground))' // Default fallback color
+// Publication color and icon mapping
+const PUBLICATION_INFO: Record<string, { color: string; icon?: string }> = {
+  'nytimes.com': { color: '#000000', icon: 'https://www.nytimes.com/vi-assets/static-assets/favicon-4bf96cb6a1093748bf5b3c429accb9b4.ico' },
+  'theguardian.com': { color: '#052962', icon: 'https://assets.guim.co.uk/images/favicons/fee5e2d638d1c35f6d501fa397e53329/32x32.ico' },
+  'congress.gov': { color: '#1f4e79' },
+  'house.gov': { color: '#1f4e79' },
+  'senate.gov': { color: '#1f4e79' },
+  'wikipedia.org': { color: '#000000' },
+  'washingtonpost.com': { color: '#000000' },
+  'cnn.com': { color: '#cc0000' },
+  'bbc.com': { color: '#000000' },
+  'reuters.com': { color: '#ff8000' },
+  'apnews.com': { color: '#d73027' },
+  'default': { color: 'hsl(var(--muted-foreground))' }
 };
 
 // Extract domain and get publication info
@@ -55,54 +60,28 @@ function getPublicationInfo(url: string): { domain: string; name: string; initia
   }
 }
 
-// Get favicon URLs for a domain (try multiple sources)
-function getFaviconUrls(domain: string): string[] {
-  return [
-    `https://${domain}/favicon.ico`,
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-    `https://icons.duckduckgo.com/ip3/${domain}.ico`
-  ];
-}
-
-// Check multiple favicon URLs until one works
-async function findWorkingFavicon(urls: string[]): Promise<string | null> {
-  for (const url of urls) {
-    try {
-      const response = await Promise.race([
-        fetch(url, { method: 'HEAD' }),
-        new Promise<Response>((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 1000)
-        )
-      ]);
-      if (response.ok) {
-        return url;
-      }
-    } catch {
-      // Try next URL
-    }
-  }
-  return null;
+// Simple favicon service that works reliably
+function getFaviconUrl(domain: string): string {
+  // Using DuckDuckGo's favicon service which has better CORS support
+  return `https://external-content.duckduckgo.com/ip3/${domain}.ico`;
 }
 
 // Main function to get source icon information
 export async function getSourceIcon(sourceUrl: string): Promise<SourceIconResult> {
   const { domain, initials } = getPublicationInfo(sourceUrl);
-  const faviconUrls = getFaviconUrls(domain);
-  
-  const color = PUBLICATION_COLORS[domain] || PUBLICATION_COLORS.default;
+  const pubInfo = PUBLICATION_INFO[domain] || PUBLICATION_INFO.default;
   
   const result: SourceIconResult = {
-    fallback: { initials, color }
+    fallback: { initials, color: pubInfo.color }
   };
 
-  // Try to find a working favicon from multiple sources
+  // Try DuckDuckGo's favicon service (better CORS support)
   try {
-    const workingFavicon = await findWorkingFavicon(faviconUrls);
-    if (workingFavicon) {
-      result.src = workingFavicon;
-    }
+    const faviconUrl = getFaviconUrl(domain);
+    // Don't do a HEAD check since it might fail due to CORS, just try to use it
+    result.src = faviconUrl;
   } catch {
-    // Use fallback if favicon check fails
+    // Use fallback initials with publication colors
   }
 
   return result;
