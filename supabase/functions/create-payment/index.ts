@@ -120,7 +120,7 @@ serve(async (req) => {
 
     // Get the origin for the return URL
     const origin = req.headers.get("origin");
-    let returnUrl = `${origin}/payment/return?session_id={CHECKOUT_SESSION_ID}`;
+    let returnUrl = `${origin}/payment-return?session_id={CHECKOUT_SESSION_ID}`;
     
     // Add simulation flags to return URL if provided
     if (simulateFailure) {
