@@ -30,7 +30,7 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
@@ -50,7 +50,7 @@ interface CardDescriptionProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const CardDescription = React.forwardRef<
-  HTMLElement,
+  any,
   CardDescriptionProps
 >(({ className, variant = "muted", as = "p", ...props }, ref) => {
   const Component = as;

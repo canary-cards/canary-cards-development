@@ -132,12 +132,12 @@ export function restoreStateFromStorage(dispatch: React.Dispatch<AppAction>): bo
       return false;
     }
     
-    if (!data.postcardData) {
+    if (!(data as any)?.postcardData) {
       console.log('❌ Invalid state: missing postcardData');
       return false;
     }
     
-    const { postcardData } = data;
+    const { postcardData } = data as any;
     
     // Check required fields
     if (!postcardData.userInfo?.fullName) {

@@ -44,12 +44,7 @@ const PaymentLoadingDetector = () => {
     return <FinalizingOrderScreen status="loading" />;
   }
 
-  return null;
-};
-
-const AppContent = () => (
-  <AppProvider>
-    <PaymentLoadingDetector />
+  return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/onboarding" element={<Onboarding />} />
@@ -68,6 +63,12 @@ const AppContent = () => (
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+  );
+};
+
+const AppContent = () => (
+  <AppProvider>
+    <PaymentLoadingDetector />
   </AppProvider>
 );
 

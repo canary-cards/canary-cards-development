@@ -86,9 +86,9 @@ export default function PaymentRefunded() {
                         <div className="h-4 w-4 bg-green-500 rounded-full mt-0.5 flex-shrink-0"></div>
                         <div className="text-sm text-green-800 text-left">
                           <p className="font-medium">Sent successfully:</p>
-                          {successfulPostcards.map((result: PostcardResult, idx: number) => (
-                            <p key={idx} className="mt-1">{result.recipient}</p>
-                          ))}
+                           {successfulPostcards.map((result: PostcardResult, idx: number) => (
+                             <p key={idx} className="mt-1">{String((result as any).recipient)}</p>
+                           ))}
                         </div>
                       </div>
                     </div>
@@ -100,10 +100,10 @@ export default function PaymentRefunded() {
                         <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-destructive text-left">
                           <p className="font-medium">Couldn't send:</p>
-                          {failedPostcards.map((result: PostcardResult, idx: number) => (
-                            <div key={idx} className="mt-1">
-                              <p className="font-medium">{result.recipient}</p>
-                              {result.error && <p className="text-xs opacity-75">{result.error}</p>}
+                           {failedPostcards.map((result: PostcardResult, idx: number) => (
+                             <div key={idx} className="mt-1">
+                               <p className="font-medium">{String((result as any).recipient)}</p>
+                               {(result as any).error && <p className="text-xs opacity-75">{String((result as any).error)}</p>}
                             </div>
                           ))}
                         </div>

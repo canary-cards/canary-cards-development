@@ -51,8 +51,8 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         if (globalCheckoutInstance) {
           console.log('EmbeddedCheckout: Cleaning up existing global instance');
           try {
-            await globalCheckoutInstance.unmount();
-            globalCheckoutInstance.destroy?.();
+            await (globalCheckoutInstance as any).unmount();
+            (globalCheckoutInstance as any).destroy?.();
           } catch (error) {
             console.log('EmbeddedCheckout: Error cleaning up global instance:', error);
           }
@@ -97,7 +97,7 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         if (!isMounted) {
           console.log('EmbeddedCheckout: Component unmounted after creation, cleaning up');
           if (checkoutInstance) {
-            checkoutInstance.unmount();
+            (checkoutInstance as any).unmount();
           }
           return;
         }
@@ -117,7 +117,7 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
           
           const checkoutElement = document.getElementById('embedded-checkout');
           if (checkoutElement) {
-            checkoutInstance.mount('#embedded-checkout');
+            (checkoutInstance as any).mount('#embedded-checkout');
             console.log('EmbeddedCheckout: Checkout mounted to DOM');
           } else {
             console.error('EmbeddedCheckout: Mount element not found after render');
@@ -157,8 +157,8 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         if (checkoutInstance) {
           console.log('EmbeddedCheckout: Unmounting checkout instance');
           try {
-            checkoutInstance.unmount();
-            checkoutInstance.destroy?.(); // Call destroy if available
+            (checkoutInstance as any).unmount();
+            (checkoutInstance as any).destroy?.(); // Call destroy if available
           } catch (error) {
             console.log('EmbeddedCheckout: Error unmounting checkout:', error);
           }
@@ -169,8 +169,8 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         if (checkout && checkout !== checkoutInstance) {
           console.log('EmbeddedCheckout: Unmounting stored checkout instance');
           try {
-            checkout.unmount();
-            checkout.destroy?.(); // Call destroy if available
+            (checkout as any).unmount();
+            (checkout as any).destroy?.(); // Call destroy if available
           } catch (error) {
             console.log('EmbeddedCheckout: Error unmounting stored checkout:', error);
           }

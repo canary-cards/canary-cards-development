@@ -24,29 +24,29 @@ export default function PaymentReturn() {
     }
     
     // Check userInfo
-    if (!data.userInfo) {
+    if (!(data as any)?.userInfo) {
       return false;
     }
     
-    if (!data.userInfo.fullName) {
+    if (!(data as any).userInfo?.fullName) {
       return false;
     }
     
-    if (!data.userInfo.streetAddress) {
+    if (!(data as any).userInfo?.streetAddress) {
       return false;
     }
     
     // Check representative
-    if (!data.representative) {
+    if (!(data as any)?.representative) {
       return false;
     }
     
-    if (!data.representative.name) {
+    if (!(data as any).representative?.name) {
       return false;
     }
     
     // Check message
-    if (!data.finalMessage) {
+    if (!(data as any)?.finalMessage) {
       return false;
     }
     
