@@ -357,15 +357,6 @@ export function CraftMessageScreen() {
                     </Button>
                   </div>
                   
-                  {isRecording && recordingField === 'concerns' && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-destructive font-medium">Recording... tap Stop to finish</span>
-                      <span aria-live="polite" className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                        {formatTime(recordingTime)}
-                      </span>
-                    </div>
-                  )}
                   
                   {transcribingField === 'concerns' && (
                     <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -423,15 +414,6 @@ export function CraftMessageScreen() {
                     </Button>
                   </div>
                   
-                  {isRecording && recordingField === 'impact' && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-destructive font-medium">Recording... tap Stop to finish</span>
-                      <span aria-live="polite" className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                        {formatTime(recordingTime)}
-                      </span>
-                    </div>
-                  )}
                   
                   {transcribingField === 'impact' && (
                     <p className="text-sm text-muted-foreground flex items-center gap-2">
