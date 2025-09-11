@@ -41,7 +41,7 @@ npm run migration:review
 - Provides deployment recommendations
 - Must show "SAFE TO DEPLOY" before proceeding
 
-### 4. Deploy to Production Safely
+### 4. Deploy Schema to Production Safely
 ```bash
 npm run migrate:production:safe
 ```
@@ -52,6 +52,17 @@ npm run migrate:production:safe
 - Provides rollback scripts
 - Validates before and after deployment
 - Maintains data integrity
+
+### 5. Deploy Functions and Policies
+```bash
+npm run sync:functions-policies
+```
+
+**What this does:**
+- Deploys all Edge Functions to production
+- Applies missing RLS (Row Level Security) policies
+- Ensures data saving/access works properly
+- Verifies functions are active and policies are applied
 
 ## 📋 Migration Safety Checklist
 
@@ -85,7 +96,8 @@ Before deploying any migration to production:
 ```bash
 npm run migration:generate [description]  # Generate migration from staging
 npm run migration:review                  # Review migrations for safety
-npm run migrate:production:safe           # Deploy to production safely
+npm run migrate:production:safe           # Deploy schema to production safely
+npm run sync:functions-policies           # Deploy functions & RLS policies
 ```
 
 ### Development Commands
@@ -123,10 +135,16 @@ npm run migration:review
 # Output: ✅ SAFE TO DEPLOY - No dangerous operations found
 ```
 
-4. **Deploy to production:**
+4. **Deploy schema to production:**
 ```bash
 npm run migrate:production:safe
 # Creates backups, applies migration, verifies success
+```
+
+5. **Deploy functions and policies:**
+```bash
+npm run sync:functions-policies
+# Deploys Edge Functions and RLS policies
 ```
 
 ## 🆘 Emergency Procedures
