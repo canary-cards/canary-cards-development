@@ -66,15 +66,10 @@ ${userInfo?.fullName}`;
         const { data: createData, error: createError } = await supabase.functions.invoke('postcard-draft', {
           body: {
             action: 'create',
-            zipCode: state.postcardData.userInfo?.zipCode,
-            recipientSnapshot: {
-              type: 'representative',
-              representative: state.postcardData.representative
-            },
-            recipientType: 'representative',
-            concerns: state.postcardData.concerns || null,
-            personalImpact: state.postcardData.personalImpact || null
-          }
+            zipCode: state.postcardData.zipCode,
+            concerns: state.postcardData.concerns,
+            personalImpact: state.postcardData.personalImpact,
+          },
         });
 
         if (createError) {

@@ -189,11 +189,11 @@ export type Database = {
           id: string
           invite_code: string | null
           personal_impact: string | null
-          recipient_snapshot: Json
-          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          recipient_snapshot: Json | null
+          recipient_type: Database["public"]["Enums"]["recipient_type"] | null
           sent_order_id: string | null
           sources_count: number
-          zip_code: string
+          zip_code: string | null
         }
         Insert: {
           ai_drafted_message?: string | null
@@ -208,11 +208,11 @@ export type Database = {
           id?: string
           invite_code?: string | null
           personal_impact?: string | null
-          recipient_snapshot: Json
-          recipient_type: Database["public"]["Enums"]["recipient_type"]
+          recipient_snapshot?: Json | null
+          recipient_type?: Database["public"]["Enums"]["recipient_type"] | null
           sent_order_id?: string | null
           sources_count?: number
-          zip_code: string
+          zip_code?: string | null
         }
         Update: {
           ai_drafted_message?: string | null
@@ -227,11 +227,11 @@ export type Database = {
           id?: string
           invite_code?: string | null
           personal_impact?: string | null
-          recipient_snapshot?: Json
-          recipient_type?: Database["public"]["Enums"]["recipient_type"]
+          recipient_snapshot?: Json | null
+          recipient_type?: Database["public"]["Enums"]["recipient_type"] | null
           sent_order_id?: string | null
           sources_count?: number
-          zip_code?: string
+          zip_code?: string | null
         }
         Relationships: [
           {

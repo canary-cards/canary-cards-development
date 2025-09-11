@@ -228,15 +228,10 @@ export function CraftMessageScreen() {
       const { data, error } = await supabase.functions.invoke('postcard-draft', {
         body: {
           action: 'create',
-          zipCode: state.postcardData.userInfo?.zipCode,
-          recipientSnapshot: {
-            type: 'representative',
-            representative: state.postcardData.representative
-          },
-          recipientType: 'representative',
-          concerns: processedConcerns || null,
-          personalImpact: processedPersonalImpact || null
-        }
+          zipCode: state.postcardData.zipCode,
+          concerns: processedConcerns,
+          personalImpact: processedPersonalImpact,
+        },
       });
 
       if (error) {

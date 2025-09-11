@@ -34,26 +34,22 @@ serve(async (req) => {
 
     if (action === 'create') {
       // Create a new draft for "Write it myself" flow
-      if (!zipCode || !recipientSnapshot || !recipientType) {
-        throw new Error("zipCode, recipientSnapshot, and recipientType are required for creating a draft");
-      }
-
+      // Only zip_code, concerns, and personalImpact are available at this stage
+      // All fields are now optional in the database
+      
       console.log("Creating new postcard draft");
-      console.log("Zip code:", zipCode);
-      console.log("Recipient type:", recipientType);
+      console.log("Zip code:", zipCode || "not provided");
       console.log("Concerns:", concerns ? "provided" : "missing");
       console.log("Personal impact:", personalImpact ? "provided" : "missing");
 
       const { data: newDraft, error: createError } = await supabase
         .from('postcard_drafts')
         .insert({
-          zip_code: zipCode,
-          recipient_snapshot: recipientSnapshot,
-          recipient_type: recipientType,
+          zip_code: zipCode || null,
           concerns: concerns || null,
           personal_impact: personalImpact || null,
-          // Don't set generation_status for manual drafts - only for AI generation
-          // Don't set human_approved_message until user clicks "Continue"
+          // recipient_snapshot and recipient_type will be null initially
+          // They can be updated later when recipient data is available
         })
         .select()
         .single();
