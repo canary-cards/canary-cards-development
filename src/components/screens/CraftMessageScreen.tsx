@@ -223,17 +223,58 @@ export function CraftMessageScreen() {
     const processedPersonalImpact = convertListToSentence(personalImpact);
     const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
     
-    // Update state with any content the user entered (or empty strings)
-    dispatch({ 
-      type: 'UPDATE_POSTCARD_DATA', 
-      payload: { 
-        concerns: processedConcerns,
-        personalImpact: processedPersonalImpact,
-        originalMessage: combinedMessage,
-        draftMessage: combinedMessage,
-        finalMessage: combinedMessage
+    try {
+      // Create a manual draft in the database
+      const { data, error } = await supabase.functions.invoke('postcard-draft', {
+        body: {
+          action: 'create',
+          zipCode: state.postcardData.userInfo?.zipCode,
+          recipientSnapshot: {
+            type: 'representative',
+            representative: state.postcardData.representative
+          },
+          recipientType: 'representative',
+          concerns: processedConcerns || null,
+          personalImpact: processedPersonalImpact || null
+        }
+      });
+
+      if (error) {
+        console.error('Failed to create manual draft:', error);
+        toast({
+          title: "Error creating draft",
+          description: "Please try again or continue without saving.",
+          variant: "destructive",
+        });
       }
-    });
+
+      // Update state with processed data and draftId
+      dispatch({ 
+        type: 'UPDATE_POSTCARD_DATA', 
+        payload: { 
+          concerns: processedConcerns,
+          personalImpact: processedPersonalImpact,
+          originalMessage: combinedMessage,
+          draftMessage: combinedMessage,
+          finalMessage: combinedMessage,
+          draftId: data?.draftId || null
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error creating manual draft:', error);
+      // Continue anyway with just state updates
+      dispatch({ 
+        type: 'UPDATE_POSTCARD_DATA', 
+        payload: { 
+          concerns: processedConcerns,
+          personalImpact: processedPersonalImpact,
+          originalMessage: combinedMessage,
+          draftMessage: combinedMessage,
+          finalMessage: combinedMessage
+        }
+      });
+    }
     
     // Navigate directly to the review screen
     dispatch({ type: 'SET_STEP', payload: 3 });

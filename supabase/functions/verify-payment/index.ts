@@ -120,15 +120,15 @@ serve(async (req) => {
         throw new Error("Failed to create order record");
       }
 
-      // Link AI draft to order if draftId provided
+      // Link postcard draft to order if draftId provided
       if (draftId) {
         const { error: linkError } = await supabase
-          .from('ai_drafts')
+          .from('postcard_drafts')
           .update({ sent_order_id: order.id })
           .eq('id', draftId);
 
         if (linkError) {
-          console.error("Error linking AI draft to order:", linkError);
+          console.error("Error linking postcard draft to order:", linkError);
         }
       }
 

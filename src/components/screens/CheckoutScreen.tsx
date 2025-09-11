@@ -248,7 +248,8 @@ export function CheckoutScreen() {
             senators: selectedSenatorsList,
             finalMessage: state.postcardData.finalMessage,
             sendOption,
-            email
+            email,
+            draftId: state.postcardData.draftId
           }
         }
       });

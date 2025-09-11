@@ -47,23 +47,55 @@ ${userInfo?.fullName}`;
     }, 2000);
   };
   const handleContinue = async () => {
-    if (!state.postcardData.draftId) {
-      toast({
-        title: 'Error',
-        description: 'No draft found. Please try again.',
-        variant: 'destructive'
-      });
+    if (!editedMessage.trim()) {
+      return;
+    }
+
+    if (editedMessage.length > 300) {
       return;
     }
 
     setIsUpdating(true);
 
     try {
+      let draftId = state.postcardData.draftId;
+
+      // Create draft if missing (safeguard for manual messages)
+      if (!draftId) {
+        console.log('No draftId found, creating manual draft on the fly');
+        const { data: createData, error: createError } = await supabase.functions.invoke('postcard-draft', {
+          body: {
+            action: 'create',
+            zipCode: state.postcardData.userInfo?.zipCode,
+            recipientSnapshot: {
+              type: 'representative',
+              representative: state.postcardData.representative
+            },
+            recipientType: 'representative',
+            concerns: state.postcardData.concerns || null,
+            personalImpact: state.postcardData.personalImpact || null
+          }
+        });
+
+        if (createError) {
+          console.error('Failed to create missing draft:', createError);
+          toast({
+            title: "Error creating draft",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        draftId = createData?.draftId;
+        console.log('Created draft with ID:', draftId);
+      }
+
       // Call the postcard-draft edge function to approve the draft
       const { data, error } = await supabase.functions.invoke('postcard-draft', {
         body: {
           action: 'approve',
-          draftId: state.postcardData.draftId,
+          draftId: draftId,
           humanApprovedMessage: editedMessage
         }
       });
@@ -94,7 +126,8 @@ ${userInfo?.fullName}`;
       dispatch({
         type: 'UPDATE_POSTCARD_DATA',
         payload: {
-          finalMessage: editedMessage
+          finalMessage: editedMessage,
+          draftId: data.draftId || draftId
         }
       });
       dispatch({
