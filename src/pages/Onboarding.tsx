@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
-import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { Slide } from '../components/onboarding/Slide';
 
 const SLIDE_DURATION = 6500;
@@ -227,24 +226,14 @@ export default function Onboarding() {
         />
       )}
 
-      {/* Header with X Button and Progress Strips */}
+      {/* Header with X Button */}
       <div 
-        className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
+        className="fixed left-0 right-0 z-40 flex items-center justify-end px-4 py-4"
         style={{ 
           top: showSharedBanner ? '3.25rem' : 0,
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
-        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
-        <div className="flex-1 ml-2 mr-3">
-          <ProgressStrips
-            currentSlide={currentSlide}
-            totalSlides={TOTAL_SLIDES}
-            autoplayActive={!autoplayStopped}
-            progress={progress}
-          />
-        </div>
-
         {/* X Button - aligned to the right */}
         <button
           onClick={exitToHome}
