@@ -19,6 +19,11 @@
     "migrate:production:safe": "./scripts/migrate-production-safe.sh",
     "sync:functions-policies": "./scripts/sync-functions-and-policies.sh",
     "db:status": "supabase status",
+    "migrate:production:enhanced": "./scripts/migrate-production-enhanced.sh",
+"sync:rls-policies:enhanced": "./scripts/sync-rls-policies-enhanced.sh",
+"backfill:framework": "./scripts/backfill-framework.sh",
+"dashboard:setup": "echo 'Run the SQL in scripts/dashboard-deploy-trigger.sql in your Supabase SQL Editor to enable dashboard deployment triggers'",
+
     "deploy:help": "echo '🚀 Production-Safe Migration Workflow:' && echo '  npm run migration:generate [description] - Generate migration from staging' && echo '  npm run migration:review               - Review migrations for safety' && echo '  npm run migrate:production:safe        - Deploy to production safely' && echo '  npm run sync:functions-policies        - Deploy functions & RLS policies' && echo '' && echo '🔧 Development Commands:' && echo '  npm run migrate:staging                - Deploy to staging' && echo '  npm run sync:staging-to-prod:enhanced  - Emergency schema sync' && echo '  npm run db:status                     - Check database status' && echo '' && echo '📝 Complete Production Deployment:' && echo '  1. Make changes in staging' && echo '  2. Generate migration: npm run migration:generate' && echo '  3. Review migration: npm run migration:review' && echo '  4. Deploy schema: npm run migrate:production:safe' && echo '  5. Deploy functions/policies: npm run sync:functions-policies'"
   },
   "dependencies": {
