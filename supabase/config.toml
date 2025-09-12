@@ -21,6 +21,9 @@ verify_jwt = false
 [functions.ignitepost-webhook]
 verify_jwt = false
 
+[functions.migration-helper]
+verify_jwt = false
+
 [functions.postcard-draft]
 verify_jwt = false
 
