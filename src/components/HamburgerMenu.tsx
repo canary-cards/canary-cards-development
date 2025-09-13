@@ -34,7 +34,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative z-50 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2"
+          className="relative z-50 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2 hover:bg-white hover:text-primary"
           aria-controls="site-menu"
           aria-expanded={open}
           aria-label="Open menu"
