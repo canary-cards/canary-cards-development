@@ -488,11 +488,11 @@ export function CheckoutScreen() {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Verified addressing to correct congressional offices</span>
+                      <span>Addresses verified for accuracy</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Proper representative names and titles included</span>
+                      <span>Names and titles included</span>
                     </div>
                   </div>
                 </div>
