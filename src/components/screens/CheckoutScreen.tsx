@@ -474,7 +474,7 @@ export function CheckoutScreen() {
                 <div className="space-y-1">
                   <button 
                     onClick={() => setShowMixMatch(true)} 
-                    className="w-full flex items-center justify-between text-sm text-primary hover:text-primary/80 transition-colors font-medium p-2 -m-2 rounded"
+                    className="w-full flex items-center justify-between text-sm text-primary hover:text-primary/80 transition-colors font-medium"
                   >
                     <span>Mix and Match Recipients</span>
                     <ChevronRight className="w-4 h-4 flex-shrink-0" />
