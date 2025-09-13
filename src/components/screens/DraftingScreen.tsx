@@ -159,7 +159,7 @@ export function DraftingScreen() {
             <DotLottiePlayer
               autoplay
               loop
-              src="https://lottie.host/0e658d43-47e8-4479-a3b2-f48b383be7c7/37OlsSxInK.lottie"
+              src="/assets/drafting-animation.lottie"
               className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
               onEvent={(event: any) => {
                 const type = typeof event === 'string' ? event : event?.type;
