@@ -485,12 +485,15 @@ export function CheckoutScreen() {
 
                 {/* Panel-level reassurance */}
                 <div className="text-center pt-4">
-                  <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span>Auto-addressed</span>
-                    <span className="mx-1">•</span>
-                    <IdCard className="w-4 h-4 flex-shrink-0" />
-                    <span>Name + title</span>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-center gap-1">
+                      <Check className="w-4 h-4 flex-shrink-0" />
+                      <span>Auto-addressed</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <Check className="w-4 h-4 flex-shrink-0" />
+                      <span>Name + title</span>
+                    </div>
                   </div>
                 </div>
               </div>
