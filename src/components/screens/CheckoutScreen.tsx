@@ -485,7 +485,7 @@ export function CheckoutScreen() {
 
                 {/* Panel-level reassurance */}
                 <div className="text-left pt-4">
-                  <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 flex-shrink-0" />
                       <span>Congressional addresses verified</span>
