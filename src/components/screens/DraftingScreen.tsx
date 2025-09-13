@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { DynamicSvg } from '../DynamicSvg';
+import { Player } from '@lottiefiles/react-lottie-player';
 
 const draftingMessages = [
   "Polishing your message…",
@@ -152,10 +151,11 @@ export function DraftingScreen() {
     <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-primary px-4">
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
-          <DynamicSvg 
-            assetName="onboarding_icon_2.svg"
-            alt="Canary research process"
-            className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
+          <Player
+            autoplay
+            loop
+            src="https://lottie.host/0e658d43-47e8-4479-a3b2-f48b383be7c7/37OlsSxInK.lottie"
+            className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
           />
           <div className="flex items-center justify-center space-x-3">
             {/* Progress writing bar synced with message timing */}
