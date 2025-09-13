@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { Player } from '@lottiefiles/react-lottie-player';
+import { DotLottiePlayer } from '@dotlottie/react-player';
+import { DynamicSvg } from '../DynamicSvg';
 
 const draftingMessages = [
   "Polishing your message…",
@@ -18,9 +19,12 @@ export function DraftingScreen() {
   const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1); // What message is actually shown
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
+  const [lottieError, setLottieError] = useState(false);
 
-  // Initial delay then start rotating messages
   useEffect(() => {
+    // Reset error if we re-enter the screen
+    setLottieError(false);
+
     // Initial 1.5s delay before showing first message
     const initialDelay = setTimeout(() => {
       setCurrentMessageIndex(0);
@@ -151,12 +155,27 @@ export function DraftingScreen() {
     <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-primary px-4">
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
-          <Player
-            autoplay
-            loop
-            src="https://lottie.host/0e658d43-47e8-4479-a3b2-f48b383be7c7/37OlsSxInK.lottie"
-            className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
-          />
+          {!lottieError ? (
+            <DotLottiePlayer
+              autoplay
+              loop
+              src="https://lottie.host/0e658d43-47e8-4479-a3b2-f48b383be7c7/37OlsSxInK.lottie"
+              className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
+              onEvent={(event: any) => {
+                const type = typeof event === 'string' ? event : event?.type;
+                if (type === 'error') {
+                  console.error('DotLottie failed to load animation');
+                  setLottieError(true);
+                }
+              }}
+            />
+          ) : (
+            <DynamicSvg 
+              assetName="onboarding_icon_2.svg"
+              alt="Canary research process"
+              className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
+            />
+          )}
           <div className="flex items-center justify-center space-x-3">
             {/* Progress writing bar synced with message timing */}
             <div className="w-8 h-1 bg-background/20 rounded-full overflow-hidden">

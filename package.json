@@ -26,6 +26,7 @@
     "deploy:help": "echo '🚀 Production-Safe Migration Workflow:' && echo '  npm run migration:generate [description] - Generate migration from staging' && echo '  npm run migration:review               - Review migrations for safety' && echo '  npm run migrate:production:safe        - Deploy to production safely' && echo '  npm run sync:functions-policies        - Deploy functions & RLS policies' && echo '' && echo '🔧 Development Commands:' && echo '  npm run migrate:staging                - Deploy to staging' && echo '  npm run sync:staging-to-prod:enhanced  - Emergency schema sync' && echo '  npm run db:status                     - Check database status' && echo '' && echo '📝 Complete Production Deployment:' && echo '  1. Make changes in staging' && echo '  2. Generate migration: npm run migration:generate' && echo '  3. Review migration: npm run migration:review' && echo '  4. Deploy schema: npm run migrate:production:safe' && echo '  5. Deploy functions/policies: npm run sync:functions-policies'"
   },
   "dependencies": {
+    "@dotlottie/react-player": "^1.6.19",
     "@hookform/resolvers": "^3.9.0",
     "@lottiefiles/react-lottie-player": "^3.6.0",
     "@radix-ui/react-accordion": "^1.2.0",
