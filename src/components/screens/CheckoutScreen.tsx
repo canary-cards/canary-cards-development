@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
 import { EmbeddedCheckout } from '../EmbeddedCheckout';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -472,8 +472,12 @@ export function CheckoutScreen() {
 
                 {/* Mix & Match */}
                 <div className="space-y-1">
-                  <button onClick={() => setShowMixMatch(true)} className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">
-                    Mix and Match Recipients
+                  <button 
+                    onClick={() => setShowMixMatch(true)} 
+                    className="w-full flex items-center justify-between text-sm text-primary hover:text-primary/80 transition-colors font-medium p-2 -m-2 rounded"
+                  >
+                    <span>Mix and Match Recipients</span>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
                   </button>
                   <p className="text-sm text-muted-foreground">
                     $5 each. Choose any combination
