@@ -484,15 +484,15 @@ export function CheckoutScreen() {
                 {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
                 {/* Panel-level reassurance */}
-                <div className="text-center pt-4">
+                <div className="text-left pt-4">
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Auto-addressed</span>
+                      <span>Verified addressing to correct congressional offices</span>
                     </div>
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Name + title</span>
+                      <span>Proper representative names and titles included</span>
                     </div>
                   </div>
                 </div>
