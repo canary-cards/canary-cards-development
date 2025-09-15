@@ -15,6 +15,18 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Set up authentication for Supabase CLI using service role key
+# This bypasses the interactive authentication that was causing SASL errors
+export SUPABASE_ACCESS_TOKEN="${PRODUCTION_SUPABASE_SERVICE_ROLE_KEY:-}"
+if [[ -z "$SUPABASE_ACCESS_TOKEN" ]]; then
+    echo -e "${YELLOW}⚠️  PRODUCTION_SUPABASE_SERVICE_ROLE_KEY not found in environment${NC}"
+    echo "This deployment will use direct database URLs for authentication"
+fi
+
+# Database connection URLs
+STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+
 # Get current timestamp for backup naming
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="backups/database"
@@ -49,18 +61,22 @@ echo ""
 echo "💾 Creating production database backup..."
 mkdir -p "$BACKUP_DIR" "$MIGRATION_DIR" "$ROLLBACK_DIR"
 
-# Link to production project
-echo "   Linking to production project..."
-supabase link --project-ref xwsgyxlvxntgpochonwe
+# Validate database credentials
+if [[ -z "$PRODUCTION_DB_PASSWORD" ]]; then
+    echo -e "${RED}❌ PRODUCTION_DB_PASSWORD not set${NC}"
+    echo "Please set the production database password and try again"
+    exit 1
+fi
 
-# Create database dump using Supabase CLI
+# Create database dump using direct database URL
 echo "   Backing up production database schema and data..."
-supabase db dump --data-only -f "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
+supabase db dump --db-url "$PRODUCTION_DB_URL" --data-only -f "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Database backup failed${NC}"
+    echo "Check your PRODUCTION_DB_PASSWORD and network connectivity"
     exit 1
 }
 
-supabase db dump --schema-only -f "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
+supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Schema backup failed${NC}"
     exit 1
 }
@@ -75,14 +91,40 @@ echo "🔍 Analyzing database changes for safety..."
 echo "   Generating migration diff..."
 MIGRATION_FILE="$MIGRATION_DIR/migration_diff_${TIMESTAMP}.sql"
 
-# Link to staging project to generate diff
-supabase link --project-ref pugnjgvdisdbdkbofwrc
-
-# Generate diff from staging (current state) 
-supabase db diff --schema public --use-migra > "$MIGRATION_FILE" 2>/dev/null || {
-    echo -e "${YELLOW}⚠️  Could not generate diff automatically - proceeding with direct push${NC}"
+# Validate staging credentials
+if [[ -z "$STAGING_DB_PASSWORD" ]]; then
+    echo -e "${YELLOW}⚠️  STAGING_DB_PASSWORD not set - skipping diff generation${NC}"
     MIGRATION_FILE=""
-}
+else
+    # Generate schema dumps for both environments and create diff
+    echo "   Dumping staging schema for comparison..."
+    STAGING_SCHEMA_TEMP="/tmp/staging_schema_${TIMESTAMP}.sql"
+    PRODUCTION_SCHEMA_TEMP="/tmp/production_schema_${TIMESTAMP}.sql"
+    
+    # Dump schemas for comparison
+    supabase db dump --db-url "$STAGING_DB_URL" --schema-only -f "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
+        echo -e "${YELLOW}⚠️  Could not dump staging schema - proceeding with direct push${NC}"
+        MIGRATION_FILE=""
+    }
+    
+    if [[ -n "$MIGRATION_FILE" ]]; then
+        supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
+            echo -e "${YELLOW}⚠️  Could not dump production schema - proceeding with direct push${NC}"  
+            MIGRATION_FILE=""
+        }
+    fi
+    
+    # Create a basic diff (this is simplified - in practice you'd want a proper schema diff tool)
+    if [[ -n "$MIGRATION_FILE" ]]; then
+        echo "-- Migration diff generated at ${TIMESTAMP}" > "$MIGRATION_FILE"
+        echo "-- Differences between staging and production schemas" >> "$MIGRATION_FILE"
+        echo "-- Review this file before applying changes" >> "$MIGRATION_FILE"
+        diff "$PRODUCTION_SCHEMA_TEMP" "$STAGING_SCHEMA_TEMP" >> "$MIGRATION_FILE" 2>/dev/null || true
+        
+        # Clean up temp files
+        rm -f "$STAGING_SCHEMA_TEMP" "$PRODUCTION_SCHEMA_TEMP"
+    fi
+fi
 
 # Analyze migration for destructive changes if we have a diff
 DESTRUCTIVE_DETECTED=false
@@ -195,20 +237,26 @@ cat > "$ROLLBACK_SCRIPT" << EOF
 #!/bin/bash
 # Automated rollback script for deployment $TIMESTAMP
 echo "🔄 Rolling back database to state before $TIMESTAMP"
-supabase link --project-ref xwsgyxlvxntgpochonwe
-supabase db reset
-psql "\$(supabase status | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
-psql "\$(supabase status | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
+
+# Use direct database URL for rollback
+PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+
+echo "   Resetting production database..."
+supabase db reset --db-url "\$PRODUCTION_DB_URL"
+
+echo "   Restoring schema..."
+psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
+
+echo "   Restoring data..."
+psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
+
 echo "✅ Database rollback complete"
 EOF
 chmod +x "$ROLLBACK_SCRIPT"
 
-# Link to production project for migrations
-supabase link --project-ref xwsgyxlvxntgpochonwe
-
-# Apply database migrations with transaction safety
+# Apply database migrations with transaction safety using direct database URL
 echo "   Applying database migrations to production..."
-if ! supabase db push; then
+if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
     echo -e "${RED}❌ Database migration failed${NC}"
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
@@ -225,7 +273,7 @@ echo ""
 
 # Step 5: Deploy Edge Functions
 echo "⚡ Deploying Edge Functions to production..."
-supabase functions deploy || {
+supabase functions deploy --project-ref xwsgyxlvxntgpochonwe || {
     echo -e "${YELLOW}⚠️  Edge function deployment failed, but continuing...${NC}"
 }
 
