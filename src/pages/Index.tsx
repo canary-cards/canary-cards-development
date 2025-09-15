@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AppProvider, useAppContext } from '../context/AppContext';
 import { LandingPage } from '../components/LandingPage';
 import { CivicPostcardApp } from '../components/CivicPostcardApp';
-import { ApiTestComponent } from '@/components/ApiTestComponent';
 
 const AppContent = () => {
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ const AppContent = () => {
     }
   }, [navigate, location.search, location.state?.skipOnboarding, dispatch]);
 
-  return <ApiTestComponent />;
+  return <CivicPostcardApp />;
 };
 
 const Index = () => {
