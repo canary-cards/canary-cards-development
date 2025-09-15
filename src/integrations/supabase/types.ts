@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      deployment_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          deployment_type: string
+          details: Json | null
+          id: string
+          message: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          deployment_type: string
+          details?: Json | null
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          deployment_type?: string
+          details?: Json | null
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount_paid: number
@@ -325,12 +355,64 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      deployment_dashboard: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          deployment_id: string | null
+          deployment_type: string | null
+          duration_seconds: number | null
+          status: string | null
+          summary: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          deployment_id?: string | null
+          deployment_type?: string | null
+          duration_seconds?: never
+          status?: string | null
+          summary?: never
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          deployment_id?: string | null
+          deployment_type?: string | null
+          duration_seconds?: never
+          status?: string | null
+          summary?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_deployment_status: {
+        Args: { limit_count?: number }
+        Returns: {
+          completed_at: string
+          created_at: string
+          deployment_id: string
+          deployment_type: string
+          message: string
+          status: string
+        }[]
+      }
       normalize_email: {
         Args: { email_input: string }
         Returns: string
+      }
+      prepare_migration_from_staging: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      trigger_production_migration: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      validate_production_environment: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
     }
     Enums: {
