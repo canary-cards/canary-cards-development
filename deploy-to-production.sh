@@ -49,14 +49,18 @@ echo ""
 echo "💾 Creating production database backup..."
 mkdir -p "$BACKUP_DIR" "$MIGRATION_DIR" "$ROLLBACK_DIR"
 
+# Link to production project
+echo "   Linking to production project..."
+supabase link --project-ref xwsgyxlvxntgpochonwe
+
 # Create database dump using Supabase CLI
 echo "   Backing up production database schema and data..."
-supabase --project-ref xwsgyxlvxntgpochonwe db dump --data-only > "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
+supabase db dump --data-only -f "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Database backup failed${NC}"
     exit 1
 }
 
-supabase --project-ref xwsgyxlvxntgpochonwe db dump --schema-only > "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
+supabase db dump --schema-only -f "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Schema backup failed${NC}"
     exit 1
 }
@@ -70,7 +74,12 @@ echo "🔍 Analyzing database changes for safety..."
 # Generate diff between staging and production
 echo "   Generating migration diff..."
 MIGRATION_FILE="$MIGRATION_DIR/migration_diff_${TIMESTAMP}.sql"
-supabase db diff --project-ref pugnjgvdisdbdkbofwrc --project-ref-2 xwsgyxlvxntgpochonwe > "$MIGRATION_FILE" 2>/dev/null || {
+
+# Link to staging project to generate diff
+supabase link --project-ref pugnjgvdisdbdkbofwrc
+
+# Generate diff from staging (current state) 
+supabase db diff --schema public --use-migra > "$MIGRATION_FILE" 2>/dev/null || {
     echo -e "${YELLOW}⚠️  Could not generate diff automatically - proceeding with direct push${NC}"
     MIGRATION_FILE=""
 }
@@ -186,16 +195,20 @@ cat > "$ROLLBACK_SCRIPT" << EOF
 #!/bin/bash
 # Automated rollback script for deployment $TIMESTAMP
 echo "🔄 Rolling back database to state before $TIMESTAMP"
-supabase db reset --project-ref xwsgyxlvxntgpochonwe
-psql "\$(supabase status --project-ref xwsgyxlvxntgpochonwe | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
-psql "\$(supabase status --project-ref xwsgyxlvxntgpochonwe | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
+supabase link --project-ref xwsgyxlvxntgpochonwe
+supabase db reset
+psql "\$(supabase status | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
+psql "\$(supabase status | grep 'DB URL' | cut -d':' -f2-)" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
 echo "✅ Database rollback complete"
 EOF
 chmod +x "$ROLLBACK_SCRIPT"
 
+# Link to production project for migrations
+supabase link --project-ref xwsgyxlvxntgpochonwe
+
 # Apply database migrations with transaction safety
 echo "   Applying database migrations to production..."
-if ! supabase db push --project-ref xwsgyxlvxntgpochonwe; then
+if ! supabase db push; then
     echo -e "${RED}❌ Database migration failed${NC}"
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
@@ -212,7 +225,7 @@ echo ""
 
 # Step 5: Deploy Edge Functions
 echo "⚡ Deploying Edge Functions to production..."
-supabase functions deploy --project-ref xwsgyxlvxntgpochonwe || {
+supabase functions deploy || {
     echo -e "${YELLOW}⚠️  Edge function deployment failed, but continuing...${NC}"
 }
 
