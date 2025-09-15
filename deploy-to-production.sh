@@ -5,6 +5,13 @@
 
 set -e  # Exit on any error
 
+# Check for debug mode
+DEBUG_MODE=false
+if [[ "$1" == "--debug" ]]; then
+    DEBUG_MODE=true
+    echo "🐛 Debug mode enabled"
+fi
+
 echo "🚀 Starting Enhanced Production Deployment..."
 echo ""
 
@@ -22,16 +29,43 @@ get_supabase_secret() {
     
     echo "   Fetching secret: $secret_name..."
     
-    # Try to get the secret from Supabase CLI
-    secret_value=$(supabase secrets list --format json 2>/dev/null | grep -o "\"$secret_name\":[[:space:]]*\"[^\"]*\"" | cut -d'"' -f4 2>/dev/null || echo "")
+    # Check authentication first
+    if ! supabase projects list >/dev/null 2>&1; then
+        echo -e "${RED}❌ Not authenticated with Supabase CLI${NC}"
+        echo "Please run: supabase login"
+        exit 1
+    fi
+    
+    # Get secrets list output
+    local secrets_output
+    secrets_output=$(supabase secrets list 2>/dev/null || echo "")
+    
+    if [[ "$DEBUG_MODE" == true ]]; then
+        echo "   Debug: Secrets list output:"
+        echo "$secrets_output" | sed 's/^/     /'
+    fi
+    
+    if [[ -z "$secrets_output" ]]; then
+        echo -e "${RED}❌ Failed to fetch secrets list${NC}"
+        echo "Please ensure you have the necessary permissions and the project is linked"
+        exit 1
+    fi
+    
+    # Parse secret value from NAME=VALUE format
+    secret_value=$(echo "$secrets_output" | grep "^${secret_name}=" | cut -d'=' -f2- | tr -d '"' | head -n1)
     
     if [[ -z "$secret_value" ]]; then
-        echo -e "${RED}❌ Failed to fetch secret: $secret_name${NC}"
-        echo "Please ensure:"
-        echo "  1. You are authenticated with Supabase CLI"
-        echo "  2. The secret '$secret_name' exists in your Supabase project"
-        echo "  3. You have the necessary permissions"
+        echo -e "${RED}❌ Secret '$secret_name' not found${NC}"
+        echo "Available secrets:"
+        echo "$secrets_output" | grep "=" | cut -d'=' -f1 | sed 's/^/   - /'
+        echo ""
+        echo "To add the missing secret, run:"
+        echo "   supabase secrets set $secret_name=<your_value>"
         exit 1
+    fi
+    
+    if [[ "$DEBUG_MODE" == true ]]; then
+        echo "   Debug: Found secret value for $secret_name (length: ${#secret_value})"
     fi
     
     echo "$secret_value"
