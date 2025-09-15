@@ -15,13 +15,40 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Function to fetch secrets from Supabase
+get_supabase_secret() {
+    local secret_name="$1"
+    local secret_value=""
+    
+    echo "   Fetching secret: $secret_name..."
+    
+    # Try to get the secret from Supabase CLI
+    secret_value=$(supabase secrets list --format json 2>/dev/null | grep -o "\"$secret_name\":[[:space:]]*\"[^\"]*\"" | cut -d'"' -f4 2>/dev/null || echo "")
+    
+    if [[ -z "$secret_value" ]]; then
+        echo -e "${RED}❌ Failed to fetch secret: $secret_name${NC}"
+        echo "Please ensure:"
+        echo "  1. You are authenticated with Supabase CLI"
+        echo "  2. The secret '$secret_name' exists in your Supabase project"
+        echo "  3. You have the necessary permissions"
+        exit 1
+    fi
+    
+    echo "$secret_value"
+}
+
+# Fetch required secrets from Supabase
+echo "🔐 Fetching deployment secrets from Supabase..."
+
+PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_supabase_secret "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY")
+PRODUCTION_DB_PASSWORD=$(get_supabase_secret "PRODUCTION_DB_PASSWORD")
+STAGING_DB_PASSWORD=$(get_supabase_secret "STAGING_DB_PASSWORD")
+
+echo -e "${GREEN}✅ All secrets fetched successfully${NC}"
+echo ""
+
 # Set up authentication for Supabase CLI using service role key
-# This bypasses the interactive authentication that was causing SASL errors
-export SUPABASE_ACCESS_TOKEN="${PRODUCTION_SUPABASE_SERVICE_ROLE_KEY:-}"
-if [[ -z "$SUPABASE_ACCESS_TOKEN" ]]; then
-    echo -e "${YELLOW}⚠️  PRODUCTION_SUPABASE_SERVICE_ROLE_KEY not found in environment${NC}"
-    echo "This deployment will use direct database URLs for authentication"
-fi
+export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 
 # Database connection URLs
 STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
@@ -61,13 +88,6 @@ echo ""
 echo "💾 Creating production database backup..."
 mkdir -p "$BACKUP_DIR" "$MIGRATION_DIR" "$ROLLBACK_DIR"
 
-# Validate database credentials
-if [[ -z "$PRODUCTION_DB_PASSWORD" ]]; then
-    echo -e "${RED}❌ PRODUCTION_DB_PASSWORD not set${NC}"
-    echo "Please set the production database password and try again"
-    exit 1
-fi
-
 # Create database dump using direct database URL
 echo "   Backing up production database schema and data..."
 supabase db dump --db-url "$PRODUCTION_DB_URL" --data-only -f "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
@@ -91,39 +111,33 @@ echo "🔍 Analyzing database changes for safety..."
 echo "   Generating migration diff..."
 MIGRATION_FILE="$MIGRATION_DIR/migration_diff_${TIMESTAMP}.sql"
 
-# Validate staging credentials
-if [[ -z "$STAGING_DB_PASSWORD" ]]; then
-    echo -e "${YELLOW}⚠️  STAGING_DB_PASSWORD not set - skipping diff generation${NC}"
+# Generate schema dumps for both environments and create diff
+echo "   Dumping staging schema for comparison..."
+STAGING_SCHEMA_TEMP="/tmp/staging_schema_${TIMESTAMP}.sql"
+PRODUCTION_SCHEMA_TEMP="/tmp/production_schema_${TIMESTAMP}.sql"
+
+# Dump schemas for comparison
+supabase db dump --db-url "$STAGING_DB_URL" --schema-only -f "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
+    echo -e "${YELLOW}⚠️  Could not dump staging schema - proceeding with direct push${NC}"
     MIGRATION_FILE=""
-else
-    # Generate schema dumps for both environments and create diff
-    echo "   Dumping staging schema for comparison..."
-    STAGING_SCHEMA_TEMP="/tmp/staging_schema_${TIMESTAMP}.sql"
-    PRODUCTION_SCHEMA_TEMP="/tmp/production_schema_${TIMESTAMP}.sql"
-    
-    # Dump schemas for comparison
-    supabase db dump --db-url "$STAGING_DB_URL" --schema-only -f "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
-        echo -e "${YELLOW}⚠️  Could not dump staging schema - proceeding with direct push${NC}"
+}
+
+if [[ -n "$MIGRATION_FILE" ]]; then
+    supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
+        echo -e "${YELLOW}⚠️  Could not dump production schema - proceeding with direct push${NC}"  
         MIGRATION_FILE=""
     }
+fi
+
+# Create a basic diff (this is simplified - in practice you'd want a proper schema diff tool)
+if [[ -n "$MIGRATION_FILE" ]]; then
+    echo "-- Migration diff generated at ${TIMESTAMP}" > "$MIGRATION_FILE"
+    echo "-- Differences between staging and production schemas" >> "$MIGRATION_FILE"
+    echo "-- Review this file before applying changes" >> "$MIGRATION_FILE"
+    diff "$PRODUCTION_SCHEMA_TEMP" "$STAGING_SCHEMA_TEMP" >> "$MIGRATION_FILE" 2>/dev/null || true
     
-    if [[ -n "$MIGRATION_FILE" ]]; then
-        supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
-            echo -e "${YELLOW}⚠️  Could not dump production schema - proceeding with direct push${NC}"  
-            MIGRATION_FILE=""
-        }
-    fi
-    
-    # Create a basic diff (this is simplified - in practice you'd want a proper schema diff tool)
-    if [[ -n "$MIGRATION_FILE" ]]; then
-        echo "-- Migration diff generated at ${TIMESTAMP}" > "$MIGRATION_FILE"
-        echo "-- Differences between staging and production schemas" >> "$MIGRATION_FILE"
-        echo "-- Review this file before applying changes" >> "$MIGRATION_FILE"
-        diff "$PRODUCTION_SCHEMA_TEMP" "$STAGING_SCHEMA_TEMP" >> "$MIGRATION_FILE" 2>/dev/null || true
-        
-        # Clean up temp files
-        rm -f "$STAGING_SCHEMA_TEMP" "$PRODUCTION_SCHEMA_TEMP"
-    fi
+    # Clean up temp files
+    rm -f "$STAGING_SCHEMA_TEMP" "$PRODUCTION_SCHEMA_TEMP"
 fi
 
 # Analyze migration for destructive changes if we have a diff
