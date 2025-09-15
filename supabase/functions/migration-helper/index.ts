@@ -14,12 +14,18 @@ interface EnvironmentConfig {
 }
 
 serve(async (req) => {
+  // Enhanced logging for debugging
+  console.log(`Migration Helper called: ${req.method} ${new Date().toISOString()}`);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, environment } = await req.json();
+    const body = await req.text();
+    console.log(`Request body: ${body}`);
+    
+    const { action, environment } = JSON.parse(body || '{}');
 
     // Get environment-specific configuration
     const getEnvironmentConfig = (env: string): EnvironmentConfig => {
@@ -43,8 +49,47 @@ serve(async (req) => {
       }
     };
 
+    console.log(`Processing action: ${action} for environment: ${environment}`);
+
     switch (action) {
+      case 'validate_secrets': {
+        // New endpoint to validate secret configuration
+        console.log('Validating secrets configuration...');
+        
+        const requiredSecrets = [
+          'PRODUCTION_PROJECT_ID',
+          'PRODUCTION_DB_PASSWORD', 
+          'PRODUCTION_SUPABASE_ANON_KEY',
+          'PRODUCTION_SUPABASE_SERVICE_ROLE_KEY',
+          'STAGING_PROJECT_ID',
+          'STAGING_DB_PASSWORD',
+          'STAGING_SUPABASE_SERVICE_ROLE_KEY'
+        ];
+        
+        const secretStatus: Record<string, boolean> = {};
+        let allSecretsPresent = true;
+        
+        for (const secret of requiredSecrets) {
+          const value = Deno.env.get(secret);
+          secretStatus[secret] = !!value;
+          if (!value) {
+            allSecretsPresent = false;
+            console.log(`Missing secret: ${secret}`);
+          }
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          allSecretsPresent,
+          secretStatus,
+          message: allSecretsPresent ? 'All secrets configured' : 'Some secrets missing'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'get_credentials': {
+        console.log(`Getting credentials for environment: ${environment}`);
         const config = getEnvironmentConfig(environment);
         
         // Build database URL with password from secrets
@@ -52,11 +97,15 @@ serve(async (req) => {
           ? Deno.env.get('PRODUCTION_DB_PASSWORD')
           : Deno.env.get('STAGING_DB_PASSWORD');
         
+        console.log(`Password configured: ${!!password}`);
+        
         if (!password) {
+          console.error(`Database password not configured for ${environment}`);
           throw new Error(`Database password not configured for ${environment}`);
         }
 
         const dbUrl = `postgresql://postgres.${config.project_id}:${password}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
+        console.log(`Database URL constructed for project: ${config.project_id}`);
         
         return new Response(JSON.stringify({
           success: true,
@@ -72,22 +121,30 @@ serve(async (req) => {
       }
 
       case 'validate_connection': {
+        console.log(`Validating connection for environment: ${environment}`);
         const config = getEnvironmentConfig(environment);
         
         try {
           // Test database connection
+          console.log(`Creating Supabase client for project: ${config.project_id}`);
           const supabase = createClient(
             `https://${config.project_id}.supabase.co`,
             config.service_role_key
           );
           
+          console.log('Testing database query...');
           const { data, error } = await supabase
             .from('information_schema.tables')
             .select('table_name')
             .eq('table_schema', 'public')
             .limit(1);
             
-          if (error) throw error;
+          if (error) {
+            console.error('Database query error:', error);
+            throw error;
+          }
+          
+          console.log(`Query successful, found ${data?.length || 0} tables`);
           
           return new Response(JSON.stringify({
             success: true,
@@ -98,9 +155,12 @@ serve(async (req) => {
           });
           
         } catch (error) {
+          console.error('Connection validation failed:', error);
           return new Response(JSON.stringify({
             success: false,
-            error: `Connection failed: ${error.message}`
+            error: `Connection failed: ${error.message}`,
+            environment,
+            timestamp: new Date().toISOString()
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -142,6 +202,7 @@ serve(async (req) => {
       }
 
       case 'check_database_empty': {
+        console.log(`Checking if database is empty for environment: ${environment}`);
         const config = getEnvironmentConfig(environment);
         
         try {
@@ -149,6 +210,8 @@ serve(async (req) => {
             `https://${config.project_id}.supabase.co`,
             config.service_role_key
           );
+          
+          console.log('Querying database tables...');
           
           // Check if database has any data in public tables
           const { data: tables, error: tablesError } = await supabase
@@ -184,9 +247,12 @@ serve(async (req) => {
           });
           
         } catch (error) {
+          console.error('Database check failed:', error);
           return new Response(JSON.stringify({
             success: false,
-            error: `Failed to check database: ${error.message}`
+            error: `Failed to check database: ${error.message}`,
+            environment,
+            timestamp: new Date().toISOString()
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -208,7 +274,9 @@ serve(async (req) => {
     console.error('Migration Helper Error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      stack: error.stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
