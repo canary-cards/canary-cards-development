@@ -60,9 +60,9 @@ serve(async (req) => {
       );
     }
 
-    const geocodioApiKey = Deno.env.get('GeoCodioKey');
+    const geocodioApiKey = Deno.env.get('GEOCODIO_KEY');
     if (!geocodioApiKey) {
-      console.error('GeoCodioKey environment variable not set');
+      console.error('GEOCODIO_KEY environment variable not set');
       return new Response(
         JSON.stringify({ error: 'API configuration error' }), 
         { 

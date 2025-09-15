@@ -15,9 +15,9 @@ serve(async (req) => {
     
     console.log('Received request:', { input, types, componentRestrictions, zipCode })
 
-    const apiKey = Deno.env.get('Google')
+    const apiKey = Deno.env.get('GOOGLE_PLACES_KEY')
     if (!apiKey) {
-      console.error('Google Places API key not found')
+      console.error('GOOGLE_PLACES_KEY environment variable not found')
       throw new Error('Google Places API key not found')
     }
 
@@ -40,7 +40,7 @@ serve(async (req) => {
     if (zipCode) {
       try {
         // Get coordinates for the zip code using Geocodio API
-        const geocodioKey = Deno.env.get('GeoCodioKey')
+        const geocodioKey = Deno.env.get('GEOCODIO_KEY')
         if (geocodioKey) {
           console.log('Getting coordinates for zip code:', zipCode)
           const geocodioResponse = await fetch(`https://api.geocod.io/v1.9/geocode?q=${zipCode}&api_key=${geocodioKey}`)
