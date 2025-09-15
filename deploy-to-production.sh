@@ -38,7 +38,7 @@ get_supabase_secret() {
     
     # Get secrets list output
     local secrets_output
-    secrets_output=$(supabase secrets list 2>/dev/null || echo "")
+    secrets_output=$(supabase secrets list --project-ref pugnjgvdisdbdkbofwrc 2>/dev/null || echo "")
     
     if [[ "$DEBUG_MODE" == true ]]; then
         echo "   Debug: Secrets list output:"
