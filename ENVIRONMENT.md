@@ -2,7 +2,12 @@
 
 This application supports seamless deployment across staging and production environments with automatic environment detection.
 
-## How It Works
+## Architecture Overview
+
+### Multi-Project Setup
+This system uses a **two-project architecture**:
+- **Staging Project** (`pugnjgvdisdbdkbofwrc`): Connected to this Lovable project for development
+- **Production Project** (`xwsgyxlvxntgpochonwe`): Separate Supabase project for live production
 
 ### Frontend Environment Detection
 The application automatically detects the environment based on the hostname:
@@ -66,6 +71,49 @@ Both staging and production Supabase projects need these secrets configured:
 3. **Production Deploy**: Deploy to production domain (automatic environment switch)
 
 No manual configuration changes needed - the environment is detected automatically!
+
+## Production Migration System
+
+### How Production Deployment Works
+The production migration system uses the **staging environment as a secure bridge** to deploy changes to production:
+
+1. **Migration Helper Edge Function**: Runs in staging, securely accesses production credentials
+2. **Secure Credential Storage**: Production database credentials are stored as secrets in the staging project
+3. **Cross-Project Migration**: The staging environment orchestrates schema changes and deployments to production
+
+### Why Production Credentials Are Stored in Staging
+- **Security**: No production secrets stored in code or local environments
+- **Centralized Management**: All deployment logic runs from the staging environment
+- **Audit Trail**: All production changes logged through the staging system
+
+### Required Migration Secrets (Stored in Staging Project)
+These secrets must be configured in the **staging Supabase project** for production migrations:
+
+#### Production Database Access
+- `PRODUCTION_PROJECT_ID`: Production Supabase project ID (`xwsgyxlvxntgpochonwe`)
+- `PRODUCTION_DB_URL`: Full PostgreSQL connection string for production database
+- `PRODUCTION_DB_PASSWORD`: Production database password
+- `PRODUCTION_SUPABASE_ANON_KEY`: Production project anon key
+- `PRODUCTION_SUPABASE_SERVICE_ROLE_KEY`: Production project service role key
+
+#### Staging Database Access (for comparison)
+- `STAGING_PROJECT_ID`: Staging Supabase project ID (`pugnjgvdisdbdkbofwrc`)
+- `STAGING_DB_URL`: Full PostgreSQL connection string for staging database
+- `STAGING_DB_PASSWORD`: Staging database password
+- `STAGING_SUPABASE_ANON_KEY`: Staging project anon key (already configured)
+- `STAGING_SUPABASE_SERVICE_ROLE_KEY`: Staging project service role key
+
+### Migration Script Workflow
+1. **Connect to Staging**: Script connects to staging environment
+2. **Invoke Migration Helper**: Calls Edge Function to get production credentials
+3. **Generate Schema Diff**: Compares staging vs production database schemas
+4. **Apply Changes**: Deploys migrations and Edge Functions to production
+5. **Verify Deployment**: Confirms successful migration and RLS policy sync
+
+### Troubleshooting Migration Issues
+- **Connection Timeout**: Usually indicates missing production credentials in staging
+- **Authentication Failed**: Check that production service role key is correct
+- **Migration Helper Error**: Verify all required secrets are configured in staging project
 
 ## Edge Function Configuration
 
