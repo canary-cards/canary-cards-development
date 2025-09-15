@@ -260,6 +260,154 @@ serve(async (req) => {
         }
       }
 
+      case 'execute_production_deployment': {
+        console.log('Starting production deployment execution...');
+        
+        // Get deployment ID from request
+        const { deployment_id } = JSON.parse(body || '{}');
+        
+        try {
+          // Create staging client to get the migration SQL
+          const stagingConfig = getEnvironmentConfig('staging');
+          const stagingSupabase = createClient(
+            `https://${stagingConfig.project_id}.supabase.co`,
+            stagingConfig.service_role_key
+          );
+
+          // Update deployment log - starting
+          await stagingSupabase
+            .from('deployment_logs')
+            .update({
+              status: 'executing',
+              message: 'Applying security fixes to production database...'
+            })
+            .eq('id', deployment_id);
+
+          // Get production config and client
+          const prodConfig = getEnvironmentConfig('production');
+          const prodSupabase = createClient(
+            `https://${prodConfig.project_id}.supabase.co`,
+            prodConfig.service_role_key
+          );
+
+          console.log('Applying security fix migration to production...');
+
+          // Execute the security fix migration SQL directly
+          const securityFixSQL = `
+            -- Fix Security Definer View Issue
+            -- The deployment_dashboard view is owned by postgres superuser, which can bypass RLS
+            -- This migration recreates the view to ensure proper security
+
+            -- Drop the existing view
+            DROP VIEW IF EXISTS public.deployment_dashboard;
+
+            -- Recreate the view with explicit security model
+            -- Using a regular view that respects RLS policies
+            CREATE VIEW public.deployment_dashboard 
+            WITH (security_invoker = true)  -- Explicitly set security invoker mode
+            AS 
+            SELECT 
+                id AS deployment_id,
+                created_at,
+                deployment_type,
+                status,
+                CASE
+                    WHEN (length(message) > 100) THEN (left(message, 100) || '...'::text)
+                    ELSE message
+                END AS summary,
+                completed_at,
+                CASE
+                    WHEN (completed_at IS NOT NULL) THEN EXTRACT(epoch FROM (completed_at - created_at))
+                    ELSE EXTRACT(epoch FROM (now() - created_at))
+                END AS duration_seconds
+            FROM deployment_logs
+            ORDER BY created_at DESC;
+
+            -- Add a comment explaining the security model
+            COMMENT ON VIEW public.deployment_dashboard IS 
+            'Dashboard view for deployment logs. Uses security_invoker=true to respect RLS policies of the calling user.';
+          `;
+
+          // Execute the migration using RPC to run raw SQL
+          const { error: migrationError } = await prodSupabase.rpc('exec', {
+            sql: securityFixSQL
+          });
+
+          if (migrationError) {
+            console.error('Migration execution failed:', migrationError);
+            
+            // Update deployment log - failed
+            await stagingSupabase
+              .from('deployment_logs')
+              .update({
+                status: 'failed',
+                message: `Migration failed: ${migrationError.message}`,
+                completed_at: new Date().toISOString()
+              })
+              .eq('id', deployment_id);
+
+            throw migrationError;
+          }
+
+          console.log('Security fix migration applied successfully');
+
+          // Update deployment log - completed
+          await stagingSupabase
+            .from('deployment_logs')
+            .update({
+              status: 'completed',
+              message: 'Security fixes successfully applied to production database',
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', deployment_id);
+
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Production deployment completed successfully',
+            deployment_id,
+            details: {
+              migration_applied: 'security_fix_deployment_dashboard',
+              timestamp: new Date().toISOString()
+            }
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        } catch (error) {
+          console.error('Production deployment failed:', error);
+          
+          // Try to update the deployment log with failure status
+          try {
+            const stagingConfig = getEnvironmentConfig('staging');
+            const stagingSupabase = createClient(
+              `https://${stagingConfig.project_id}.supabase.co`,
+              stagingConfig.service_role_key
+            );
+            
+            await stagingSupabase
+              .from('deployment_logs')
+              .update({
+                status: 'failed',
+                message: `Deployment failed: ${error.message}`,
+                completed_at: new Date().toISOString()
+              })
+              .eq('id', deployment_id);
+          } catch (logError) {
+            console.error('Failed to update deployment log:', logError);
+          }
+
+          return new Response(JSON.stringify({
+            success: false,
+            error: `Production deployment failed: ${error.message}`,
+            deployment_id,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       default:
         return new Response(JSON.stringify({
           success: false,
