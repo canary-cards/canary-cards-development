@@ -361,7 +361,7 @@ chmod +x "$ROLLBACK_SCRIPT"
 echo "   Applying database migrations to production..."
 # Note: We keep supabase db push as it's the proper way to apply migrations
 # and doesn't require Docker like db dump does
-if ! supabase db push --project-ref xwsgyxlvxntgpochonwe; then
+if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
     echo -e "${RED}❌ Database migration failed${NC}"
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
