@@ -26,6 +26,7 @@ NC='\033[0m' # No Color
 get_database_password() {
     local env_var="$1"
     local prompt_text="$2"
+    local result_var="$3"
     local password=""
     
     # Check if password is in environment variable
@@ -33,7 +34,7 @@ get_database_password() {
     
     if [[ -n "$password" ]]; then
         echo "   Using password from environment variable: $env_var"
-        echo "$password"
+        eval "$result_var='$password'"
         return
     fi
     
@@ -47,11 +48,12 @@ get_database_password() {
         exit 1
     fi
     
-    echo "$password"
+    eval "$result_var='$password'"
 }
 
 # Function to get service role key from environment or prompt
 get_service_role_key() {
+    local result_var="$1"
     local password=""
     
     # Check if service role key is in environment variable
@@ -59,7 +61,7 @@ get_service_role_key() {
     
     if [[ -n "$password" ]]; then
         echo "   Using service role key from environment variable"
-        echo "$password"
+        eval "$result_var='$password'"
         return
     fi
     
@@ -79,7 +81,7 @@ get_service_role_key() {
         exit 1
     fi
     
-    echo "$password"
+    eval "$result_var='$password'"
 }
 
 # Function to test database connectivity
@@ -101,12 +103,12 @@ test_database_connection() {
 # Get database credentials
 echo "🔐 Getting database credentials..."
 
-# Get database passwords (from env vars or interactive prompts)
-PRODUCTION_DB_PASSWORD=$(get_database_password "PRODUCTION_DB_PASSWORD" "Enter production database password")
-STAGING_DB_PASSWORD=$(get_database_password "STAGING_DB_PASSWORD" "Enter staging database password")
+# Get database passwords (from env vars or interactive prompts) - using variable references to avoid subshells
+get_database_password "PRODUCTION_DB_PASSWORD" "Enter production database password" "PRODUCTION_DB_PASSWORD"
+get_database_password "STAGING_DB_PASSWORD" "Enter staging database password" "STAGING_DB_PASSWORD"
 
-# Get service role key (from env var or interactive prompt)
-PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_service_role_key)
+# Get service role key (from env var or interactive prompt) - using variable reference to avoid subshells
+get_service_role_key "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 
 # Set up authentication for Supabase CLI using service role key
 export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
