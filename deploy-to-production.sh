@@ -40,41 +40,22 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Function to URL encode passwords for database connections
-url_encode_password() {
-    local password="$1"
-    # URL encode special characters that commonly appear in passwords
-    password="${password//\%/%25}"  # % must be first
-    password="${password//\ /%20}"  # space
-    password="${password//\!/%21}"  # !
-    password="${password//\"/%22}"  # "
-    password="${password//\#/%23}"  # #
-    password="${password//\$/%24}"  # $
-    password="${password//\&/%26}"  # &
-    password="${password//\'/%27}"  # '
-    password="${password//\(/%28}"  # (
-    password="${password//\)/%29}"  # )
-    password="${password//\*/%2A}"  # *
-    password="${password//\+/%2B}"  # +
-    password="${password//\,/%2C}"  # ,
-    password="${password//\//%2F}"  # /
-    password="${password//\:/%3A}"  # :
-    password="${password//\;/%3B}"  # ;
-    password="${password//\</%3C}"  # <
-    password="${password//\=/%3D}"  # =
-    password="${password//\>/%3E}"  # >
-    password="${password//\?/%3F}"  # ?
-    password="${password//\@/%40}"  # @
-    password="${password//\[/%5B}"  # [
-    password="${password//\\/%5C}"  # \
-    password="${password//\]/%5D}"  # ]
-    password="${password//\^/%5E}"  # ^
-    password="${password//\`/%60}"  # `
-    password="${password//\{/%7B}"  # {
-    password="${password//\|/%7C}"  # |
-    password="${password//\}/%7D}"  # }
-    password="${password//\~/%7E}"  # ~
-    echo "$password"
+# Function to URL-encode strings (critical for passwords with special characters)
+url_encode() {
+    local string="${1}"
+    local strlen=${#string}
+    local encoded=""
+    local pos c o
+
+    for (( pos=0 ; pos<strlen ; pos++ )); do
+        c=${string:$pos:1}
+        case "$c" in
+            [-_.~a-zA-Z0-9] ) o="${c}" ;;
+            * ) printf -v o '%%%02X' "'$c" ;;
+        esac
+        encoded+="${o}"
+    done
+    echo "${encoded}"
 }
 
 # Function to get database password from environment or prompt
@@ -153,20 +134,78 @@ check_pg_dump_availability() {
     fi
 }
 
-# Function to test database connectivity
-test_database_connection() {
+# Function to test connection with detailed diagnostics
+test_connection_with_diagnostics() {
     local db_url="$1"
     local db_name="$2"
+    local db_host="$3"
+    local db_port="$4"
     
-    echo "   Testing $db_name database connection..."
+    echo "   Testing $db_name database (pooler connection)..."
     
-    if ! psql "$db_url" -c "SELECT 1;" >/dev/null 2>&1; then
-        echo -e "${RED}❌ Failed to connect to $db_name database${NC}"
-        echo "Please check your database password and network connectivity"
-        exit 1
+    # First test network connectivity
+    if command -v nc &> /dev/null; then
+        if ! nc -zv -w5 "$db_host" "$db_port" &>/dev/null; then
+            echo -e "${RED}   ❌ Cannot reach $db_name pooler (network issue)${NC}"
+            echo "   Host: $db_host"
+            echo "   Port: $db_port"
+            return 1
+        fi
     fi
     
-    echo -e "${GREEN}   ✅ $db_name database connection successful${NC}"
+    # Test with timeout and better error capture
+    local error_output=$(timeout 30 psql "$db_url" -c "SELECT 1 as test;" 2>&1)
+    local exit_code=$?
+    
+    if [ $exit_code -eq 0 ]; then
+        echo -e "${GREEN}   ✅ $db_name database connection successful${NC}"
+        return 0
+    else
+        echo -e "${RED}   ❌ Failed to connect to $db_name database${NC}"
+        
+        # Provide specific error diagnosis
+        if echo "$error_output" | grep -q "password authentication failed"; then
+            echo "   Issue: Password authentication failed"
+            echo "   • Check if password contains special characters that weren't properly encoded"
+            echo "   • Verify the password is correct in Supabase dashboard"
+        elif echo "$error_output" | grep -q "timeout"; then
+            echo "   Issue: Connection timeout"
+            echo "   • Check network connectivity"
+            echo "   • Verify firewall settings"
+        elif echo "$error_output" | grep -q "SSL"; then
+            echo "   Issue: SSL/TLS connection problem"
+            echo "   • Try adding ?sslmode=require to connection string"
+        else
+            echo "   Error details: ${error_output:0:200}"
+        fi
+        return 1
+    fi
+}
+
+# Alternative: Function to test connection using PGPASSWORD environment variable
+test_connection_with_env() {
+    local host="$1"
+    local port="$2"
+    local user="$3"
+    local database="$4"
+    local password="$5"
+    local name="$6"
+    
+    echo "   Testing $name database using environment method..."
+    
+    # Export password to environment
+    export PGPASSWORD="$password"
+    
+    # Test connection
+    if timeout 30 psql -h "$host" -p "$port" -U "$user" -d "$database" -c "SELECT 1;" >/dev/null 2>&1; then
+        echo -e "${GREEN}   ✅ $name database connection successful (env method)${NC}"
+        unset PGPASSWORD
+        return 0
+    else
+        echo -e "${RED}   ❌ Failed to connect to $name database (env method)${NC}"
+        unset PGPASSWORD
+        return 1
+    fi
 }
 
 # Get database credentials
@@ -185,55 +224,73 @@ export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
 echo ""
 
-# URL encode passwords for safe use in connection strings
-STAGING_DB_PASSWORD_ENCODED=$(url_encode_password "$STAGING_DB_PASSWORD")
-PRODUCTION_DB_PASSWORD_ENCODED=$(url_encode_password "$PRODUCTION_DB_PASSWORD")
+# Encode passwords for safe URL usage
+echo "🔐 Encoding database credentials for secure connections..."
+ENCODED_STAGING_PASSWORD=$(url_encode "$STAGING_DB_PASSWORD")
+ENCODED_PRODUCTION_PASSWORD=$(url_encode "$PRODUCTION_DB_PASSWORD")
 
-# Database connection URLs using IPv4-compatible pooler endpoints with URL-encoded passwords
-echo "🔗 Configuring database connections..."
-STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD_ENCODED}@aws-1-us-east-1.pooler.supabase.com:6543/postgres?prepared_statements=false"
-PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD_ENCODED}@aws-0-us-west-1.pooler.supabase.com:6543/postgres?prepared_statements=false"
+# Database connection URLs (fixed regional endpoints)
+# Use PgBouncer (port 6543) for regular operations like pg_dump
+STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${ENCODED_STAGING_PASSWORD}@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
+PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
-# Simple network connectivity check (no IPv6 workarounds)
+# Use direct connection (port 5432) for migrations and resets (required for prepared statements)
+STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${ENCODED_STAGING_PASSWORD}@db.pugnjgvdisdbdkbofwrc.supabase.co:5432/postgres"
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
+
+# Configure IPv4-compatible pooler connections for migration
+echo "🌐 Configuring IPv4-only database connections..."
+
+# Use pooler connections with prepared statements disabled for IPv4 compatibility
+STAGING_DB_POOLER_URL="${STAGING_DB_URL}?prepared_statements=false&sslmode=require"
+PRODUCTION_DB_POOLER_URL="${PRODUCTION_DB_URL}?prepared_statements=false&sslmode=require"
+
+# Network diagnostics to understand connectivity
 echo "   Checking network connectivity..."
-if command -v nc &> /dev/null; then
-    if nc -zv aws-1-us-east-1.pooler.supabase.com 6543 >/dev/null 2>&1; then
-        echo "   ✅ Staging pooler reachable"
-    else
-        echo "   ❌ Cannot reach staging pooler"
-    fi
+if command -v dig &> /dev/null; then
+    IPV4_TEST=$(dig +short ifconfig.co @8.8.8.8 2>/dev/null || echo 'Failed')
+    IPV6_TEST=$(dig +short ifconfig.co AAAA @2001:4860:4860::8888 2>/dev/null || echo 'No IPv6')
+    echo "   IPv4 capability: $IPV4_TEST"
+    echo "   IPv6 capability: $IPV6_TEST"
     
-    if nc -zv aws-0-us-west-1.pooler.supabase.com 6543 >/dev/null 2>&1; then
-        echo "   ✅ Production pooler reachable"
-    else
-        echo "   ❌ Cannot reach production pooler"
+    if [ "$IPV6_TEST" = "No IPv6" ]; then
+        echo "   Using IPv4-compatible pooler connections for migrations"
     fi
 fi
 
-# Test database connections
+# Enhanced database connection testing
 echo "🔗 Testing database connections..."
 
-# Test staging database connection
-echo "   Testing staging database connection..."
-if timeout 30 psql "$STAGING_DB_URL" -c "SELECT 1 as test;" >/dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Staging database connection successful${NC}"
-else
-    echo -e "${RED}   ❌ Failed to connect to staging database${NC}"
-    echo "   Connection string format: postgresql://postgres.pugnjgvdisdbdkbofwrc:[ENCODED_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres?prepared_statements=false"
-    echo "   Please verify your staging database password is correct"
-    exit 1
+# Test staging connection
+if ! test_connection_with_diagnostics "$STAGING_DB_POOLER_URL" "staging" "aws-1-us-east-1.pooler.supabase.com" "6543"; then
+    echo ""
+    echo "🔧 Troubleshooting suggestions:"
+    echo "   1. Verify your password in Supabase dashboard"
+    echo "   2. Try resetting the database password if needed"
+    echo "   3. Check if your IP is whitelisted (if IP restrictions are enabled)"
+    echo "   4. Ensure you're using the correct project reference"
+    echo ""
+    echo "Attempting alternative connection method..."
+    if ! test_connection_with_env "aws-1-us-east-1.pooler.supabase.com" "6543" "postgres.pugnjgvdisdbdkbofwrc" "postgres" "$STAGING_DB_PASSWORD" "staging"; then
+        exit 1
+    fi
 fi
 
-# Test production database connection
-echo "   Testing production database connection..."
-if timeout 30 psql "$PRODUCTION_DB_URL" -c "SELECT 1 as test;" >/dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Production database connection successful${NC}"
-else
-    echo -e "${RED}   ❌ Failed to connect to production database${NC}"
-    echo "   Connection string format: postgresql://postgres.xwsgyxlvxntgpochonwe:[ENCODED_PASSWORD]@aws-0-us-west-1.pooler.supabase.com:6543/postgres?prepared_statements=false"
-    echo "   Please verify your production database password is correct"
-    exit 1
+# Test production connection
+if ! test_connection_with_diagnostics "$PRODUCTION_DB_POOLER_URL" "production" "aws-0-us-west-1.pooler.supabase.com" "6543"; then
+    echo ""
+    echo "🔧 Troubleshooting suggestions:"
+    echo "   1. Verify your password in Supabase dashboard"
+    echo "   2. Try resetting the database password if needed"
+    echo "   3. Check if your IP is whitelisted (if IP restrictions are enabled)"
+    echo "   4. Ensure you're using the correct project reference"
+    echo ""
+    echo "Attempting alternative connection method..."
+    if ! test_connection_with_env "aws-0-us-west-1.pooler.supabase.com" "6543" "postgres.xwsgyxlvxntgpochonwe" "postgres" "$PRODUCTION_DB_PASSWORD" "production"; then
+        exit 1
+    fi
 fi
+
 echo ""
 
 # Get current timestamp for backup naming
@@ -273,18 +330,40 @@ mkdir -p "$BACKUP_DIR" "$MIGRATION_DIR" "$ROLLBACK_DIR"
 # Check if pg_dump is available
 check_pg_dump_availability
 
-# Create database dump using pg_dump
+# Create database dump using pg_dump with encoded passwords
 echo "   Backing up production database schema and data..."
-pg_dump "$PRODUCTION_DB_URL" --data-only --no-owner --no-privileges > "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
+
+# Use PGPASSWORD environment variable for pg_dump to avoid URL encoding issues
+export PGPASSWORD="$PRODUCTION_DB_PASSWORD"
+
+pg_dump -h aws-0-us-west-1.pooler.supabase.com \
+        -p 6543 \
+        -U postgres.xwsgyxlvxntgpochonwe \
+        -d postgres \
+        --data-only \
+        --no-owner \
+        --no-privileges \
+        > "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Database backup failed${NC}"
     echo "Check your PRODUCTION_DB_PASSWORD and network connectivity"
+    unset PGPASSWORD
     exit 1
 }
 
-pg_dump "$PRODUCTION_DB_URL" --schema-only --no-owner --no-privileges > "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
+pg_dump -h aws-0-us-west-1.pooler.supabase.com \
+        -p 6543 \
+        -U postgres.xwsgyxlvxntgpochonwe \
+        -d postgres \
+        --schema-only \
+        --no-owner \
+        --no-privileges \
+        > "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Schema backup failed${NC}"
+    unset PGPASSWORD
     exit 1
 }
+
+unset PGPASSWORD
 
 echo -e "${GREEN}✅ Database backup created: ${BACKUP_DIR}/*_${TIMESTAMP}.sql${NC}"
 echo ""
@@ -322,7 +401,7 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
             echo -e "${RED}💥 RESETTING PRODUCTION DATABASE...${NC}"
             echo "   This will take a few moments..."
             
-            if supabase db reset --db-url "$PRODUCTION_DB_URL"; then
+            if supabase db reset --db-url "$PRODUCTION_DB_DIRECT_URL"; then
                 echo -e "${GREEN}✅ Production database reset complete${NC}"
                 echo "   Database is now empty and ready for fresh schema deployment"
             else
@@ -349,17 +428,35 @@ echo "   Dumping staging schema for comparison..."
 STAGING_SCHEMA_TEMP="/tmp/staging_schema_${TIMESTAMP}.sql"
 PRODUCTION_SCHEMA_TEMP="/tmp/production_schema_${TIMESTAMP}.sql"
 
-# Dump schemas for comparison using pg_dump
-pg_dump "$STAGING_DB_URL" --schema-only --no-owner --no-privileges > "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
+# Use PGPASSWORD for schema dumps
+export PGPASSWORD="$STAGING_DB_PASSWORD"
+pg_dump -h aws-1-us-east-1.pooler.supabase.com \
+        -p 6543 \
+        -U postgres.pugnjgvdisdbdkbofwrc \
+        -d postgres \
+        --schema-only \
+        --no-owner \
+        --no-privileges \
+        > "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
     echo -e "${YELLOW}⚠️  Could not dump staging schema - proceeding with direct push${NC}"
     MIGRATION_FILE=""
 }
+unset PGPASSWORD
 
 if [[ -n "$MIGRATION_FILE" ]]; then
-    pg_dump "$PRODUCTION_DB_URL" --schema-only --no-owner --no-privileges > "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
+    export PGPASSWORD="$PRODUCTION_DB_PASSWORD"
+    pg_dump -h aws-0-us-west-1.pooler.supabase.com \
+            -p 6543 \
+            -U postgres.xwsgyxlvxntgpochonwe \
+            -d postgres \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            > "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
         echo -e "${YELLOW}⚠️  Could not dump production schema - proceeding with direct push${NC}"  
         MIGRATION_FILE=""
     }
+    unset PGPASSWORD
 fi
 
 # Create a basic diff (this is simplified - in practice you'd want a proper schema diff tool)
@@ -422,9 +519,9 @@ if [[ -n "$MIGRATION_FILE" && -f "$MIGRATION_FILE" ]]; then
                 2)
                     echo -e "${YELLOW}⚠️  Applying automatic safety transforms...${NC}"
                     # Apply safety transforms
-                    sed -i 's/DROP COLUMN/-- SAFETY: DROP COLUMN/g' "$MIGRATION_FILE"
-                    sed -i 's/DROP TABLE/-- SAFETY: DROP TABLE/g' "$MIGRATION_FILE"
-                    sed -i 's/TRUNCATE/-- SAFETY: TRUNCATE/g' "$MIGRATION_FILE"
+                    sed -i '' 's/DROP COLUMN/-- SAFETY: DROP COLUMN/g' "$MIGRATION_FILE" 2>/dev/null || sed -i 's/DROP COLUMN/-- SAFETY: DROP COLUMN/g' "$MIGRATION_FILE"
+                    sed -i '' 's/DROP TABLE/-- SAFETY: DROP TABLE/g' "$MIGRATION_FILE" 2>/dev/null || sed -i 's/DROP TABLE/-- SAFETY: DROP TABLE/g' "$MIGRATION_FILE"
+                    sed -i '' 's/TRUNCATE/-- SAFETY: TRUNCATE/g' "$MIGRATION_FILE" 2>/dev/null || sed -i 's/TRUNCATE/-- SAFETY: TRUNCATE/g' "$MIGRATION_FILE"
                     echo -e "${GREEN}✅ Safety transforms applied${NC}"
                     ;;
                 3)
@@ -485,11 +582,11 @@ cat > "$ROLLBACK_SCRIPT" << EOF
 # Automated rollback script for deployment $TIMESTAMP
 echo "🔄 Rolling back database to state before $TIMESTAMP"
 
-# Use production database URL for rollback
-PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD_ENCODED}@aws-0-us-west-1.pooler.supabase.com:6543/postgres?prepared_statements=false"
+# Use direct database URL for rollback (required for migrations)
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
 echo "   Resetting production database..."
-supabase db reset --db-url "\$PRODUCTION_DB_URL"
+supabase db reset --db-url "\$PRODUCTION_DB_DIRECT_URL"
 
 echo "   Restoring schema..."
 psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
@@ -516,7 +613,7 @@ else
         echo "   Found $MIGRATION_FILES_COUNT migration files to apply"
         
         # Test if we can access the migration table via pooler
-        APPLIED_MIGRATIONS_COUNT=$(timeout 30 psql "$PRODUCTION_DB_URL" -t -c "SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "error")
+        APPLIED_MIGRATIONS_COUNT=$(timeout 30 psql "$PRODUCTION_DB_POOLER_URL" -t -c "SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "error")
         
         if [ "$APPLIED_MIGRATIONS_COUNT" = "error" ] || [ -z "$APPLIED_MIGRATIONS_COUNT" ]; then
             echo -e "${YELLOW}⚠️  Cannot access migration history via pooler connection${NC}"
@@ -585,7 +682,7 @@ else
             migration_name=$(basename "$migration_file")
             echo "   • Applying: $migration_name"
             
-            if timeout 60 psql "$PRODUCTION_DB_URL" -f "$migration_file" >/dev/null 2>&1; then
+            if timeout 60 psql "$PRODUCTION_DB_POOLER_URL" -f "$migration_file" >/dev/null 2>&1; then
                 echo "     ✅ $migration_name applied successfully"
             else
                 echo "     ❌ $migration_name failed"
@@ -614,18 +711,6 @@ else
 fi
 
 echo "📋 Database deployment completed"
-        echo "   • Try with --reset-production flag for clean deployment"
-    fi
-    echo ""
-    echo "🔄 Automatic rollback available:"
-    echo "   Run: $ROLLBACK_SCRIPT"
-    echo ""
-    echo "🔄 Manual rollback also available:"
-    echo "   Code: git checkout main && git push -f origin realproduction:realproduction"
-    echo "   Database: Use backup files in $BACKUP_DIR"
-    git checkout main
-    exit 1
-fi
 
 if [[ "$RESET_PRODUCTION" == true ]]; then
     echo -e "${GREEN}✅ Fresh schema deployment complete${NC}"
