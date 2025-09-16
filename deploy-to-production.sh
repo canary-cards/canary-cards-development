@@ -157,10 +157,84 @@ PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PA
 STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@db.pugnjgvdisdbdkbofwrc.supabase.co:5432/postgres"
 PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
-# Test database connections
+# Configure DNS64/NAT64 for IPv6-to-IPv4 connectivity
+echo "🌐 Configuring DNS64/NAT64 for database connectivity..."
+
+# Check current network connectivity
+echo "   Checking network connectivity..."
+if command -v dig &> /dev/null; then
+    echo "   IPv4 test: $(dig +short ifconfig.co @8.8.8.8 2>/dev/null || echo 'Failed')"
+    echo "   IPv6 test: $(dig +short ifconfig.co AAAA @2001:4860:4860::8888 2>/dev/null || echo 'No IPv6')"
+fi
+
+# Set up DNS64/NAT64 using Google's public DNS64 service
+echo "   Setting up DNS64/NAT64 gateway..."
+export RESOLV_CONF_BACKUP="/tmp/resolv.conf.backup.$$"
+
+# Backup current DNS config if we can modify it
+if [ "$EUID" -eq 0 ] || (command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null); then
+    if [ -f /etc/resolv.conf ]; then
+        cp /etc/resolv.conf "$RESOLV_CONF_BACKUP" 2>/dev/null || true
+        echo "   Backed up DNS configuration"
+    fi
+    
+    # Configure DNS64 nameservers  
+    {
+        echo "# Temporary DNS64/NAT64 configuration for Supabase connectivity"
+        echo "nameserver 2001:4860:4860::6464"
+        echo "nameserver 2001:4860:4860::64" 
+        echo "nameserver 8.8.8.8"
+        echo "nameserver 8.8.4.4"
+    } | tee /etc/resolv.conf >/dev/null 2>&1 || {
+        echo "   ⚠️  Could not modify /etc/resolv.conf (running without root)"
+        echo "   Attempting connection with existing DNS configuration..."
+    }
+else
+    echo "   ⚠️  Running without root privileges - using existing DNS"
+fi
+
+# Set up cleanup trap to restore DNS configuration on exit
+trap 'restore_dns_config' EXIT INT TERM
+
+# Function to restore DNS configuration
+restore_dns_config() {
+    if [ -f "$RESOLV_CONF_BACKUP" ] && [ "$EUID" -eq 0 ]; then
+        cp "$RESOLV_CONF_BACKUP" /etc/resolv.conf 2>/dev/null || true
+        rm -f "$RESOLV_CONF_BACKUP" 2>/dev/null || true
+        echo "   DNS configuration restored"
+    fi
+}
+
+# Test database connections with enhanced error handling
 echo "🔗 Testing database connections..."
-test_database_connection "$STAGING_DB_URL" "staging"
-test_database_connection "$PRODUCTION_DB_URL" "production"
+
+# Test staging connection with timeout and detailed logging
+echo "   Testing staging database..."
+if timeout 30 psql "$STAGING_DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+    echo -e "${GREEN}   ✅ Staging database connection successful${NC}"
+else
+    echo -e "${RED}   ❌ Failed to connect to staging database${NC}"
+    echo "   Trying direct connection test..."
+    nc -zv aws-1-us-east-1.pooler.supabase.com 6543 2>&1 | head -1 || echo "   Direct connection test failed"
+    
+    restore_dns_config
+    echo "   Check your staging database password and network connectivity"
+    exit 1
+fi
+
+# Test production connection with timeout and detailed logging  
+echo "   Testing production database..."
+if timeout 30 psql "$PRODUCTION_DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+    echo -e "${GREEN}   ✅ Production database connection successful${NC}"
+else
+    echo -e "${RED}   ❌ Failed to connect to production database${NC}"
+    echo "   Trying direct connection test..."
+    nc -zv aws-0-us-west-1.pooler.supabase.com 6543 2>&1 | head -1 || echo "   Direct connection test failed"
+    
+    restore_dns_config
+    echo "   Check your production database password and network connectivity"
+    exit 1
+fi
 echo ""
 
 # Get current timestamp for backup naming
