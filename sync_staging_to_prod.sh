@@ -3,68 +3,47 @@ set -euo pipefail
 
 # ==============================================================================
 # Canary Cards — Sync STAGING → PROD (Schema-only, Safe-by-default)
+# Interactive helper for non-technical teammates.
 #
-# What this does (non-destructive by default):
-#   • Diffs the STAGING database schema (public) against PROD using Docker + migra
-#   • Applies only ADDITIVE changes by default (new tables/columns/indexes, enum values)
-#   • Preserves all existing PROD data
-#   • Then deploys code: merges `main` → `realproduction` and pushes
-#   • Then deploys Supabase Edge Functions
+# What it does:
+#   • Diffs STAGING → PROD for schema changes (public schema only) using Docker + migra
+#   • Applies ADDITIVE changes by default (new tables/columns/indexes, enum values)
+#   • Preserves PROD data
+#   • Deploys code (merge main → realproduction) and then Supabase Edge Functions
 #
-# What this does NOT do:
-#   • Does NOT touch the `storage` schema (policies/grants/ownership there are Supabase-managed)
-#   • Does NOT drop/rename columns/tables unless you opt in with --allow-destructive
+# What it does NOT do:
+#   • Does NOT touch Supabase-managed `storage` schema (policies/grants/ownership)
+#   • Does NOT drop/rename objects unless you opt in to "allow destructive"
 #
-# Quick examples:
-#   DRY RUN (preview only):   ./sync_staging_to_prod.sh --dry-run
-#   Normal sync:              ./sync_staging_to_prod.sh
-#   Allow drops/renames:      ./sync_staging_to_prod.sh --allow-destructive
-#   Auto-stash local edits:   ./sync_staging_to_prod.sh --autostash
-#   Discard local edits:      ./sync_staging_to_prod.sh --discard-local
+# You can also pass flags (for automation/CI) to skip the interactive prompts:
+#   --dry-run            Show the SQL diff; don't apply it
+#   --allow-destructive  Include DROPs/renames (migra --unsafe)
+#   --autostash          Stash local git edits automatically before code deploy
+#   --discard-local      Reset & clean local repo before code deploy (DANGEROUS)
+#   --debug              Verbose output
+#   --help               Print this banner and exit
 #
-# Required environment variables:
-#   export STAGING_DB_PASSWORD=********
-#   export PRODUCTION_DB_PASSWORD=********
-#   export SUPABASE_STAGING_REF=pugnjgvdisdbdkbofwrc
-#   export SUPABASE_PROD_REF=xwsgyxlvxntgpochonwe
-# Optional (for Edge Functions deploy):
-#   export SUPABASE_ACCESS_TOKEN=sbp_************************
+# Required env vars (the script will prompt if missing):
+#   STAGING_DB_PASSWORD, PRODUCTION_DB_PASSWORD, SUPABASE_STAGING_REF, SUPABASE_PROD_REF
+# Optional:
+#   SUPABASE_ACCESS_TOKEN (for Edge Functions deploy)
 #
-# Dependencies (CLI tools):
+# Dependencies (the script checks for these and explains how to install):
 #   docker, psql, pg_dump, supabase, git
-#   - macOS tips:
-#       brew install postgresql  # psql/pg_dump
-#       brew install supabase/tap/supabase
-#       Install Docker Desktop & start it
-#
-# Flags:
-#   --dry-run           Show the SQL diff; don't apply it
-#   --allow-destructive Include DROPs/renames (uses migra --unsafe)
-#   --autostash         Stash any local git changes before code deploy
-#   --discard-local     Reset & clean local repo before code deploy (DANGEROUS)
-#   --debug             Verbose output for troubleshooting
-#   --help              Print this banner and exit
-#
-# Limitations / gotchas:
-#   • Only the `public` schema is synced.
-#   • `storage` is intentionally ignored (ownership/privileges differ in Supabase).
-#   • Enum handling: we add new values; removals/renames require --allow-destructive.
-#   • Destructive diffs are wrapped in a transaction but you should use with care.
 # ==============================================================================
 
 # ---------- Configurable branches ----------
 MAIN_BRANCH="${MAIN_BRANCH:-main}"
 REALPROD_BRANCH="${REALPROD_BRANCH:-realproduction}"
 
-# ---------- Flags ----------
+# ---------- CLI flags (non-interactive override) ----------
 DRY_RUN=false
 ALLOW_DESTRUCTIVE=false
 DEBUG=false
 AUTOSTASH=false
 DISCARD_LOCAL=false
 SHOW_HELP=false
-
-for arg in "$@"; do
+for arg in "${@:-}"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     --allow-destructive) ALLOW_DESTRUCTIVE=true ;;
@@ -72,82 +51,155 @@ for arg in "$@"; do
     --autostash) AUTOSTASH=true ;;
     --discard-local) DISCARD_LOCAL=true ;;
     --help|-h) SHOW_HELP=true ;;
-    *)
-      echo "Unknown option: $arg"
-      SHOW_HELP=true
-      ;;
+    *) echo "Unknown option: $arg"; SHOW_HELP=true ;;
   esac
 done
 
 print_help() {
-  sed -n '1,130p' "$0" | sed 's/^# \{0,1\}//' | sed 's/^#*$//'
+  sed -n '1,160p' "$0" | sed 's/^# \{0,1\}//' | sed 's/^#*$//'
 }
-
 [ "$SHOW_HELP" = true ] && { print_help; exit 0; }
 
-# ---------- Friendly checks & guidance ----------
-info()  { echo -e "🟦 $*"; }
-ok()    { echo -e "✅ $*"; }
-warn()  { echo -e "⚠️  $*"; }
-fail()  { echo -e "🛑 $*"; exit 1; }
+# ---------- UX helpers ----------
+say()  { echo -e "$*"; }
+info() { echo -e "🟦 $*"; }
+ok()   { echo -e "✅ $*"; }
+warn() { echo -e "⚠️  $*"; }
+fail() { echo -e "🛑 $*"; exit 1; }
 
 require_bin() {
   if ! command -v "$1" >/dev/null 2>&1; then
     case "$1" in
-      psql|pg_dump) fail "Missing $1. On macOS: brew install postgresql";;
-      supabase)     fail "Missing supabase CLI. On macOS: brew install supabase/tap/supabase";;
-      docker)       fail "Missing Docker. Install Docker Desktop and start it."; ;
-      git)          fail "Missing git. Install Xcode CLT (xcode-select --install) or brew install git.";;
-      *)            fail "Missing $1. Please install it."; ;
+      psql|pg_dump) fail "Missing $1. On macOS: brew install postgresql" ;;
+      supabase)     fail "Missing supabase CLI. On macOS: brew install supabase/tap/supabase" ;;
+      docker)       fail "Missing Docker. Install Docker Desktop and start it." ;;
+      git)          fail "Missing git. Install Xcode CLT (xcode-select --install) or brew install git." ;;
+      *)            fail "Missing $1. Please install it." ;;
     esac
   fi
 }
 
+# ---------- Check dependencies ----------
 require_bin docker
 require_bin psql
 require_bin pg_dump
 require_bin supabase
 require_bin git
-
-# Is Docker running?
 if ! docker info >/dev/null 2>&1; then
-  fail "Docker is installed but not running. Please open Docker Desktop and retry."
+  fail "Docker is installed but not running. Open Docker Desktop and retry."
 fi
-ok "Dependencies check passed."
 
-# ---------- Required env with guidance ----------
-need_env() {
-  local var="$1" example="$2"
+# ---------- Gather env (prompt if missing) ----------
+prompt_if_empty() {
+  local var="$1" prompt="$2" silent="${3:-false}"
   if [ -z "${!var:-}" ]; then
-    warn "$var is not set."
-    echo "  Set it like:"
-    echo "     export $var=$example"
-    MISSING_ENV=true
+    if [ "$silent" = true ]; then
+      read -r -s -p "   $prompt: " value; echo
+    else
+      read -r -p "   $prompt: " value
+    fi
+    [ -z "${value:-}" ] && fail "$var cannot be empty."
+    export "$var=$value"
   fi
 }
 
-MISSING_ENV=false
-need_env "STAGING_DB_PASSWORD"     "your_staging_db_password"
-need_env "PRODUCTION_DB_PASSWORD"  "your_prod_db_password"
-need_env "SUPABASE_STAGING_REF"    "pugnjgvdisdbdkbofwrc"
-need_env "SUPABASE_PROD_REF"       "xwsgyxlvxntgpochonwe"
+say ""
+say "🧭 Canary Cards — Sync STAGING → PROD (public schema only)"
+say "-----------------------------------------------------------"
+say "This tool keeps PROD schema in sync with STAGING without touching PROD data."
+say ""
+say "What you'll choose next:"
+say "  1) Dry run vs Apply"
+say "  2) Whether to allow destructive changes (drops/renames) — default: NO"
+say "  3) How to handle local git edits for the code deploy step"
+say ""
+say "Limitations:"
+say "  • Only the 'public' schema is synced"
+say "  • Supabase 'storage' schema is ignored"
+say "  • Destructive changes require explicit opt-in"
+say ""
 
-if [ "$MISSING_ENV" = true ]; then
-  echo
-  fail "Missing required environment variables. See guidance above, then re-run. (Use --help for full docs.)"
+# Prompt for env vars if missing
+say "🔑 Environment:"
+say "   (Press Enter to keep current value if already set)"
+prompt_if_empty "SUPABASE_STAGING_REF"   "SUPABASE_STAGING_REF (e.g., pugnjgvdisdbdkbofwrc)"
+prompt_if_empty "SUPABASE_PROD_REF"      "SUPABASE_PROD_REF (e.g., xwsgyxlvxntgpochonwe)"
+prompt_if_empty "STAGING_DB_PASSWORD"    "STAGING_DB_PASSWORD" true
+prompt_if_empty "PRODUCTION_DB_PASSWORD" "PRODUCTION_DB_PASSWORD" true
+# Optional
+if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+  read -r -p "   (Optional) SUPABASE_ACCESS_TOKEN for Edge Functions deploy (press Enter to skip): " tok || true
+  [ -n "${tok:-}" ] && export SUPABASE_ACCESS_TOKEN="$tok"
 fi
+say ""
+
+# ---------- Interactive choices (skip if flags provided) ----------
+choose=false
+$DRY_RUN || choose=true
+$ALLOW_DESTRUCTIVE && choose=false || true
+$AUTOSTASH || $DISCARD_LOCAL || choose=true
+
+if [ "$choose" = true ]; then
+  say "⚙️  Choose what to do:"
+  say "   1) Dry run (preview SQL only)"
+  say "   2) Apply additive changes (default)"
+  read -r -p "   Select [1/2]: " choice
+  case "${choice:-2}" in
+    1) DRY_RUN=true ;;
+    *) DRY_RUN=false ;;
+  esac
+
+  if [ "$DRY_RUN" = false ]; then
+    say ""
+    say "🛡️  Destructive changes (drops/renames)?"
+    say "   N) No — additive only (SAFE DEFAULT)"
+    say "   Y) Yes — include drops/renames (use only for contract phase)"
+    read -r -p "   Select [Y/N]: " destr
+    case "${destr:-N}" in
+      Y|y) ALLOW_DESTRUCTIVE=true ;;
+      *)   ALLOW_DESTRUCTIVE=false ;;
+    esac
+  fi
+
+  say ""
+  say "📦 Code deploy step needs a clean working tree."
+  say "   A) Autostash local edits before deploy (recommended)"
+  say "   D) Discard local edits (git reset --hard && git clean -fd)"
+  say "   S) Skip automatic handling (abort if dirty)"
+  read -r -p "   Select [A/D/S]: " dirt
+  case "${dirt:-A}" in
+    D|d) DISCARD_LOCAL=true; AUTOSTASH=false ;;
+    S|s) DISCARD_LOCAL=false; AUTOSTASH=false ;;
+    *)   AUTOSTASH=true; DISCARD_LOCAL=false ;;
+  esac
+  say ""
+fi
+
+# ---------- Show plan and confirm ----------
+say "📝 Plan:"
+say "   Mode:            $( [ "$DRY_RUN" = true ] && echo 'Dry run (no DB changes)' || echo 'Apply changes' )"
+say "   Destructive:     $( [ "$ALLOW_DESTRUCTIVE" = true ] && echo 'ALLOWED (drops/renames enabled)' || echo 'Not allowed (additive only)' )"
+say "   Git behavior:    $( [ "$AUTOSTASH" = true ] && echo 'Autostash' || ([ "$DISCARD_LOCAL" = true ] && echo 'Discard local' || echo 'Abort if dirty') )"
+say "   Staging project: ${SUPABASE_STAGING_REF}"
+say "   Prod project:    ${SUPABASE_PROD_REF}"
+[ -n "${SUPABASE_ACCESS_TOKEN:-}" ] && say "   Edge Functions:  Will deploy (token present)" || say "   Edge Functions:  Skipped (no token)"
+read -r -p "Proceed? [y/N]: " go
+[[ "${go:-N}" =~ ^[Yy]$ ]] || fail "Aborted."
 
 [ "$DEBUG" = true ] && set -x
 
+# ---------- Paths ----------
 TS="$(date +%Y%m%d_%H%M%S)"
-WORKDIR="backups/${TS}_sync"
-mkdir -p "$WORKDIR"
+WORKDIR_REL="backups/${TS}_sync"
+mkdir -p "$WORKDIR_REL"
+WORKDIR="$(cd "$WORKDIR_REL" && pwd -P)"
+PGPASS_LOCAL="${WORKDIR}/pgpass"
 
-# ---------- DSNs (POOLER IPv4) — no passwords embedded ----------
+# ---------- DSNs (POOLER IPv4) — psql/pg_dump keyword form; Docker reads password from pgpass ----------
 STAGING_DSN_KW="host=aws-1-us-east-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_STAGING_REF} dbname=postgres sslmode=require"
 PROD_DSN_KW="host=aws-0-us-west-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_PROD_REF} dbname=postgres sslmode=require"
 
-info "Probing database connectivity (pooler)…"
+info "Probing database connectivity…"
 PGPASSWORD="$STAGING_DB_PASSWORD"    psql "$STAGING_DSN_KW" -c "select 1;" >/dev/null
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW"    -c "select 1;" >/dev/null
 ok "DB connectivity OK."
@@ -158,8 +210,7 @@ PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${WORKDIR}/prod_full.sql"
 ok "Backup complete."
 
-# ---------- pgpass for Docker (avoid passing passwords in URLs) ----------
-PGPASS_LOCAL="${WORKDIR}/pgpass"
+# ---------- pgpass for Docker (absolute path mount) ----------
 cat > "$PGPASS_LOCAL" <<EOF
 aws-1-us-east-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}
 aws-0-us-west-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}
@@ -172,7 +223,7 @@ SANITIZED_SQL="${WORKDIR}/sync_diff_sanitized.sql"
 MIGRA_FLAGS="--schema public --with-privileges"
 [ "$ALLOW_DESTRUCTIVE" = true ] && MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
 
-info "Generating schema diff (prod → staging) with migra…"
+info "Generating schema diff (prod → staging)…"
 DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_DSN" "$STAGING_DSN"'
 set +e
 docker run --rm \
@@ -183,7 +234,7 @@ docker run --rm \
   python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
 DOCKER_STATUS=$?
 set -e
-[ $DOCKER_STATUS -ne 0 ] && fail "migra (Docker) failed. Run with --debug and share the output."
+[ $DOCKER_STATUS -ne 0 ] && fail "migra (Docker) failed. Re-run with --debug and share the output."
 
 # ---------- Sanitize: strip owner changes & ALTER DEFAULT PRIVILEGES ----------
 if command -v perl >/dev/null 2>&1; then
@@ -198,7 +249,9 @@ fi
 # ---------- Apply or no-op ----------
 if [ ! -s "$SANITIZED_SQL" ]; then
   ok "Already in sync (no schema changes)."
+  DB_CHANGED=false
 else
+  DB_CHANGED=true
   echo "🗂️  Diff saved to:   $DIFF_SQL"
   echo "🧹 Sanitized diff:   $SANITIZED_SQL"
   if [ "$DRY_RUN" = true ]; then
@@ -233,9 +286,8 @@ SQL
 fi
 
 # ---------- Code deploy: main → realproduction ----------
-info "Deploying code ( ${MAIN_BRANCH} → ${REALPROD_BRANCH} )…"
+info "Deploying code (${MAIN_BRANCH} → ${REALPROD_BRANCH})…"
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD || echo "")"
-
 if ! git diff --quiet || ! git diff --cached --quiet; then
   if [ "$DISCARD_LOCAL" = true ]; then
     warn "Discarding local changes: git reset --hard && git clean -fd"
@@ -246,7 +298,7 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
     info "Autostashing local changes as: $STASH_NAME"
     git stash push -u -m "$STASH_NAME" >/dev/null
   else
-    fail "Uncommitted changes detected. Re-run with --autostash or --discard-local, or commit/stash manually."
+    fail "Uncommitted changes detected. Re-run choosing Autostash/Discard, or commit/stash manually."
   fi
 fi
 
@@ -270,7 +322,7 @@ echo "   Pushing ${REALPROD_BRANCH}…"
 git push origin "${REALPROD_BRANCH}"
 ok "Code deployment complete."
 [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
-[ "${AUTOSTASH}" = true ] && echo "ℹ️  Your local edits are stashed as: ${STASH_NAME} (restore with: git stash pop \"stash^{/${STASH_NAME}}\")"
+[ "${AUTOSTASH:-false}" = true ] && echo "ℹ️  Your local edits are stashed as: ${STASH_NAME} (restore with: git stash pop \"stash^{/${STASH_NAME}}\")"
 echo
 
 # ---------- Edge Functions deploy ----------
