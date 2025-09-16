@@ -120,6 +120,46 @@ get_service_role_key() {
     eval "$result_var='$password'"
 }
 
+# Function to get Supabase access token (Personal Access Token)
+get_supabase_access_token() {
+    local result_var="$1"
+    local token=""
+    
+    # Check if access token is in environment variable
+    token="$SUPABASE_ACCESS_TOKEN"
+    
+    if [[ -n "$token" ]]; then
+        echo "   Using Supabase access token from environment variable"
+        eval "$result_var='$token'"
+        return
+    fi
+    
+    # Prompt for access token interactively
+    echo ""
+    echo "   📌 Note: You need a Personal Access Token from https://supabase.com/dashboard/account/tokens"
+    echo "   This is different from the service role key and starts with 'sbp_'"
+    echo ""
+    echo -n "   Enter your Supabase Personal Access Token (or press Enter to skip): "
+    read -s token
+    echo "" # New line after hidden input
+    
+    if [[ -z "$token" ]]; then
+        echo "   ⚠️  No access token provided - will use alternative methods"
+        eval "$result_var=''"
+        return
+    fi
+    
+    # Validate access token format
+    if [[ ! "$token" =~ ^sbp_ ]]; then
+        echo -e "${YELLOW}   ⚠️  Invalid access token format (should start with 'sbp_')${NC}"
+        echo "   Proceeding without CLI access token..."
+        eval "$result_var=''"
+        return
+    fi
+    
+    eval "$result_var='$token'"
+}
+
 # Function to check if pg_dump is available
 check_pg_dump_availability() {
     if ! command -v pg_dump >/dev/null 2>&1; then
@@ -182,28 +222,33 @@ test_connection_with_diagnostics() {
     fi
 }
 
-# Alternative: Function to test connection using PGPASSWORD environment variable
-test_connection_with_env() {
-    local host="$1"
-    local port="$2"
-    local user="$3"
-    local database="$4"
-    local password="$5"
-    local name="$6"
+# Function to recreate migration history table
+recreate_migration_history_table() {
+    local db_url="$1"
     
-    echo "   Testing $name database using environment method..."
+    echo "   Recreating migration history table..."
     
-    # Export password to environment
-    export PGPASSWORD="$password"
+    # Create the schema and table
+    psql "$db_url" << 'EOF' 2>/dev/null
+-- Create schema if not exists
+CREATE SCHEMA IF NOT EXISTS supabase_migrations;
+
+-- Create migration history table
+CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (
+    version text NOT NULL PRIMARY KEY,
+    inserted_at timestamptz DEFAULT now()
+);
+
+-- Grant permissions
+GRANT ALL ON SCHEMA supabase_migrations TO postgres;
+GRANT ALL ON TABLE supabase_migrations.schema_migrations TO postgres;
+EOF
     
-    # Test connection
-    if timeout 30 psql -h "$host" -p "$port" -U "$user" -d "$database" -c "SELECT 1;" >/dev/null 2>&1; then
-        echo -e "${GREEN}   ✅ $name database connection successful (env method)${NC}"
-        unset PGPASSWORD
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}   ✅ Migration history table created${NC}"
         return 0
     else
-        echo -e "${RED}   ❌ Failed to connect to $name database (env method)${NC}"
-        unset PGPASSWORD
+        echo -e "${RED}   ❌ Failed to create migration history table${NC}"
         return 1
     fi
 }
@@ -211,17 +256,23 @@ test_connection_with_env() {
 # Get database credentials
 echo "🔐 Getting database credentials..."
 
-# Get database passwords (from env vars or interactive prompts) - using variable references to avoid subshells
+# Get database passwords (from env vars or interactive prompts)
 get_database_password "PRODUCTION_DB_PASSWORD" "Enter production database password" "PRODUCTION_DB_PASSWORD"
 get_database_password "STAGING_DB_PASSWORD" "Enter staging database password" "STAGING_DB_PASSWORD"
 
-# Get service role key (from env var or interactive prompt) - using variable reference to avoid subshells
+# Get service role key (for API operations, not CLI)
 get_service_role_key "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 
-# Set up authentication for Supabase CLI using service role key
-export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
+# Get Supabase Personal Access Token (for CLI operations)
+get_supabase_access_token "SUPABASE_ACCESS_TOKEN"
 
-echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
+# Only set the access token if we have a valid one
+if [[ -n "$SUPABASE_ACCESS_TOKEN" ]]; then
+    export SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN"
+    echo -e "${GREEN}✅ All credentials obtained successfully (with CLI access)${NC}"
+else
+    echo -e "${GREEN}✅ Database credentials obtained (CLI will use local auth)${NC}"
+fi
 echo ""
 
 # Encode passwords for safe URL usage
@@ -269,11 +320,7 @@ if ! test_connection_with_diagnostics "$STAGING_DB_POOLER_URL" "staging" "aws-1-
     echo "   2. Try resetting the database password if needed"
     echo "   3. Check if your IP is whitelisted (if IP restrictions are enabled)"
     echo "   4. Ensure you're using the correct project reference"
-    echo ""
-    echo "Attempting alternative connection method..."
-    if ! test_connection_with_env "aws-1-us-east-1.pooler.supabase.com" "6543" "postgres.pugnjgvdisdbdkbofwrc" "postgres" "$STAGING_DB_PASSWORD" "staging"; then
-        exit 1
-    fi
+    exit 1
 fi
 
 # Test production connection
@@ -284,11 +331,7 @@ if ! test_connection_with_diagnostics "$PRODUCTION_DB_POOLER_URL" "production" "
     echo "   2. Try resetting the database password if needed"
     echo "   3. Check if your IP is whitelisted (if IP restrictions are enabled)"
     echo "   4. Ensure you're using the correct project reference"
-    echo ""
-    echo "Attempting alternative connection method..."
-    if ! test_connection_with_env "aws-0-us-west-1.pooler.supabase.com" "6543" "postgres.xwsgyxlvxntgpochonwe" "postgres" "$PRODUCTION_DB_PASSWORD" "production"; then
-        exit 1
-    fi
+    exit 1
 fi
 
 echo ""
@@ -401,15 +444,25 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
             echo -e "${RED}💥 RESETTING PRODUCTION DATABASE...${NC}"
             echo "   This will take a few moments..."
             
-            if supabase db reset --db-url "$PRODUCTION_DB_DIRECT_URL"; then
-                echo -e "${GREEN}✅ Production database reset complete${NC}"
-                echo "   Database is now empty and ready for fresh schema deployment"
+            # Try to reset using CLI first
+            if [[ -n "$SUPABASE_ACCESS_TOKEN" ]]; then
+                supabase link --project-ref xwsgyxlvxntgpochonwe 2>/dev/null || true
+                if supabase db reset --linked; then
+                    echo -e "${GREEN}✅ Production database reset complete${NC}"
+                    echo "   Database is now empty and ready for fresh schema deployment"
+                else
+                    echo -e "${YELLOW}⚠️  CLI reset failed, using direct SQL method...${NC}"
+                    psql "$PRODUCTION_DB_DIRECT_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || {
+                        echo -e "${RED}❌ Database reset failed${NC}"
+                        exit 1
+                    }
+                fi
             else
-                echo -e "${RED}❌ Database reset failed${NC}"
-                echo "🔄 Rollback information:"
-                echo "   Restore from backup: $BACKUP_DIR/production_*_${TIMESTAMP}.sql"
-                echo "   Or run: $ROLLBACK_SCRIPT (when created)"
-                exit 1
+                # Direct SQL reset
+                psql "$PRODUCTION_DB_DIRECT_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || {
+                    echo -e "${RED}❌ Database reset failed${NC}"
+                    exit 1
+                }
             fi
         fi
     fi
@@ -586,13 +639,13 @@ echo "🔄 Rolling back database to state before $TIMESTAMP"
 PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
 echo "   Resetting production database..."
-supabase db reset --db-url "\$PRODUCTION_DB_DIRECT_URL"
+psql "\$PRODUCTION_DB_DIRECT_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 
 echo "   Restoring schema..."
-psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
+psql "\$PRODUCTION_DB_DIRECT_URL" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
 
 echo "   Restoring data..."
-psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
+psql "\$PRODUCTION_DB_DIRECT_URL" < "$BACKUP_DIR/production_data_${TIMESTAMP}.sql"
 
 echo "✅ Database rollback complete"
 EOF
@@ -603,129 +656,216 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
     echo "   Deploying fresh schema to reset database..."
     echo "   (Skipping migration history validation since database was reset)"
 else
-    echo "   Validating migration history compatibility using pooler connection..."
+    echo "   Validating migration history compatibility..."
     
-    # Check migration status using pooler connection (IPv4 compatible)
+    # Check migration status
     echo "   Checking migration files and database state..."
     MIGRATION_FILES_COUNT=$(find supabase/migrations -name "*.sql" 2>/dev/null | wc -l || echo "0")
     
     if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
         echo "   Found $MIGRATION_FILES_COUNT migration files to apply"
         
-        # Test if we can access the migration table via pooler
-        APPLIED_MIGRATIONS_COUNT=$(timeout 30 psql "$PRODUCTION_DB_POOLER_URL" -t -c "SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "error")
+        # Check if migration history table exists
+        TABLE_EXISTS=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_schema = 'supabase_migrations' 
+                AND table_name = 'schema_migrations'
+            );" 2>/dev/null | tr -d ' \n' || echo "error")
         
-        if [ "$APPLIED_MIGRATIONS_COUNT" = "error" ] || [ -z "$APPLIED_MIGRATIONS_COUNT" ]; then
-            echo -e "${YELLOW}⚠️  Cannot access migration history via pooler connection${NC}"
-            echo "   This is expected for pooler connections in some configurations."
+        if [ "$TABLE_EXISTS" = "f" ] || [ "$TABLE_EXISTS" = "false" ]; then
+            echo -e "${YELLOW}⚠️  Migration history table not found${NC}"
+            echo ""
+            echo "This can happen when:"
+            echo "  • The production database is new"
+            echo "  • Migration history was manually deleted"
+            echo "  • Previous deployments used a different method"
             echo ""
             echo "Options:"
-            echo "1. Continue with manual migration application (recommended)"
-            echo "2. Reset production database and start fresh"
+            echo "1. Create migration history table and apply all migrations (recommended)"
+            echo "2. Reset production database completely and start fresh"
+            echo "3. Cancel deployment and handle manually"
             echo ""
-            read -p "   Choose option [1/2]: " -n 1 -r
+            read -p "   Choose option [1/2/3]: " -n 1 -r
             echo
             
             if [[ $REPLY =~ ^[1]$ ]]; then
-                echo "   Proceeding with manual migration via pooler connection..."
+                echo "   Proceeding with manual migration..."
             elif [[ $REPLY =~ ^[2]$ ]]; then
                 echo ""
                 echo -e "${YELLOW}⚠️  Converting to reset deployment...${NC}"
                 RESET_PRODUCTION=true
-                echo "   Database will be reset and fresh schema deployed"
             else
-                echo -e "${RED}❌ Invalid option selected${NC}"
                 echo "   Deployment cancelled"
                 git checkout main
                 exit 1
             fi
-        else
-            echo "   Migration history accessible: $APPLIED_MIGRATIONS_COUNT migrations previously applied"
         fi
     else
         echo "   No migration files found - skipping migration step"
     fi
 fi
 
+# Deploy database changes
 if [[ "$RESET_PRODUCTION" == true ]]; then
     echo "   Applying fresh schema to reset production database..."
-else
-    echo "   Applying database migrations to production..."
-fi
-
-# Deploy database changes using pooler connection (IPv4 compatible)
-if [[ "$RESET_PRODUCTION" == true ]]; then
-    echo "   Resetting production database using Supabase CLI..."
-    supabase link --project-ref xwsgyxlvxntgpochonwe
-    if ! supabase db reset; then
-        echo -e "${RED}❌ Database reset failed${NC}"
-        echo ""
-        echo "🔍 Possible causes:"
-        echo "   • Network connectivity issues"
-        echo "   • Permission problems"
-        echo "   • Database is in use by active connections"
-        echo ""
-        echo "🔄 Automatic rollback available:"
-        echo "   Run: $ROLLBACK_SCRIPT"
-        git checkout main
-        exit 1
-    fi
-    echo -e "${GREEN}✅ Database reset successful${NC}"
-else
-    # Apply migrations manually using pooler connection
-    if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
-        echo "   Applying migrations via pooler connection..."
+    
+    # Check if we're already linked to the project
+    CURRENT_PROJECT=$(supabase projects list 2>/dev/null | grep xwsgyxlvxntgpochonwe | awk '{print $1}' || echo "")
+    
+    if [ -z "$CURRENT_PROJECT" ] || [ "$CURRENT_PROJECT" != "xwsgyxlvxntgpochonwe" ]; then
+        echo "   Linking to production project..."
         
-        # Apply each migration file individually
-        FAILED_MIGRATIONS=0
+        if [[ -n "$SUPABASE_ACCESS_TOKEN" ]]; then
+            # Use access token if available
+            supabase link --project-ref xwsgyxlvxntgpochonwe || {
+                echo -e "${YELLOW}⚠️  Failed to link project with access token${NC}"
+            }
+        else
+            # Try without access token (will use local auth)
+            echo "   Note: No access token provided, using local authentication"
+            supabase link --project-ref xwsgyxlvxntgpochonwe --password "$PRODUCTION_DB_PASSWORD" || {
+                echo -e "${YELLOW}⚠️  Failed to link project${NC}"
+            }
+        fi
+    else
+        echo "   Already linked to project xwsgyxlvxntgpochonwe"
+    fi
+    
+    echo "   Resetting production database..."
+    
+    # Use direct URL for reset if CLI is not available
+    if [[ -n "$SUPABASE_ACCESS_TOKEN" ]]; then
+        if ! supabase db reset --linked; then
+            echo -e "${YELLOW}⚠️  CLI reset failed, trying direct SQL reset...${NC}"
+            # Fallback to direct SQL reset
+            psql "$PRODUCTION_DB_DIRECT_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || {
+                echo -e "${RED}❌ Database reset failed${NC}"
+                git checkout main
+                exit 1
+            }
+        fi
+    else
+        echo "   Using direct SQL reset (no CLI access token)..."
+        # Direct SQL reset
+        psql "$PRODUCTION_DB_DIRECT_URL" << 'EOF'
+-- Reset database
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO public;
+
+-- Recreate extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pgjwt";
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+EOF
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Database reset failed${NC}"
+            git checkout main
+            exit 1
+        fi
+        
+        # Apply migrations from files
+        echo "   Applying migration files..."
         for migration_file in $(find supabase/migrations -name "*.sql" | sort); do
             migration_name=$(basename "$migration_file")
             echo "   • Applying: $migration_name"
             
-            if timeout 60 psql "$PRODUCTION_DB_POOLER_URL" -f "$migration_file" >/dev/null 2>&1; then
+            if psql "$PRODUCTION_DB_DIRECT_URL" -f "$migration_file"; then
+                echo "     ✅ $migration_name applied"
+            else
+                echo "     ❌ $migration_name failed"
+                echo -e "${RED}❌ Migration failed during reset${NC}"
+                git checkout main
+                exit 1
+            fi
+        done
+    fi
+    
+    echo -e "${GREEN}✅ Database reset and schema deployment successful${NC}"
+else
+    # Regular migration path (non-reset)
+    echo "   Applying incremental migrations..."
+    
+    if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
+        # Get list of already applied migrations
+        APPLIED_MIGRATIONS=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+            SELECT version FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "")
+        
+        # Apply each migration file
+        FAILED_MIGRATIONS=0
+        APPLIED_COUNT=0
+        SKIPPED_COUNT=0
+        
+        for migration_file in $(find supabase/migrations -name "*.sql" | sort); do
+            migration_name=$(basename "$migration_file" .sql)
+            
+            # Check if migration was already applied
+            if echo "$APPLIED_MIGRATIONS" | grep -q "$migration_name"; then
+                echo "   ⏭️  Skipping: $migration_name (already applied)"
+                SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+                continue
+            fi
+            
+            echo "   • Applying: $migration_name"
+            
+            # Begin transaction for safe migration
+            psql "$PRODUCTION_DB_POOLER_URL" << EOF
+BEGIN;
+-- Apply migration
+\i $migration_file
+
+-- Record migration
+INSERT INTO supabase_migrations.schema_migrations (version) 
+VALUES ('$migration_name');
+
+COMMIT;
+EOF
+            
+            if [ $? -eq 0 ]; then
                 echo "     ✅ $migration_name applied successfully"
+                APPLIED_COUNT=$((APPLIED_COUNT + 1))
             else
                 echo "     ❌ $migration_name failed"
                 FAILED_MIGRATIONS=$((FAILED_MIGRATIONS + 1))
             fi
         done
         
+        echo ""
+        echo "   Migration summary:"
+        echo "   • Applied: $APPLIED_COUNT"
+        echo "   • Skipped: $SKIPPED_COUNT"
+        echo "   • Failed: $FAILED_MIGRATIONS"
+        
         if [ "$FAILED_MIGRATIONS" -gt 0 ]; then
             echo -e "${RED}❌ $FAILED_MIGRATIONS migration(s) failed${NC}"
             echo ""
-            echo "🔍 Manual migration troubleshooting:"
-            echo "   • Check migration file syntax"
-            echo "   • Verify permissions and RLS policies"
-            echo "   • Review database logs in Supabase Dashboard"
-            echo ""
-            echo "🔄 Automatic rollback available:"
-            echo "   Run: $ROLLBACK_SCRIPT"
+            echo "🔄 Rollback available: $ROLLBACK_SCRIPT"
             git checkout main
             exit 1
         fi
         
-        echo -e "${GREEN}✅ All $MIGRATION_FILES_COUNT migrations applied successfully${NC}"
-    else
-        echo "   No migrations to apply"
+        echo -e "${GREEN}✅ All migrations applied successfully${NC}"
     fi
 fi
 
-echo "📋 Database deployment completed"
-
-if [[ "$RESET_PRODUCTION" == true ]]; then
-    echo -e "${GREEN}✅ Fresh schema deployment complete${NC}"
-else
-    echo -e "${GREEN}✅ Database migration complete${NC}"
-fi
 echo ""
 
 # Step 5: Deploy Edge Functions
 echo "⚡ Deploying Edge Functions to production..."
-supabase functions deploy --project-ref xwsgyxlvxntgpochonwe || {
-    echo -e "${YELLOW}⚠️  Edge function deployment failed, but continuing...${NC}"
-}
+if [[ -n "$SUPABASE_ACCESS_TOKEN" ]]; then
+    supabase functions deploy --project-ref xwsgyxlvxntgpochonwe || {
+        echo -e "${YELLOW}⚠️  Edge function deployment failed, but continuing...${NC}"
+    }
+else
+    echo -e "${YELLOW}⚠️  Skipping Edge Functions deployment (no CLI access token)${NC}"
+    echo "   To deploy Edge Functions, set SUPABASE_ACCESS_TOKEN environment variable"
+fi
 
-echo -e "${GREEN}✅ Edge Functions deployed${NC}"
+echo -e "${GREEN}✅ Edge Functions deployment complete${NC}"
 echo ""
 
 # Step 6: Post-deployment validation
@@ -766,7 +906,7 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
     echo "   3. Verify all data is properly restored (if data was migrated)"
     echo "   4. If issues occur: Use backup files in $BACKUP_DIR"
 else
-    echo "   3. If issues occur: ./rollback-production.sh"
+    echo "   3. If issues occur: Run $ROLLBACK_SCRIPT"
 fi
 echo ""
 echo "📊 Monitoring Links:"
@@ -778,3 +918,44 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
 else
     echo -e "${GREEN}✨ Your deployment is protected by automatic safety checks and rollback capabilities!${NC}"
 fi
+            
+            if [[ $REPLY =~ ^[1]$ ]]; then
+                echo ""
+                if recreate_migration_history_table "$PRODUCTION_DB_POOLER_URL"; then
+                    echo "   Migration history table created, proceeding with migrations..."
+                else
+                    echo -e "${RED}❌ Failed to create migration history table${NC}"
+                    git checkout main
+                    exit 1
+                fi
+            elif [[ $REPLY =~ ^[2]$ ]]; then
+                echo ""
+                echo -e "${YELLOW}⚠️  Converting to reset deployment...${NC}"
+                RESET_PRODUCTION=true
+                echo "   Database will be reset and fresh schema deployed"
+            elif [[ $REPLY =~ ^[3]$ ]]; then
+                echo ""
+                echo "   Deployment cancelled for manual handling"
+                git checkout main
+                exit 0
+            else
+                echo -e "${RED}❌ Invalid option selected${NC}"
+                git checkout main
+                exit 1
+            fi
+        elif [ "$TABLE_EXISTS" = "t" ] || [ "$TABLE_EXISTS" = "true" ]; then
+            # Table exists, check migration count
+            APPLIED_MIGRATIONS_COUNT=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+                SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "0")
+            echo "   Migration history found: $APPLIED_MIGRATIONS_COUNT migrations previously applied"
+        else
+            echo -e "${YELLOW}⚠️  Cannot determine migration history status${NC}"
+            echo "   Error checking table: $TABLE_EXISTS"
+            echo ""
+            echo "Options:"
+            echo "1. Continue with manual migration application"
+            echo "2. Reset production database and start fresh"
+            echo "3. Cancel deployment"
+            echo ""
+            read -p "   Choose option [1/2/3]: " -n 1 -r
+            echo
