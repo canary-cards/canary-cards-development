@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # ===== Canary Cards — Mirror STAGING -> PROD =====
-# - Mirrors ONLY the schema you own: public
-# - Keeps Supabase-managed `storage` base tables intact
-# - Applies storage RLS/policies for storage.objects + storage.buckets ONLY (post-data)
+# - Mirrors ONLY schema you own: public
+# - Keeps Supabase-managed storage base tables intact
+# - Applies storage post-data (policies/grants) for storage.objects ONLY (skips buckets to avoid ownership errors)
 # - Copies bucket rows (names/visibility), not files
 # - Uses POOLER (IPv4) keyword DSNs (no URL-encoding)
 # - Single FULL backup of prod
@@ -50,134 +50,11 @@ for s in "${SCHEMAS[@]}"; do DUMP_ARGS+=(--schema="$s"); done
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres "${DUMP_ARGS[@]}" > "$STAGING_SCHEMA_DUMP"
 
-# ===== Robust sanitize: remove schema-public DDL and ALL ALTER DEFAULT PRIVILEGES statements =====
+# ===== Robust sanitize: remove schema-public DDL & ALL ALTER DEFAULT PRIVILEGES =====
 echo "🧼 Sanitizing dump (strip CREATE/ALTER/COMMENT SCHEMA public + ALTER DEFAULT PRIVILEGES)…"
 if command -v perl >/dev/null 2>&1; then
   perl -0777 -pe '
-    # Remove any CREATE/ALTER/COMMENT on schema public
     s/^\s*CREATE\s+SCHEMA\s+(IF\s+NOT\s+EXISTS\s+)?("?public"?)\s*(AUTHORIZATION\s+\S+)?\s*;\s*$//gmi;
     s/^\s*ALTER\s+SCHEMA\s+"?public"?\s+.*?;\s*$//gmi;
     s/^\s*COMMENT\s+ON\s+SCHEMA\s+"?public"?\s+IS\s+.*?;\s*$//gmi;
-    # Remove ALL ALTER DEFAULT PRIVILEGES statements (multi-line safe)
-    s/^\s*ALTER\s+DEFAULT\s+PRIVILEGES\b.*?;\s*$//gmis;
-  ' -i "$STAGING_SCHEMA_DUMP"
-else
-  # Fallback: sed/awk combo
-  if sed -i '' -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
-    :
-  else
-    sed -i -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP"
-  fi
-  awk '
-    BEGIN {skip=0}
-    {
-      if (skip==1) {
-        if ($0 ~ /;[[:space:]]*$/) { skip=0 }
-        next
-      }
-      if (tolower($0) ~ /^[[:space:]]*alter[[:space:]]+default[[:space:]]+privileges/) {
-        if ($0 ~ /;[[:space:]]*$/) { next } else { skip=1; next }
-      }
-      print
-    }
-  ' "$STAGING_SCHEMA_DUMP" > "${STAGING_SCHEMA_DUMP}.tmp" && mv "${STAGING_SCHEMA_DUMP}.tmp" "$STAGING_SCHEMA_DUMP"
-fi
-
-# ===== Dump STAGING storage post-data ONLY for objects + buckets (avoid buckets_analytics, etc.) =====
-echo "🛡️  Dumping STAGING storage post-data (policies/grants) for objects + buckets…"
-STAGING_STORAGE_POSTDATA="${BACKUP_DIR}/staging_storage_postdata.sql"
-PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
-  -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
-  --section=post-data \
-  -t storage.objects \
-  -t storage.buckets > "$STAGING_STORAGE_POSTDATA"
-
-# ===== Dump STAGING bucket rows (names/visibility), not objects =====
-echo "🪣 Dumping STAGING bucket definitions (storage.buckets)…"
-STAGING_BUCKETS_DUMP="${BACKUP_DIR}/staging_storage_buckets.sql"
-if PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
-    -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
-    --data-only --table=storage.buckets > "$STAGING_BUCKETS_DUMP" 2>/dev/null; then
-  :
-else
-  echo "-- no buckets found" > "$STAGING_BUCKETS_DUMP"
-fi
-
-# ===== Replace ONLY the owned schemas in PROD (here: public) =====
-echo "🧨 Replacing schemas in PROD (only: public)…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-DROP SCHEMA IF EXISTS "public" CASCADE;
-CREATE SCHEMA "public";
-
--- Common extensions (idempotent; ensure available before loading objects)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pgjwt";
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
-COMMIT;
-SQL
-
-# ===== Apply STAGING public schema (atomic) =====
-echo "📥 Applying STAGING schema (public) to PROD…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-\i ${STAGING_SCHEMA_DUMP}
-COMMIT;
-SQL
-
-# ===== Apply STAGING storage post-data (policies/grants for objects + buckets) =====
-echo "🛡️  Applying storage policies/grants (objects + buckets) to PROD…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-\i ${STAGING_STORAGE_POSTDATA}
-COMMIT;
-SQL
-
-# ===== Restore bucket rows (names/visibility) =====
-echo "🪣 Restoring bucket definitions to PROD…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-\i ${STAGING_BUCKETS_DUMP}
-COMMIT;
-SQL
-
-# ===== Normalize migration history with a single anchor row =====
-echo "🧾 Normalizing migration history (single anchor)…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-CREATE SCHEMA IF NOT EXISTS supabase_migrations;
-CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations(
-  version text PRIMARY KEY,
-  inserted_at timestamptz DEFAULT now()
-);
-INSERT INTO supabase_migrations.schema_migrations(version)
-VALUES ('${MIGRATION_ANCHOR}_${TS}')
-ON CONFLICT DO NOTHING;
-COMMIT;
-SQL
-
-# ===== Edge Functions (secrets managed by you) =====
-echo "⚡ Deploying Edge Functions to PROD…"
-supabase login --token "${SUPABASE_ACCESS_TOKEN:-}" >/dev/null 2>&1 || true
-supabase link --project-ref "$SUPABASE_PROD_REF" >/dev/null
-if [ -d "supabase/functions" ]; then
-  for dir in supabase/functions/*; do
-    [ -d "$dir" ] || continue
-    fn="$(basename "$dir")"
-    echo "   • $fn"
-    supabase functions deploy "$fn" --project-ref "$SUPABASE_PROD_REF" \
-      || echo "     ⚠️ deploy failed for $fn (continuing)"
-  done
-fi
-
-echo "✅ PROD now mirrors STAGING:"
-echo "   • Schemas mirrored: public"
-echo "   • storage: base tables untouched; policies/grants applied ONLY for objects + buckets; buckets copied"
-echo "   • Backup: ${BACKUP_DIR}/prod_full.sql"
-echo "   • Anchor migration: ${MIGRATION_ANCHOR}_${TS}"
+    s/^\s*ALTER\s+DEFAULT\s+PRIVILE*
