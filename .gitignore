@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+backups/
+migration_patches/
+migration_cleanup_backup_*/
+supabase/.temp/
