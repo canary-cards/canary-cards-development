@@ -2,14 +2,15 @@
 set -euo pipefail
 
 # ===== Canary Cards — Mirror STAGING -> PROD =====
-# Mirrors ONLY schema you own: public
-# Keeps Supabase-managed `storage` base tables; applies its policies/grants (post-data) and copies bucket rows
-# Uses POOLER (IPv4) for everything; keyword DSNs (no URL encoding issues)
-# Wraps each apply in a single transaction
-# Takes a single FULL backup of prod (simpler restore than separate schema/data dumps)
+# - Mirrors ONLY the schema you own: public
+# - Keeps Supabase-managed `storage` base tables intact
+# - Applies `storage` post-data (policies/grants/triggers) and copies bucket rows
+# - Uses POOLER (IPv4) connections via keyword DSNs (no URL-encoding)
+# - Wraps each apply in a single transaction
+# - Takes a single FULL backup of prod for easy restore
 
 # ===== Config =====
-SCHEMAS=("public")                 # you confirmed: only `public` is owned; do NOT include `storage`
+SCHEMAS=("public")                 # You confirmed: only `public` is owned; do NOT include `storage`
 MIGRATION_ANCHOR="normalize_from_staging"
 TS="$(date +%Y%m%d_%H%M%S)"
 
@@ -35,7 +36,7 @@ echo "   ✅ Pooler connectivity OK"
 BACKUP_DIR="backups/${TS}"
 mkdir -p "$BACKUP_DIR"
 
-# ===== Full backup of PROD (simplest restore path; avoids FK dump warnings) =====
+# ===== Full backup of PROD (simplest restore path) =====
 echo "💾 Backing up PROD (FULL dump) → ${BACKUP_DIR}/prod_full.sql"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${BACKUP_DIR}/prod_full.sql"
@@ -48,16 +49,29 @@ for s in "${SCHEMAS[@]}"; do DUMP_ARGS+=(--schema="$s"); done
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres "${DUMP_ARGS[@]}" > "$STAGING_SCHEMA_DUMP"
 
-# ===== Sanitize dump: remove CREATE/ALTER SCHEMA public to avoid conflicts =====
-echo "🧼 Sanitizing dump (remove CREATE/ALTER SCHEMA public)…"
-if sed -i '' -e 's/^[[:space:]]*CREATE[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?[[:space:]]*;[[:space:]]*$/-- removed: CREATE SCHEMA public;/I' \
-             -e 's/^[[:space:]]*ALTER[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?.*;[[:space:]]*$/-- removed: ALTER SCHEMA public;/I' \
-             "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
-  :
+# ===== Robust sanitize: remove any statement that (re)creates/alters/comments schema public =====
+# Handles:
+#   CREATE SCHEMA public;
+#   CREATE SCHEMA IF NOT EXISTS public;
+#   CREATE SCHEMA public AUTHORIZATION postgres;
+#   ALTER SCHEMA public ... ;
+#   COMMENT ON SCHEMA public IS '...';
+# (Case-insensitive; safe to run on macOS/BSD or Linux. Tries perl first for reliability.)
+echo "🧼 Sanitizing dump (strip CREATE/ALTER/COMMENT ON SCHEMA public …)"
+if command -v perl >/dev/null 2>&1; then
+  perl -0777 -pe '
+    s/^\s*CREATE\s+SCHEMA\s+(IF\s+NOT\s+EXISTS\s+)?("?public"?)\s*(AUTHORIZATION\s+\S+)?\s*;\s*$//gmi;
+    s/^\s*ALTER\s+SCHEMA\s+"?public"?\s+.*?;\s*$//gmi;
+    s/^\s*COMMENT\s+ON\s+SCHEMA\s+"?public"?\s+IS\s+.*?;\s*$//gmi;
+  ' -i "$STAGING_SCHEMA_DUMP"
 else
-  sed -i -e 's/^[[:space:]]*CREATE[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?[[:space:]]*;[[:space:]]*$/-- removed: CREATE SCHEMA public;/I' \
-         -e 's/^[[:space:]]*ALTER[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?.*;[[:space:]]*$/-- removed: ALTER SCHEMA public;/I' \
-         "$STAGING_SCHEMA_DUMP"
+  # Fallback with sed (delete any single-line statement that targets SCHEMA public)
+  # BSD sed first; if it fails, try GNU sed form.
+  if sed -i '' -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;/I d' "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
+    :
+  else
+    sed -i -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;/I d' "$STAGING_SCHEMA_DUMP"
+  fi
 fi
 
 # ===== Dump STAGING storage post-data (policies/grants/triggers; no base tables) =====
@@ -86,7 +100,7 @@ BEGIN;
 DROP SCHEMA IF EXISTS "public" CASCADE;
 CREATE SCHEMA "public";
 
--- Common extensions (safe idempotent)
+-- Common extensions (idempotent; ensure available before loading objects)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pgjwt";
@@ -103,7 +117,7 @@ BEGIN;
 COMMIT;
 SQL
 
-# ===== Apply STAGING storage post-data (policies/grants) =====
+# ===== Apply STAGING storage post-data (policies/grants/triggers) =====
 echo "🛡️  Applying storage policies/grants/triggers to PROD…"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
 \set ON_ERROR_STOP on
