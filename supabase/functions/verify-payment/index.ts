@@ -96,32 +96,49 @@ serve(async (req) => {
         throw new Error("Failed to create customer record");
       }
 
-      // Create order record
-      const { data: order, error: orderError } = await supabase
+      // Check if order already exists for this session
+      let { data: existingOrder } = await supabase
         .from('orders')
-        .insert({
-          postcard_draft_id: draftId || null, // Convert empty string to null for UUID field
-          customer_id: customer.id,
-          email_for_receipt: session.customer_email || metadata.user_email,
-          send_option: metadata.send_option || metadata.postcard_sendOption,
-          stripe_session_id: session.id,
-          stripe_payment_intent_id: session.payment_intent,
-          stripe_customer_id: session.customer,
-          amount_paid: session.amount_total, // Using new column name
-          payment_status: 'paid',
-          paid_at: new Date().toISOString(),
-          metadata_snapshot: metadata
-        })
-        .select()
+        .select('*')
+        .eq('stripe_session_id', session.id)
         .single();
 
-      if (orderError) {
-        console.error("Error creating order:", orderError);
-        throw new Error("Failed to create order record");
+      let order = existingOrder;
+      let isNewOrder = false;
+
+      if (!existingOrder) {
+        // Create new order record
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            postcard_draft_id: draftId || null, // Convert empty string to null for UUID field
+            customer_id: customer.id,
+            email_for_receipt: session.customer_email || metadata.user_email,
+            send_option: metadata.send_option || metadata.postcard_sendOption,
+            stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent,
+            stripe_customer_id: session.customer,
+            amount_paid: session.amount_total,
+            payment_status: 'paid',
+            paid_at: new Date().toISOString(),
+            metadata_snapshot: metadata
+          })
+          .select()
+          .single();
+
+        if (orderError) {
+          console.error("Error creating order:", orderError);
+          throw new Error("Failed to create order record");
+        }
+        
+        order = newOrder;
+        isNewOrder = true;
+      } else {
+        console.log("Order already exists for session:", session.id);
       }
 
-      // Link postcard draft to order if draftId provided
-      if (draftId) {
+      // Link postcard draft to order if draftId provided and it's a new order
+      if (draftId && isNewOrder) {
         const { error: linkError } = await supabase
           .from('postcard_drafts')
           .update({ sent_order_id: order.id })
@@ -132,7 +149,7 @@ serve(async (req) => {
         }
       }
 
-      console.log("Successfully processed payment and created records");
+      console.log("Successfully processed payment - order", isNewOrder ? "created" : "found");
       
       // Extract postcard data for sending
       const postcardData = {
@@ -144,33 +161,42 @@ serve(async (req) => {
         email: session.customer_email || metadata.user_email
       };
 
-      // Auto-trigger postcard sending
+      // Auto-trigger postcard sending only for new orders
       let postcardResults = null;
-      try {
-        const sendResponse = await supabase.functions.invoke('send-postcard', {
-          body: { 
-            postcardData,
-            orderId: order.id
+      if (isNewOrder) {
+        try {
+          const sendResponse = await supabase.functions.invoke('send-postcard', {
+            body: { 
+              postcardData,
+              orderId: order.id
+            }
+          });
+          
+          console.log("Postcard sending triggered:", sendResponse);
+          if (sendResponse.data) {
+            postcardResults = sendResponse.data;
           }
-        });
-        
-        console.log("Postcard sending triggered:", sendResponse);
-        if (sendResponse.data) {
-          postcardResults = sendResponse.data;
+        } catch (sendError) {
+          console.error("Failed to trigger postcard sending:", sendError);
+          // Create error results for frontend handling
+          postcardResults = {
+            success: false,
+            error: sendError.message,
+            summary: { totalSent: 0, totalFailed: 1, total: 1 },
+            results: [{
+              type: 'representative',
+              recipient: postcardData.representative?.name || 'Unknown',
+              status: 'error',
+              error: sendError.message
+            }]
+          };
         }
-      } catch (sendError) {
-        console.error("Failed to trigger postcard sending:", sendError);
-        // Create error results for frontend handling
+      } else {
+        // For existing orders, create a success response without re-sending postcards
         postcardResults = {
-          success: false,
-          error: sendError.message,
-          summary: { totalSent: 0, totalFailed: 1, total: 1 },
-          results: [{
-            type: 'representative',
-            recipient: postcardData.representative?.name || 'Unknown',
-            status: 'error',
-            error: sendError.message
-          }]
+          success: true,
+          already_sent: true,
+          summary: { message: "Postcards were already sent for this order" }
         };
       }
       
