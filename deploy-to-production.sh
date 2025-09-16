@@ -292,9 +292,9 @@ PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_P
 # Configure IPv4-compatible pooler connections for migration
 echo "🌐 Configuring IPv4-only database connections..."
 
-# Use pooler connections with prepared statements disabled for IPv4 compatibility
-STAGING_DB_POOLER_URL="${STAGING_DB_URL}?prepared_statements=false&sslmode=require"
-PRODUCTION_DB_POOLER_URL="${PRODUCTION_DB_URL}?prepared_statements=false&sslmode=require"
+# Use pooler connections with SSL for security
+STAGING_DB_POOLER_URL="${STAGING_DB_URL}?sslmode=require"
+PRODUCTION_DB_POOLER_URL="${PRODUCTION_DB_URL}?sslmode=require"
 
 # Network diagnostics to understand connectivity
 echo "   Checking network connectivity..."
@@ -666,7 +666,7 @@ else
         echo "   Found $MIGRATION_FILES_COUNT migration files to apply"
         
         # Check if migration history table exists
-        TABLE_EXISTS=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+        TABLE_EXISTS=$(psql "$PRODUCTION_DB_URL" -t -c "
             SELECT EXISTS (
                 SELECT 1 FROM information_schema.tables 
                 WHERE table_schema = 'supabase_migrations' 
@@ -792,7 +792,7 @@ else
     
     if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
         # Get list of already applied migrations
-        APPLIED_MIGRATIONS=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+        APPLIED_MIGRATIONS=$(psql "$PRODUCTION_DB_URL" -t -c "
             SELECT version FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "")
         
         # Apply each migration file
@@ -813,7 +813,7 @@ else
             echo "   • Applying: $migration_name"
             
             # Begin transaction for safe migration
-            psql "$PRODUCTION_DB_POOLER_URL" << EOF
+            psql "$PRODUCTION_DB_URL" << EOF
 BEGIN;
 -- Apply migration
 \i $migration_file
@@ -921,7 +921,7 @@ fi
             
             if [[ $REPLY =~ ^[1]$ ]]; then
                 echo ""
-                if recreate_migration_history_table "$PRODUCTION_DB_POOLER_URL"; then
+                if recreate_migration_history_table "$PRODUCTION_DB_URL"; then
                     echo "   Migration history table created, proceeding with migrations..."
                 else
                     echo -e "${RED}❌ Failed to create migration history table${NC}"
@@ -945,7 +945,7 @@ fi
             fi
         elif [ "$TABLE_EXISTS" = "t" ] || [ "$TABLE_EXISTS" = "true" ]; then
             # Table exists, check migration count
-            APPLIED_MIGRATIONS_COUNT=$(psql "$PRODUCTION_DB_POOLER_URL" -t -c "
+            APPLIED_MIGRATIONS_COUNT=$(psql "$PRODUCTION_DB_URL" -t -c "
                 SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "0")
             echo "   Migration history found: $APPLIED_MIGRATIONS_COUNT migrations previously applied"
         else
@@ -959,3 +959,4 @@ fi
             echo ""
             read -p "   Choose option [1/2/3]: " -n 1 -r
             echo
+   
