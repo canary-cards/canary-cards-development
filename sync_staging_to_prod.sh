@@ -1,52 +1,207 @@
 #!/bin/bash
 
-# ===== Canary Cards — Sync STAGING → PROD (Schema-Only, Non-Destructive by default) =====
-# - Source of truth: STAGING schema (public only)
-# - Target: PROD (data preserved)
-# - Uses Docker + migra for precise diffs
-# - --dry-run to preview, --allow-destructive to include drops/renames
-# - Adds enum values (no removals)
-# - Conservative timeouts
-# - After DB sync: deploy code (merge main → realproduction) and deploy Supabase Edge Functions
-
-# ===== Usage =====
-# export STAGING_DB_PASSWORD=...
-# export PRODUCTION_DB_PASSWORD=...
-# export SUPABASE_STAGING_REF=pugnjgvdisdbdkbofwrc
-# export SUPABASE_PROD_REF=xwsgyxlvxntgpochonwe
+# ==============================================================================
+# Canary Cards — Sync STAGING → PROD (Schema-only, Safe-by-default)
 #
-# optional for Edge Functions:
-# # export SUPABASE_ACCESS_TOKEN=sbp_...
-# bash sync_staging_to_prod.sh [--dry-run] [--allow-destructive] [--debug]
+# What this does (non-destructive by default):
+#   • Diffs the STAGING database schema (public) against PROD using Docker + migra
+#   • Applies only ADDITIVE changes by default (new tables/columns/indexes, enum values)
+#   • Preserves all existing PROD data
+#   • Then deploys code: merges `main` → `realproduction` and pushes
+#   • Then deploys Supabase Edge Functions
+#
+# What this does NOT do:
+#   • Does NOT touch the `storage` schema (policies/grants/ownership there are Supabase-managed)
+#   • Does NOT drop/rename columns/tables unless you opt in with --allow-destructive
+#
+# Quick examples:
+#   DRY RUN (preview only):   ./sync_staging_to_prod.sh --dry-run
+#   Normal sync:              ./sync_staging_to_prod.sh
+#   Allow drops/renames:      ./sync_staging_to_prod.sh --allow-destructive
+#   Auto-stash local edits:   ./sync_staging_to_prod.sh --autostash
+#   Discard local edits:      ./sync_staging_to_prod.sh --discard-local
+#
+# Required environment variables:
+#   export STAGING_DB_PASSWORD=********
+#   export PRODUCTION_DB_PASSWORD=********
+#   export SUPABASE_STAGING_REF=pugnjgvdisdbdkbofwrc
+#   export SUPABASE_PROD_REF=xwsgyxlvxntgpochonwe
+# Optional (for Edge Functions deploy):
+#   export SUPABASE_ACCESS_TOKEN=sbp_************************
+#
+# Dependencies (CLI tools):
+#   docker, psql, pg_dump, supabase, git
+#   - macOS tips:
+#       brew install postgresql  # psql/pg_dump
+#       brew install supabase/tap/supabase
+#       Install Docker Desktop & start it
+#
+# Flags:
+#   --dry-run           Show the SQL diff; don't apply it
+#   --allow-destructive Include DROPs/renames (uses migra --unsafe)
+#   --autostash         Stash any local git changes before code deploy
+#   --discard-local     Reset & clean local repo before code deploy (DANGEROUS)
+#   --debug             Verbose output for troubleshooting
+#   --help              Print this banner and exit
+#
+# Limitations / gotchas:
+#   • Only the `public` schema is synced.
+#   • `storage` is intentionally ignored (ownership/privileges differ in Supabase).
+#   • Enum handling: we add new values; removals/renames require --allow-destructive.
+#   • Destructive diffs are wrapped in a transaction but you should use with care.
+# ==============================================================================
 
-# ===== Flags =====
-DRY_RUN=false
-ALLOW_DESTRUCTIVE=false
-DEBUG=false
+# ===== Check Required Environment Variables First =====
+echo ""
+echo "🔧 Checking environment variables..."
 
-for arg in "$@"; do
-    case "$arg" in
-        --dry-run)
+MISSING_VARS=""
+if [ -z "$STAGING_DB_PASSWORD" ]; then
+    MISSING_VARS="$MISSING_VARS STAGING_DB_PASSWORD"
+fi
+if [ -z "$PRODUCTION_DB_PASSWORD" ]; then
+    MISSING_VARS="$MISSING_VARS PRODUCTION_DB_PASSWORD"
+fi
+if [ -z "$SUPABASE_STAGING_REF" ]; then
+    MISSING_VARS="$MISSING_VARS SUPABASE_STAGING_REF"
+fi
+if [ -z "$SUPABASE_PROD_REF" ]; then
+    MISSING_VARS="$MISSING_VARS SUPABASE_PROD_REF"
+fi
+
+if [ -n "$MISSING_VARS" ]; then
+    echo "❌ Missing required environment variables:$MISSING_VARS"
+    echo ""
+    echo "Please set them first:"
+    for var in $MISSING_VARS; do
+        echo "  export $var=your_value_here"
+    done
+    echo ""
+    exit 1
+fi
+
+echo "✅ All required environment variables are set"
+echo ""
+
+# ===== Interactive Flag Selection =====
+echo "🚀 Welcome to the Canary Cards Database Sync Tool"
+echo "=================================================="
+echo ""
+echo "This tool will sync your STAGING database schema to PRODUCTION,"
+echo "then deploy your code changes and Edge Functions."
+echo ""
+echo "Please select your sync mode:"
+echo ""
+echo "1) DRY RUN - Preview changes only (recommended first time)"
+echo "   Shows you exactly what SQL will be applied without making any changes"
+echo ""
+echo "2) NORMAL SYNC - Safe deployment (RECOMMENDED)"
+echo "   Applies only additive changes: new tables, columns, indexes, enum values"
+echo ""
+echo "3) DESTRUCTIVE SYNC - Include drops and renames (DANGEROUS)"
+echo "   Can drop/rename tables and columns. Use when you need to remove things"
+echo ""
+echo "4) DEBUG MODE - Normal sync with verbose logging"
+echo "   Same as normal sync but shows detailed output for troubleshooting"
+echo ""
+
+# Get user selection
+while true; do
+    echo -n "Enter your choice (1-4) [default: 2]: "
+    read -r choice
+    
+    # Handle default
+    if [ -z "$choice" ]; then
+        choice=2
+    fi
+    
+    case "$choice" in
+        1)
             DRY_RUN=true
+            ALLOW_DESTRUCTIVE=false
+            DEBUG=false
+            MODE_DESCRIPTION="DRY RUN (preview only)"
+            break
             ;;
-        --allow-destructive)
+        2)
+            DRY_RUN=false
+            ALLOW_DESTRUCTIVE=false
+            DEBUG=false
+            MODE_DESCRIPTION="NORMAL SYNC (safe, additive changes only)"
+            break
+            ;;
+        3)
+            DRY_RUN=false
             ALLOW_DESTRUCTIVE=true
+            DEBUG=false
+            MODE_DESCRIPTION="DESTRUCTIVE SYNC (includes drops/renames)"
+            break
             ;;
-        --debug)
+        4)
+            DRY_RUN=false
+            ALLOW_DESTRUCTIVE=false
             DEBUG=true
+            MODE_DESCRIPTION="DEBUG MODE (normal sync with verbose logging)"
+            break
             ;;
         *)
-            echo "Usage: $0 [--dry-run] [--allow-destructive] [--debug]"
-            exit 1
+            echo "❌ Invalid choice. Please enter 1, 2, 3, or 4."
+            echo ""
             ;;
     esac
 done
 
-# ===== Required env =====
-: "${STAGING_DB_PASSWORD:?STAGING_DB_PASSWORD is required}"
-: "${PRODUCTION_DB_PASSWORD:?PRODUCTION_DB_PASSWORD is required}"
-: "${SUPABASE_STAGING_REF:?SUPABASE_STAGING_REF is required}"  # e.g., pugnjgvdisdbdkbofwrc
-: "${SUPABASE_PROD_REF:?SUPABASE_PROD_REF is required}"        # e.g., xwsgyxlvxntgpochonwe
+# ===== Final Confirmation =====
+echo ""
+echo "📋 CONFIRMATION"
+echo "==============="
+echo "Selected mode: $MODE_DESCRIPTION"
+echo ""
+echo "What will happen:"
+if [ "$DRY_RUN" = true ]; then
+    echo "  ✓ Connect to staging and production databases"
+    echo "  ✓ Generate schema diff (staging → production)"
+    echo "  ✓ Show you the SQL that WOULD be applied"
+    echo "  ✓ Exit without making any changes"
+else
+    echo "  ✓ Create full backup of production database"
+    echo "  ✓ Connect to staging and production databases"
+    echo "  ✓ Generate and apply schema changes to production"
+    if [ "$ALLOW_DESTRUCTIVE" = true ]; then
+        echo "  ⚠️  DESTRUCTIVE changes (drops/renames) will be included"
+    else
+        echo "  ✓ Only safe, additive changes will be applied"
+    fi
+    echo "  ✓ Deploy code changes (main → realproduction)"
+    echo "  ✓ Deploy Supabase Edge Functions"
+fi
+if [ "$DEBUG" = true ]; then
+    echo "  ✓ Show detailed debug output"
+fi
+echo ""
+
+while true; do
+    echo -n "Proceed with this configuration? (y/n): "
+    read -r confirm
+    case "$confirm" in
+        [Yy]|[Yy][Ee][Ss])
+            echo ""
+            echo "🎯 Starting sync process..."
+            echo ""
+            break
+            ;;
+        [Nn]|[Nn][Oo])
+            echo "❌ Sync cancelled by user"
+            exit 0
+            ;;
+        *)
+            echo "Please enter 'y' for yes or 'n' for no."
+            ;;
+    esac
+done
+
+# ===== Initialize Variables =====
+# (User selections from interactive menu are already set above)
 
 # ===== Git branches (configurable) =====
 MAIN_BRANCH="${MAIN_BRANCH:-main}"
