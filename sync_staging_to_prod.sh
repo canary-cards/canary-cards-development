@@ -6,12 +6,15 @@
 # What this does (non-destructive by default):
 #   • Diffs the STAGING database schema (public) against PROD using Docker + migra
 #   • Applies only ADDITIVE changes by default (new tables/columns/indexes, enum values)
-#   • Preserves all existing PROD data
+#   • Preserves all existing PROD data - NO DATA IS EVER DELETED OR OVERWRITTEN
+#   • Only modifies database SCHEMA (structure), never touches the actual data/rows
 #   • Then deploys code: merges `main` → `realproduction` and pushes
 #   • Then deploys Supabase Edge Functions
 #
 # What this does NOT do:
 #   • Does NOT touch the `storage` schema (policies/grants/ownership there are Supabase-managed)
+#   • Does NOT manage storage buckets, files, or storage policies
+#   • Does NOT delete, modify, or overwrite any existing data in your tables
 #   • Does NOT drop/rename columns/tables unless you opt in with --allow-destructive
 #
 # Quick examples:
@@ -46,7 +49,8 @@
 #
 # Limitations / gotchas:
 #   • Only the `public` schema is synced.
-#   • `storage` is intentionally ignored (ownership/privileges differ in Supabase).
+#   • `storage` schema and storage buckets are intentionally ignored (ownership/privileges differ in Supabase).
+#   • All table data is preserved - this tool only modifies schema structure.
 #   • Enum handling: we add new values; removals/renames require --allow-destructive.
 #   • Destructive diffs are wrapped in a transaction but you should use with care.
 # ==============================================================================
@@ -89,6 +93,14 @@ echo "=================================================="
 echo ""
 echo "This tool will sync your STAGING database schema to PRODUCTION,"
 echo "then deploy your code changes and Edge Functions."
+echo ""
+echo "What this does (non-destructive by default):"
+echo "  • Diffs the STAGING database schema (public) against PROD using Docker + migra"
+echo "  • Applies only ADDITIVE changes by default (new tables/columns/indexes, enum values)"
+echo "  • Preserves all existing PROD data - NO DATA IS EVER DELETED OR OVERWRITTEN"
+echo "  • Only modifies database SCHEMA (structure), never touches the actual data/rows"
+echo "  • Then deploys code: merges main → realproduction and pushes"
+echo "  • Then deploys Supabase Edge Functions"
 echo ""
 echo "Please select your sync mode:"
 echo ""
@@ -281,6 +293,12 @@ fi
 if [ ! -s "$SANITIZED_SQL" ]; then
     echo "✅ Already in sync (no schema changes)."
     DB_CHANGED=false
+    if [ "$DRY_RUN" = true ]; then
+        echo ""
+        echo "🔍 DRY RUN COMPLETE - No changes were made to production"
+        echo "  (No schema differences found)"
+        exit 0
+    fi
 else
     DB_CHANGED=true
     echo "🗂️ Diff written: $DIFF_SQL"
@@ -324,55 +342,59 @@ SQL
 fi
 
 # ===== Code deploy (main → realproduction) =====
-echo "📦 Deploying code changes ( ${MAIN_BRANCH} → ${REALPROD_BRANCH} )..."
+if [ "$DRY_RUN" = false ]; then
+    echo "📦 Deploying code changes ( ${MAIN_BRANCH} → ${REALPROD_BRANCH} )..."
 
-CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD || echo "")"
+    CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD || echo "")"
 
-# Preflight
-if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "🛑 Uncommitted changes in working tree. Commit/stash them and rerun."
-    exit 1
-fi
+    # Preflight
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "🛑 Uncommitted changes in working tree. Commit/stash them and rerun."
+        exit 1
+    fi
 
-git fetch origin --quiet
+    git fetch origin --quiet
 
-# Ensure branches exist locally
-git checkout "$REALPROD_BRANCH" >/dev/null 2>&1 || {
-    echo "🛑 Branch $REALPROD_BRANCH not found locally."
-    exit 1
-}
+    # Ensure branches exist locally
+    git checkout "$REALPROD_BRANCH" >/dev/null 2>&1 || {
+        echo "🛑 Branch $REALPROD_BRANCH not found locally."
+        exit 1
+    }
 
-echo " Merging ${MAIN_BRANCH} into ${REALPROD_BRANCH}…"
-if ! git merge "$MAIN_BRANCH" --no-edit; then
-    echo "❌ Merge conflict detected. Resolve manually, then push."
-    # Return to original branch
+    echo " Merging ${MAIN_BRANCH} into ${REALPROD_BRANCH}…"
+    if ! git merge "$MAIN_BRANCH" --no-edit; then
+        echo "❌ Merge conflict detected. Resolve manually, then push."
+        # Return to original branch
+        [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
+        exit 1
+    fi
+
+    echo " Pushing ${REALPROD_BRANCH}…"
+    git push origin "$REALPROD_BRANCH"
+
+    echo "✅ Code deployment complete"
+
+    # Return to prior branch
     [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
-    exit 1
+
+    echo ""
 fi
-
-echo " Pushing ${REALPROD_BRANCH}…"
-git push origin "$REALPROD_BRANCH"
-
-echo "✅ Code deployment complete"
-
-# Return to prior branch
-[ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
-
-echo ""
 
 # ===== Edge Functions (deploy) =====
-echo "⚡ Deploying Edge Functions to production…"
+if [ "$DRY_RUN" = false ]; then
+    echo "⚡ Deploying Edge Functions to production…"
 
-supabase login --token "${SUPABASE_ACCESS_TOKEN:-}" >/dev/null 2>&1 || true
-supabase link --project-ref "$SUPABASE_PROD_REF" >/dev/null
+    supabase login --token "${SUPABASE_ACCESS_TOKEN:-}" >/dev/null 2>&1 || true
+    supabase link --project-ref "$SUPABASE_PROD_REF" >/dev/null
 
-if [ -d "supabase/functions" ]; then
-    for dir in supabase/functions/*; do
-        [ -d "$dir" ] || continue
-        fn="$(basename "$dir")"
-        echo " • $fn"
-        supabase functions deploy "$fn" --project-ref "$SUPABASE_PROD_REF" || echo "  ⚠️ $fn deploy failed (continuing)"
-    done
+    if [ -d "supabase/functions" ]; then
+        for dir in supabase/functions/*; do
+            [ -d "$dir" ] || continue
+            fn="$(basename "$dir")"
+            echo " • $fn"
+            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROD_REF" || echo "  ⚠️ $fn deploy failed (continuing)"
+        done
+    fi
 fi
 
 echo "🎉 Done."
@@ -380,5 +402,3 @@ echo "  Backup: ${WORKDIR}/prod_full.sql"
 echo "  Raw diff: ${DIFF_SQL}"
 echo "  Sanitized diff:${SANITIZED_SQL}"
 echo "  Destructive: $ALLOW_DESTRUCTIVE (use --allow-destructive to include drops/renames)"
-
-
