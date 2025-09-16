@@ -357,12 +357,58 @@ echo "✅ Database rollback complete"
 EOF
 chmod +x "$ROLLBACK_SCRIPT"
 
-# Apply database migrations with transaction safety using supabase db push
+# Apply database migrations with migration history validation
+echo "   Validating migration history compatibility..."
+
+# Check for migration history mismatches first
+if ! supabase db push --db-url "$PRODUCTION_DB_URL" --dry-run 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Migration history mismatch detected${NC}"
+    echo "   This usually means the production database has migrations not present locally."
+    echo ""
+    read -p "   Auto-sync local migrations with production? [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "   Syncing local migrations with production database..."
+        if supabase db pull --db-url "$PRODUCTION_DB_URL"; then
+            echo -e "${GREEN}✅ Migration history synced successfully${NC}"
+            echo "   Re-attempting deployment..."
+        else
+            echo -e "${RED}❌ Failed to sync migration history${NC}"
+            echo "   Manual intervention required:"
+            echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
+            echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
+            echo "   3. Then re-run this deployment script"
+            echo ""
+            echo "🔄 Automatic rollback available:"
+            echo "   Run: $ROLLBACK_SCRIPT"
+            git checkout main
+            exit 1
+        fi
+    else
+        echo -e "${RED}❌ Cannot proceed without migration history sync${NC}"
+        echo "   To fix manually:"
+        echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
+        echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
+        echo "   3. Then re-run this deployment script"
+        echo ""
+        echo "🔄 Automatic rollback available:"
+        echo "   Run: $ROLLBACK_SCRIPT"
+        git checkout main
+        exit 1
+    fi
+fi
+
 echo "   Applying database migrations to production..."
 # Note: We keep supabase db push as it's the proper way to apply migrations
 # and doesn't require Docker like db dump does
 if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
     echo -e "${RED}❌ Database migration failed${NC}"
+    echo ""
+    echo "🔍 Common fixes:"
+    echo "   • Migration history mismatch: supabase db pull --db-url \$PRODUCTION_DB_URL"
+    echo "   • Repair migration table: supabase migration repair --status reverted [ids]"
+    echo "   • Check migration file syntax and constraints"
+    echo ""
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
     echo ""
