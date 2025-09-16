@@ -4,13 +4,14 @@ set -euo pipefail
 # ===== Canary Cards — Mirror STAGING -> PROD =====
 # - Mirrors ONLY the schema you own: public
 # - Keeps Supabase-managed `storage` base tables intact
-# - Applies `storage` post-data (policies/grants/triggers) and copies bucket rows
-# - Uses POOLER (IPv4) connections via keyword DSNs (no URL-encoding)
-# - Wraps each apply in a single transaction
-# - Takes a single FULL backup of prod for easy restore
+# - Applies storage RLS/policies for storage.objects + storage.buckets ONLY (post-data)
+# - Copies bucket rows (names/visibility), not files
+# - Uses POOLER (IPv4) keyword DSNs (no URL-encoding)
+# - Single FULL backup of prod
+# - All changes applied in transactions
 
 # ===== Config =====
-SCHEMAS=("public")                 # You confirmed: only `public` is owned; do NOT include `storage`
+SCHEMAS=("public")                 # you confirmed: only `public` is owned; do NOT include `storage`
 MIGRATION_ANCHOR="normalize_from_staging"
 TS="$(date +%Y%m%d_%H%M%S)"
 
@@ -62,13 +63,11 @@ if command -v perl >/dev/null 2>&1; then
   ' -i "$STAGING_SCHEMA_DUMP"
 else
   # Fallback: sed/awk combo
-  # 1) Drop any single-line CREATE/ALTER/COMMENT SCHEMA public
   if sed -i '' -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
     :
   else
     sed -i -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP"
   fi
-  # 2) Remove multi-line ALTER DEFAULT PRIVILEGES blocks up to semicolon
   awk '
     BEGIN {skip=0}
     {
@@ -76,7 +75,6 @@ else
         if ($0 ~ /;[[:space:]]*$/) { skip=0 }
         next
       }
-      low=$0; gsub(/[A-Z]/, "x", low); # cheap lowercase-ish
       if (tolower($0) ~ /^[[:space:]]*alter[[:space:]]+default[[:space:]]+privileges/) {
         if ($0 ~ /;[[:space:]]*$/) { next } else { skip=1; next }
       }
@@ -85,12 +83,14 @@ else
   ' "$STAGING_SCHEMA_DUMP" > "${STAGING_SCHEMA_DUMP}.tmp" && mv "${STAGING_SCHEMA_DUMP}.tmp" "$STAGING_SCHEMA_DUMP"
 fi
 
-# ===== Dump STAGING storage post-data (policies/grants/triggers; no base tables) =====
-echo "🛡️  Dumping STAGING storage post-data (policies/grants/triggers)…"
+# ===== Dump STAGING storage post-data ONLY for objects + buckets (avoid buckets_analytics, etc.) =====
+echo "🛡️  Dumping STAGING storage post-data (policies/grants) for objects + buckets…"
 STAGING_STORAGE_POSTDATA="${BACKUP_DIR}/staging_storage_postdata.sql"
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
-  --schema=storage --section=post-data > "$STAGING_STORAGE_POSTDATA"
+  --section=post-data \
+  -t storage.objects \
+  -t storage.buckets > "$STAGING_STORAGE_POSTDATA"
 
 # ===== Dump STAGING bucket rows (names/visibility), not objects =====
 echo "🪣 Dumping STAGING bucket definitions (storage.buckets)…"
@@ -128,8 +128,8 @@ BEGIN;
 COMMIT;
 SQL
 
-# ===== Apply STAGING storage post-data (policies/grants/triggers) =====
-echo "🛡️  Applying storage policies/grants/triggers to PROD…"
+# ===== Apply STAGING storage post-data (policies/grants for objects + buckets) =====
+echo "🛡️  Applying storage policies/grants (objects + buckets) to PROD…"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
 \set ON_ERROR_STOP on
 BEGIN;
@@ -178,6 +178,6 @@ fi
 
 echo "✅ PROD now mirrors STAGING:"
 echo "   • Schemas mirrored: public"
-echo "   • storage: base tables untouched; policies/grants applied; buckets copied"
+echo "   • storage: base tables untouched; policies/grants applied ONLY for objects + buckets; buckets copied"
 echo "   • Backup: ${BACKUP_DIR}/prod_full.sql"
 echo "   • Anchor migration: ${MIGRATION_ANCHOR}_${TS}"
