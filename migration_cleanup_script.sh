@@ -59,17 +59,43 @@ echo ""
 # Encode passwords
 ENCODED_PRODUCTION_PASSWORD=$(url_encode "$PRODUCTION_DB_PASSWORD")
 
-# Database URLs
-PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require"
-PRODUCTION_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
+# Database connection URLs (matching deployment script pattern exactly)
+# Use PgBouncer (port 6543) for regular operations
+PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
-# Test connection
+# Use direct connection (port 5432) for administrative tasks
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${ENCODED_PRODUCTION_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
+
+# Configure with SSL mode
+PRODUCTION_DB_POOLER_URL="${PRODUCTION_DB_URL}?sslmode=require"
+
+# Test connection (using same pattern as deployment script)
 echo "🔗 Testing database connection..."
-if ! psql "$PRODUCTION_DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+echo "   Testing production database (pooler connection)..."
+
+# Test with timeout and better error capture
+error_output=$(timeout 30 psql "$PRODUCTION_DB_POOLER_URL" -c "SELECT 1 as test;" 2>&1)
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+    echo -e "${GREEN}✅ Production database connection successful${NC}"
+else
     echo -e "${RED}❌ Failed to connect to production database${NC}"
+    
+    # Provide specific error diagnosis
+    if echo "$error_output" | grep -q "password authentication failed"; then
+        echo "   Issue: Password authentication failed"
+        echo "   • Verify the password is correct in Supabase dashboard"
+    elif echo "$error_output" | grep -q "timeout"; then
+        echo "   Issue: Connection timeout"
+        echo "   • Check network connectivity"
+    elif echo "$error_output" | grep -q "SSL"; then
+        echo "   Issue: SSL/TLS connection problem"
+    else
+        echo "   Error: ${error_output:0:200}"
+    fi
     exit 1
 fi
-echo -e "${GREEN}✅ Production database connection successful${NC}"
 echo ""
 
 # Create backup directory
@@ -290,7 +316,7 @@ apply_migration_with_patch() {
     local migration_name=$(basename "$migration_file" .sql)
     local patch_file="migration_patches/patch_${migration_name}.sql"
     
-    # Check if already applied
+    # Check if already applied (use PRODUCTION_DB_URL without pooler suffix)
     local already_applied=$(psql "$PRODUCTION_DB_URL" -t -c "SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '$migration_name';" 2>/dev/null | tr -d ' ')
     
     if [ "$already_applied" = "1" ]; then
@@ -307,7 +333,7 @@ apply_migration_with_patch() {
         file_to_apply="$patch_file"
     fi
     
-    # Apply the migration
+    # Apply the migration (use PRODUCTION_DB_URL)
     local output=$(psql "$PRODUCTION_DB_URL" << EOF 2>&1
 BEGIN;
 \i $file_to_apply
