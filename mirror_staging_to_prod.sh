@@ -49,29 +49,40 @@ for s in "${SCHEMAS[@]}"; do DUMP_ARGS+=(--schema="$s"); done
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres "${DUMP_ARGS[@]}" > "$STAGING_SCHEMA_DUMP"
 
-# ===== Robust sanitize: remove any statement that (re)creates/alters/comments schema public =====
-# Handles:
-#   CREATE SCHEMA public;
-#   CREATE SCHEMA IF NOT EXISTS public;
-#   CREATE SCHEMA public AUTHORIZATION postgres;
-#   ALTER SCHEMA public ... ;
-#   COMMENT ON SCHEMA public IS '...';
-# (Case-insensitive; safe to run on macOS/BSD or Linux. Tries perl first for reliability.)
-echo "🧼 Sanitizing dump (strip CREATE/ALTER/COMMENT ON SCHEMA public …)"
+# ===== Robust sanitize: remove schema-public DDL and ALL ALTER DEFAULT PRIVILEGES statements =====
+echo "🧼 Sanitizing dump (strip CREATE/ALTER/COMMENT SCHEMA public + ALTER DEFAULT PRIVILEGES)…"
 if command -v perl >/dev/null 2>&1; then
   perl -0777 -pe '
+    # Remove any CREATE/ALTER/COMMENT on schema public
     s/^\s*CREATE\s+SCHEMA\s+(IF\s+NOT\s+EXISTS\s+)?("?public"?)\s*(AUTHORIZATION\s+\S+)?\s*;\s*$//gmi;
     s/^\s*ALTER\s+SCHEMA\s+"?public"?\s+.*?;\s*$//gmi;
     s/^\s*COMMENT\s+ON\s+SCHEMA\s+"?public"?\s+IS\s+.*?;\s*$//gmi;
+    # Remove ALL ALTER DEFAULT PRIVILEGES statements (multi-line safe)
+    s/^\s*ALTER\s+DEFAULT\s+PRIVILEGES\b.*?;\s*$//gmis;
   ' -i "$STAGING_SCHEMA_DUMP"
 else
-  # Fallback with sed (delete any single-line statement that targets SCHEMA public)
-  # BSD sed first; if it fails, try GNU sed form.
-  if sed -i '' -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;/I d' "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
+  # Fallback: sed/awk combo
+  # 1) Drop any single-line CREATE/ALTER/COMMENT SCHEMA public
+  if sed -i '' -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
     :
   else
-    sed -i -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;/I d' "$STAGING_SCHEMA_DUMP"
+    sed -i -E '/^[[:space:]]*(CREATE|ALTER|COMMENT)[[:space:]]+.*SCHEMA[[:space:]]+"?public"?([[:space:]]+|").*;[[:space:]]*$/I d' "$STAGING_SCHEMA_DUMP"
   fi
+  # 2) Remove multi-line ALTER DEFAULT PRIVILEGES blocks up to semicolon
+  awk '
+    BEGIN {skip=0}
+    {
+      if (skip==1) {
+        if ($0 ~ /;[[:space:]]*$/) { skip=0 }
+        next
+      }
+      low=$0; gsub(/[A-Z]/, "x", low); # cheap lowercase-ish
+      if (tolower($0) ~ /^[[:space:]]*alter[[:space:]]+default[[:space:]]+privileges/) {
+        if ($0 ~ /;[[:space:]]*$/) { next } else { skip=1; next }
+      }
+      print
+    }
+  ' "$STAGING_SCHEMA_DUMP" > "${STAGING_SCHEMA_DUMP}.tmp" && mv "${STAGING_SCHEMA_DUMP}.tmp" "$STAGING_SCHEMA_DUMP"
 fi
 
 # ===== Dump STAGING storage post-data (policies/grants/triggers; no base tables) =====
