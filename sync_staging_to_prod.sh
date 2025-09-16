@@ -51,15 +51,15 @@ require git
 TS="$(date +%Y%m%d_%H%M%S)"
 WORKDIR_REL="backups/${TS}_sync"
 mkdir -p "$WORKDIR_REL"
-
-# Turn WORKDIR + pgpass into absolute paths for Docker mounts
-abs_path() { cd "$(dirname "$1")" && pwd -P && return; }
 WORKDIR="$(cd "$WORKDIR_REL" && pwd -P)"
-PGPASS_LOCAL="${WORKDIR}/pgpass"
 
-# ===== DSNs (POOLER IPv4) — no passwords embedded =====
+# ===== DSNs =====
+# Keyword DSNs (for psql/pg_dump)
 STAGING_DSN_KW="host=aws-1-us-east-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_STAGING_REF} dbname=postgres sslmode=require"
 PROD_DSN_KW="host=aws-0-us-west-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_PROD_REF} dbname=postgres sslmode=require"
+# URL DSNs (for SQLAlchemy/migra) — password comes from pgpass inside the container
+STAGING_DSN_URL="postgresql://postgres.${SUPABASE_STAGING_REF}@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
+PROD_DSN_URL="postgresql://postgres.${SUPABASE_PROD_REF}@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
 echo "🔗 Probing connectivity (pooler)…"
 PGPASSWORD="$STAGING_DB_PASSWORD"    psql "$STAGING_DSN_KW" -c "select 1;" >/dev/null
@@ -72,6 +72,7 @@ PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${WORKDIR}/prod_full.sql"
 
 # ===== Build pgpass (absolute path) for Docker =====
+PGPASS_LOCAL="${WORKDIR}/pgpass"
 cat > "$PGPASS_LOCAL" <<EOF
 aws-1-us-east-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}
 aws-0-us-west-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}
@@ -85,14 +86,14 @@ MIGRA_FLAGS="--schema public --with-privileges"
 [ "$ALLOW_DESTRUCTIVE" = true ] && MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
 
 echo "🧮 Generating diff (prod → staging) with migra…"
-DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_DSN" "$STAGING_DSN"'
+DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_URL" "$STAGING_URL"'
 
 set +e
 docker run --rm \
   -v "$PGPASS_LOCAL":/tmp/pgpass:ro \
   -e PGPASSFILE=/tmp/pgpass \
-  -e PROD_DSN="$PROD_DSN_KW" \
-  -e STAGING_DSN="$STAGING_DSN_KW" \
+  -e PROD_URL="$PROD_DSN_URL" \
+  -e STAGING_URL="$STAGING_DSN_URL" \
   python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
 DOCKER_STATUS=$?
 set -e
@@ -100,7 +101,7 @@ set -e
 if [ $DOCKER_STATUS -ne 0 ]; then
   echo "❌ migra (Docker) failed. Common fixes:"
   echo "   • Ensure Docker Desktop is running"
-  echo "   • We now pass absolute paths for -v (was the earlier error); if this persists, re-run with --debug"
+  echo "   • If it still fails, run with --debug and paste the logs"
   exit 1
 fi
 
