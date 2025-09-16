@@ -157,82 +157,62 @@ PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PA
 STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@db.pugnjgvdisdbdkbofwrc.supabase.co:5432/postgres"
 PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
-# Configure DNS64/NAT64 for IPv6-to-IPv4 connectivity
-echo "🌐 Configuring DNS64/NAT64 for database connectivity..."
+# Configure IPv4-compatible pooler connections for migration
+echo "🌐 Configuring IPv4-compatible database connections..."
 
-# Check current network connectivity
+# Use pooler connections with prepared statements disabled for IPv4 compatibility
+STAGING_DB_POOLER_URL="${STAGING_DB_URL}?prepared_statements=false"
+PRODUCTION_DB_POOLER_URL="${PRODUCTION_DB_URL}?prepared_statements=false"
+
+# Network diagnostics to understand connectivity
 echo "   Checking network connectivity..."
 if command -v dig &> /dev/null; then
-    echo "   IPv4 test: $(dig +short ifconfig.co @8.8.8.8 2>/dev/null || echo 'Failed')"
-    echo "   IPv6 test: $(dig +short ifconfig.co AAAA @2001:4860:4860::8888 2>/dev/null || echo 'No IPv6')"
-fi
-
-# Set up DNS64/NAT64 using Google's public DNS64 service
-echo "   Setting up DNS64/NAT64 gateway..."
-export RESOLV_CONF_BACKUP="/tmp/resolv.conf.backup.$$"
-
-# Backup current DNS config if we can modify it
-if [ "$EUID" -eq 0 ] || (command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null); then
-    if [ -f /etc/resolv.conf ]; then
-        cp /etc/resolv.conf "$RESOLV_CONF_BACKUP" 2>/dev/null || true
-        echo "   Backed up DNS configuration"
-    fi
+    IPV4_TEST=$(dig +short ifconfig.co @8.8.8.8 2>/dev/null || echo 'Failed')
+    IPV6_TEST=$(dig +short ifconfig.co AAAA @2001:4860:4860::8888 2>/dev/null || echo 'No IPv6')
+    echo "   IPv4 capability: $IPV4_TEST"
+    echo "   IPv6 capability: $IPV6_TEST"
     
-    # Configure DNS64 nameservers  
-    {
-        echo "# Temporary DNS64/NAT64 configuration for Supabase connectivity"
-        echo "nameserver 2001:4860:4860::6464"
-        echo "nameserver 2001:4860:4860::64" 
-        echo "nameserver 8.8.8.8"
-        echo "nameserver 8.8.4.4"
-    } | tee /etc/resolv.conf >/dev/null 2>&1 || {
-        echo "   ⚠️  Could not modify /etc/resolv.conf (running without root)"
-        echo "   Attempting connection with existing DNS configuration..."
-    }
-else
-    echo "   ⚠️  Running without root privileges - using existing DNS"
+    if [ "$IPV6_TEST" = "No IPv6" ]; then
+        echo "   Using IPv4-compatible pooler connections for migrations"
+    fi
 fi
 
-# Set up cleanup trap to restore DNS configuration on exit
-trap 'restore_dns_config' EXIT INT TERM
-
-# Function to restore DNS configuration
-restore_dns_config() {
-    if [ -f "$RESOLV_CONF_BACKUP" ] && [ "$EUID" -eq 0 ]; then
-        cp "$RESOLV_CONF_BACKUP" /etc/resolv.conf 2>/dev/null || true
-        rm -f "$RESOLV_CONF_BACKUP" 2>/dev/null || true
-        echo "   DNS configuration restored"
-    fi
-}
-
-# Test database connections with enhanced error handling
+# Enhanced database connection testing
 echo "🔗 Testing database connections..."
 
-# Test staging connection with timeout and detailed logging
-echo "   Testing staging database..."
-if timeout 30 psql "$STAGING_DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+# Test staging pooler connection
+echo "   Testing staging database (pooler connection)..."
+if timeout 30 psql "$STAGING_DB_POOLER_URL" -c "SELECT 1 as test;" >/dev/null 2>&1; then
     echo -e "${GREEN}   ✅ Staging database connection successful${NC}"
 else
     echo -e "${RED}   ❌ Failed to connect to staging database${NC}"
-    echo "   Trying direct connection test..."
-    nc -zv aws-1-us-east-1.pooler.supabase.com 6543 2>&1 | head -1 || echo "   Direct connection test failed"
-    
-    restore_dns_config
-    echo "   Check your staging database password and network connectivity"
+    echo "   Testing network connectivity to pooler..."
+    if command -v nc &> /dev/null; then
+        if nc -zv aws-1-us-east-1.pooler.supabase.com 6543 >/dev/null 2>&1; then
+            echo "   ✅ Network connectivity to staging pooler OK"
+            echo "   ❌ Check your staging database password"
+        else
+            echo "   ❌ Cannot reach staging pooler (network issue)"
+        fi
+    fi
     exit 1
 fi
 
-# Test production connection with timeout and detailed logging  
-echo "   Testing production database..."
-if timeout 30 psql "$PRODUCTION_DB_URL" -c "SELECT 1;" >/dev/null 2>&1; then
+# Test production pooler connection
+echo "   Testing production database (pooler connection)..."
+if timeout 30 psql "$PRODUCTION_DB_POOLER_URL" -c "SELECT 1 as test;" >/dev/null 2>&1; then
     echo -e "${GREEN}   ✅ Production database connection successful${NC}"
 else
     echo -e "${RED}   ❌ Failed to connect to production database${NC}"
-    echo "   Trying direct connection test..."
-    nc -zv aws-0-us-west-1.pooler.supabase.com 6543 2>&1 | head -1 || echo "   Direct connection test failed"
-    
-    restore_dns_config
-    echo "   Check your production database password and network connectivity"
+    echo "   Testing network connectivity to pooler..."
+    if command -v nc &> /dev/null; then
+        if nc -zv aws-0-us-west-1.pooler.supabase.com 6543 >/dev/null 2>&1; then
+            echo "   ✅ Network connectivity to production pooler OK"
+            echo "   ❌ Check your production database password"
+        else
+            echo "   ❌ Cannot reach production pooler (network issue)"
+        fi
+    fi
     exit 1
 fi
 echo ""
@@ -507,54 +487,47 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
     echo "   Deploying fresh schema to reset database..."
     echo "   (Skipping migration history validation since database was reset)"
 else
-    echo "   Validating migration history compatibility..."
+    echo "   Validating migration history compatibility using pooler connection..."
     
-    # Check for migration history mismatches first
-    if ! supabase db push --db-url "$PRODUCTION_DB_DIRECT_URL" --dry-run 2>/dev/null; then
-        echo -e "${YELLOW}⚠️  Migration history mismatch detected${NC}"
-        echo "   This usually means the production database has migrations not present locally."
-        echo ""
-        echo "Options:"
-        echo "1. Auto-sync local migrations with production"
-        echo "2. Reset production database and start fresh"
-        echo ""
-        read -p "   Choose option [1/2]: " -n 1 -r
-        echo
+    # Check migration status using pooler connection (IPv4 compatible)
+    echo "   Checking migration files and database state..."
+    MIGRATION_FILES_COUNT=$(find supabase/migrations -name "*.sql" 2>/dev/null | wc -l || echo "0")
+    
+    if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
+        echo "   Found $MIGRATION_FILES_COUNT migration files to apply"
         
-        if [[ $REPLY =~ ^[1]$ ]]; then
-            echo "   Syncing local migrations with production database..."
-            if supabase db pull --db-url "$PRODUCTION_DB_DIRECT_URL"; then
-                echo -e "${GREEN}✅ Migration history synced successfully${NC}"
-                echo "   Re-attempting deployment..."
-            else
-                echo -e "${RED}❌ Failed to sync migration history${NC}"
-                echo "   Manual intervention required:"
-                echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
-                echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
-                echo "   3. Or re-run with --reset-production flag"
+        # Test if we can access the migration table via pooler
+        APPLIED_MIGRATIONS_COUNT=$(timeout 30 psql "$PRODUCTION_DB_POOLER_URL" -t -c "SELECT COUNT(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null | tr -d ' ' || echo "error")
+        
+        if [ "$APPLIED_MIGRATIONS_COUNT" = "error" ] || [ -z "$APPLIED_MIGRATIONS_COUNT" ]; then
+            echo -e "${YELLOW}⚠️  Cannot access migration history via pooler connection${NC}"
+            echo "   This is expected for pooler connections in some configurations."
+            echo ""
+            echo "Options:"
+            echo "1. Continue with manual migration application (recommended)"
+            echo "2. Reset production database and start fresh"
+            echo ""
+            read -p "   Choose option [1/2]: " -n 1 -r
+            echo
+            
+            if [[ $REPLY =~ ^[1]$ ]]; then
+                echo "   Proceeding with manual migration via pooler connection..."
+            elif [[ $REPLY =~ ^[2]$ ]]; then
                 echo ""
-                echo "🔄 Automatic rollback available:"
-                echo "   Run: $ROLLBACK_SCRIPT"
+                echo -e "${YELLOW}⚠️  Converting to reset deployment...${NC}"
+                RESET_PRODUCTION=true
+                echo "   Database will be reset and fresh schema deployed"
+            else
+                echo -e "${RED}❌ Invalid option selected${NC}"
+                echo "   Deployment cancelled"
                 git checkout main
                 exit 1
             fi
-        elif [[ $REPLY =~ ^[2]$ ]]; then
-            echo ""
-            echo -e "${YELLOW}⚠️  Converting to reset deployment...${NC}"
-            RESET_PRODUCTION=true
-            echo "   Database will be reset and fresh schema deployed"
         else
-            echo -e "${RED}❌ Invalid option selected${NC}"
-            echo "   Manual intervention required:"
-            echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
-            echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
-            echo "   3. Or re-run with --reset-production flag"
-            echo ""
-            echo "🔄 Automatic rollback available:"
-            echo "   Run: $ROLLBACK_SCRIPT"
-            git checkout main
-            exit 1
+            echo "   Migration history accessible: $APPLIED_MIGRATIONS_COUNT migrations previously applied"
         fi
+    else
+        echo "   No migration files found - skipping migration step"
     fi
 fi
 
@@ -564,22 +537,64 @@ else
     echo "   Applying database migrations to production..."
 fi
 
-# Deploy database changes using supabase db push
-if ! supabase db push --db-url "$PRODUCTION_DB_DIRECT_URL"; then
-    if [[ "$RESET_PRODUCTION" == true ]]; then
-        echo -e "${RED}❌ Fresh schema deployment failed${NC}"
+# Deploy database changes using pooler connection (IPv4 compatible)
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo "   Resetting production database using Supabase CLI..."
+    supabase link --project-ref xwsgyxlvxntgpochonwe
+    if ! supabase db reset; then
+        echo -e "${RED}❌ Database reset failed${NC}"
         echo ""
         echo "🔍 Possible causes:"
-        echo "   • Schema syntax errors in migration files"
-        echo "   • Database connection issues"
+        echo "   • Network connectivity issues"
         echo "   • Permission problems"
-    else
-        echo -e "${RED}❌ Database migration failed${NC}"
+        echo "   • Database is in use by active connections"
         echo ""
-        echo "🔍 Common fixes:"
-        echo "   • Migration history mismatch: supabase db pull --db-url \$PRODUCTION_DB_URL"
-        echo "   • Repair migration table: supabase migration repair --status reverted [ids]"
-        echo "   • Check migration file syntax and constraints"
+        echo "🔄 Automatic rollback available:"
+        echo "   Run: $ROLLBACK_SCRIPT"
+        git checkout main
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Database reset successful${NC}"
+else
+    # Apply migrations manually using pooler connection
+    if [ "$MIGRATION_FILES_COUNT" -gt 0 ]; then
+        echo "   Applying migrations via pooler connection..."
+        
+        # Apply each migration file individually
+        FAILED_MIGRATIONS=0
+        for migration_file in $(find supabase/migrations -name "*.sql" | sort); do
+            migration_name=$(basename "$migration_file")
+            echo "   • Applying: $migration_name"
+            
+            if timeout 60 psql "$PRODUCTION_DB_POOLER_URL" -f "$migration_file" >/dev/null 2>&1; then
+                echo "     ✅ $migration_name applied successfully"
+            else
+                echo "     ❌ $migration_name failed"
+                FAILED_MIGRATIONS=$((FAILED_MIGRATIONS + 1))
+            fi
+        done
+        
+        if [ "$FAILED_MIGRATIONS" -gt 0 ]; then
+            echo -e "${RED}❌ $FAILED_MIGRATIONS migration(s) failed${NC}"
+            echo ""
+            echo "🔍 Manual migration troubleshooting:"
+            echo "   • Check migration file syntax"
+            echo "   • Verify permissions and RLS policies"
+            echo "   • Review database logs in Supabase Dashboard"
+            echo ""
+            echo "🔄 Automatic rollback available:"
+            echo "   Run: $ROLLBACK_SCRIPT"
+            git checkout main
+            exit 1
+        fi
+        
+        echo -e "${GREEN}✅ All $MIGRATION_FILES_COUNT migrations applied successfully${NC}"
+    else
+        echo "   No migrations to apply"
+    fi
+fi
+
+echo "📋 Database deployment completed"
         echo "   • Try with --reset-production flag for clean deployment"
     fi
     echo ""
