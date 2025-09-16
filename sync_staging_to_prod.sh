@@ -2,34 +2,27 @@
 set -euo pipefail
 
 # ===== Canary Cards — Sync STAGING → PROD (Schema-Only, Non-Destructive by default) =====
-# - Source of truth: STAGING schema (public only)
-# - Target: PROD (data preserved)
-# - Uses Docker + migra for precise diffs
-# - --dry-run to preview, --allow-destructive to include drops/renames
-# - Adds enum values (no removals)
-# - Conservative timeouts
-# - After DB sync: deploy code (merge main → realproduction) and deploy Supabase Edge Functions
-
-# ===== Usage =====
-# export STAGING_DB_PASSWORD=...
-# export PRODUCTION_DB_PASSWORD=...
-# export SUPABASE_STAGING_REF=pugnjgvdisdbdkbofwrc
-# export SUPABASE_PROD_REF=xwsgyxlvxntgpochonwe
-# # optional for Edge Functions:
-# # export SUPABASE_ACCESS_TOKEN=sbp_...
-# bash sync_staging_to_prod.sh [--dry-run] [--allow-destructive] [--debug]
+# Source of truth: STAGING (schema), Target: PROD (data preserved)
+# Scope: public schema ONLY (ignores Supabase storage)
+# Diff engine: Docker + migra
+# Flags: --dry-run (preview), --allow-destructive (include drops/renames), --autostash, --discard-local
+# Adds enum values (no removals). Conservative timeouts. Code + Edge Functions deploy after DB.
 
 # ===== Flags =====
 DRY_RUN=false
 ALLOW_DESTRUCTIVE=false
 DEBUG=false
+AUTOSTASH=false
+DISCARD_LOCAL=false
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     --allow-destructive) ALLOW_DESTRUCTIVE=true ;;
     --debug) DEBUG=true ;;
+    --autostash) AUTOSTASH=true ;;
+    --discard-local) DISCARD_LOCAL=true ;;
     *)
-      echo "Usage: $0 [--dry-run] [--allow-destructive] [--debug]"
+      echo "Usage: $0 [--dry-run] [--allow-destructive] [--debug] [--autostash] [--discard-local]"
       exit 1
       ;;
   esac
@@ -56,8 +49,13 @@ require git
 [ "$DEBUG" = true ] && set -x
 
 TS="$(date +%Y%m%d_%H%M%S)"
-WORKDIR="backups/${TS}_sync"
-mkdir -p "$WORKDIR"
+WORKDIR_REL="backups/${TS}_sync"
+mkdir -p "$WORKDIR_REL"
+
+# Turn WORKDIR + pgpass into absolute paths for Docker mounts
+abs_path() { cd "$(dirname "$1")" && pwd -P && return; }
+WORKDIR="$(cd "$WORKDIR_REL" && pwd -P)"
+PGPASS_LOCAL="${WORKDIR}/pgpass"
 
 # ===== DSNs (POOLER IPv4) — no passwords embedded =====
 STAGING_DSN_KW="host=aws-1-us-east-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_STAGING_REF} dbname=postgres sslmode=require"
@@ -73,8 +71,7 @@ echo "💾 Backing up PROD (FULL) → ${WORKDIR}/prod_full.sql"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${WORKDIR}/prod_full.sql"
 
-# ===== Build pgpass for Docker (avoid embedding passwords) =====
-PGPASS_LOCAL="${WORKDIR}/pgpass"
+# ===== Build pgpass (absolute path) for Docker =====
 cat > "$PGPASS_LOCAL" <<EOF
 aws-1-us-east-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}
 aws-0-us-west-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}
@@ -83,20 +80,31 @@ chmod 600 "$PGPASS_LOCAL"
 
 # ===== Generate schema diff (PROD -> STAGING) with migra =====
 DIFF_SQL="${WORKDIR}/sync_diff.sql"
+SANITIZED_SQL="${WORKDIR}/sync_diff_sanitized.sql"
 MIGRA_FLAGS="--schema public --with-privileges"
 [ "$ALLOW_DESTRUCTIVE" = true ] && MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
 
 echo "🧮 Generating diff (prod → staging) with migra…"
 DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_DSN" "$STAGING_DSN"'
+
+set +e
 docker run --rm \
   -v "$PGPASS_LOCAL":/tmp/pgpass:ro \
   -e PGPASSFILE=/tmp/pgpass \
   -e PROD_DSN="$PROD_DSN_KW" \
   -e STAGING_DSN="$STAGING_DSN_KW" \
-  python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL" || true
+  python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
+DOCKER_STATUS=$?
+set -e
+
+if [ $DOCKER_STATUS -ne 0 ]; then
+  echo "❌ migra (Docker) failed. Common fixes:"
+  echo "   • Ensure Docker Desktop is running"
+  echo "   • We now pass absolute paths for -v (was the earlier error); if this persists, re-run with --debug"
+  exit 1
+fi
 
 # ===== Sanitize diff: strip owner changes & ALTER DEFAULT PRIVILEGES =====
-SANITIZED_SQL="${WORKDIR}/sync_diff_sanitized.sql"
 if command -v perl >/dev/null 2>&1; then
   perl -0777 -pe '
     s/^\s*ALTER\s+(TABLE|SEQUENCE|VIEW|MATERIALIZED\s+VIEW|FUNCTION|AGGREGATE|TYPE|DOMAIN)\s+.*\sOWNER\s+TO\s+.*?;\s*$//gmi;
@@ -107,7 +115,7 @@ else
 fi
 
 # ===== No-op? =====
-if [ ! -s "$SANITIZED_SQL" ]; then
+if ! [ -s "$SANITIZED_SQL" ]; then
   echo "✅ Already in sync (no schema changes)."
   DB_CHANGED=false
 else
@@ -149,26 +157,60 @@ fi
 # ===== Code deploy (main → realproduction) =====
 echo "📦 Deploying code changes ( ${MAIN_BRANCH} → ${REALPROD_BRANCH} )..."
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD || echo "")"
-# Preflight
+
+# Handle dirty working tree (chmod +x etc.)
 if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "🛑 Uncommitted changes in working tree. Commit/stash them and rerun."
-  exit 1
+  if [ "$DISCARD_LOCAL" = true ]; then
+    echo "⚠️  Discarding local changes: git reset --hard && git clean -fd"
+    git reset --hard HEAD
+    git clean -fd
+  elif [ "$AUTOSTASH" = true ]; then
+    STASH_NAME="sync_autostash_${TS}"
+    echo "📦 Autostashing local changes as: $STASH_NAME"
+    git stash push -u -m "$STASH_NAME" >/dev/null
+  else
+    echo "🛑 Uncommitted changes in working tree."
+    echo "   Fix with one of:"
+    echo "   • Stash (keep for later):  git stash push -u -m sync_autostash_${TS}"
+    echo "   • OR discard everything:   git reset --hard && git clean -fd"
+    echo "   • OR commit:               git add -A && git commit -m 'WIP'"
+    echo "   Re-run with --autostash or --discard-local to do this automatically."
+    exit 1
+  fi
 fi
+
 git fetch origin --quiet
-# Ensure branches exist locally
-git checkout "$REALPROD_BRANCH" >/dev/null 2>&1 || { echo "🛑 Branch $REALPROD_BRANCH not found locally."; exit 1; }
+
+# Ensure REALPROD branch exists locally (create from remote if needed)
+if git show-ref --verify --quiet "refs/heads/${REALPROD_BRANCH}"; then
+  git checkout "${REALPROD_BRANCH}" >/dev/null 2>&1
+else
+  git checkout -b "${REALPROD_BRANCH}" "origin/${REALPROD_BRANCH}" >/dev/null 2>&1 || {
+    echo "🛑 Branch ${REALPROD_BRANCH} not found locally or on origin."
+    [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
+    exit 1
+  }
+fi
+
 echo "   Merging ${MAIN_BRANCH} into ${REALPROD_BRANCH}…"
-if ! git merge "$MAIN_BRANCH" --no-edit; then
+if ! git merge "${MAIN_BRANCH}" --no-edit; then
   echo "❌ Merge conflict detected. Resolve manually, then push."
-  # Return to original branch
   [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
   exit 1
 fi
+
 echo "   Pushing ${REALPROD_BRANCH}…"
-git push origin "$REALPROD_BRANCH"
+git push origin "${REALPROD_BRANCH}"
 echo "✅ Code deployment complete"
+
 # Return to prior branch
 [ -n "$CURRENT_BRANCH" ] && git checkout "$CURRENT_BRANCH" >/dev/null 2>&1 || true
+
+# If we autostashed, tell the user how to restore
+if [ "${AUTOSTASH}" = true ]; then
+  echo "ℹ️ Your local edits are stashed as: ${STASH_NAME}"
+  echo "   Restore later with: git stash pop \"stash^{/${STASH_NAME}}\""
+fi
 echo ""
 
 # ===== Edge Functions (deploy) =====
