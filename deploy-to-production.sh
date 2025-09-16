@@ -84,6 +84,20 @@ get_service_role_key() {
     eval "$result_var='$password'"
 }
 
+# Function to check if pg_dump is available
+check_pg_dump_availability() {
+    if ! command -v pg_dump >/dev/null 2>&1; then
+        echo -e "${RED}❌ pg_dump not found${NC}"
+        echo "Please install PostgreSQL client tools:"
+        echo "  • macOS: brew install postgresql"
+        echo "  • Ubuntu/Debian: sudo apt-get install postgresql-client"
+        echo "  • RHEL/CentOS: sudo yum install postgresql"
+        echo ""
+        echo "Alternatively, run with --skip-backup flag (not recommended for production)"
+        exit 1
+    fi
+}
+
 # Function to test database connectivity
 test_database_connection() {
     local db_url="$1"
@@ -160,15 +174,18 @@ echo ""
 echo "💾 Creating production database backup..."
 mkdir -p "$BACKUP_DIR" "$MIGRATION_DIR" "$ROLLBACK_DIR"
 
-# Create database dump using direct database URL
+# Check if pg_dump is available
+check_pg_dump_availability
+
+# Create database dump using pg_dump
 echo "   Backing up production database schema and data..."
-supabase db dump --db-url "$PRODUCTION_DB_URL" --data-only -f "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
+pg_dump "$PRODUCTION_DB_URL" --data-only --no-owner --no-privileges > "$BACKUP_DIR/production_data_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Database backup failed${NC}"
     echo "Check your PRODUCTION_DB_PASSWORD and network connectivity"
     exit 1
 }
 
-supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
+pg_dump "$PRODUCTION_DB_URL" --schema-only --no-owner --no-privileges > "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql" || {
     echo -e "${RED}❌ Schema backup failed${NC}"
     exit 1
 }
@@ -188,14 +205,14 @@ echo "   Dumping staging schema for comparison..."
 STAGING_SCHEMA_TEMP="/tmp/staging_schema_${TIMESTAMP}.sql"
 PRODUCTION_SCHEMA_TEMP="/tmp/production_schema_${TIMESTAMP}.sql"
 
-# Dump schemas for comparison
-supabase db dump --db-url "$STAGING_DB_URL" --schema-only -f "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
+# Dump schemas for comparison using pg_dump
+pg_dump "$STAGING_DB_URL" --schema-only --no-owner --no-privileges > "$STAGING_SCHEMA_TEMP" 2>/dev/null || {
     echo -e "${YELLOW}⚠️  Could not dump staging schema - proceeding with direct push${NC}"
     MIGRATION_FILE=""
 }
 
 if [[ -n "$MIGRATION_FILE" ]]; then
-    supabase db dump --db-url "$PRODUCTION_DB_URL" --schema-only -f "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
+    pg_dump "$PRODUCTION_DB_URL" --schema-only --no-owner --no-privileges > "$PRODUCTION_SCHEMA_TEMP" 2>/dev/null || {
         echo -e "${YELLOW}⚠️  Could not dump production schema - proceeding with direct push${NC}"  
         MIGRATION_FILE=""
     }
@@ -340,9 +357,11 @@ echo "✅ Database rollback complete"
 EOF
 chmod +x "$ROLLBACK_SCRIPT"
 
-# Apply database migrations with transaction safety using direct database URL
+# Apply database migrations with transaction safety using supabase db push
 echo "   Applying database migrations to production..."
-if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
+# Note: We keep supabase db push as it's the proper way to apply migrations
+# and doesn't require Docker like db dump does
+if ! supabase db push --project-ref xwsgyxlvxntgpochonwe; then
     echo -e "${RED}❌ Database migration failed${NC}"
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
