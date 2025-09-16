@@ -813,7 +813,7 @@ else
             echo "   • Applying: $migration_name"
             
             # Begin transaction for safe migration
-            psql "$PRODUCTION_DB_URL" << EOF
+            psql "$PRODUCTION_DB_URL" << EOF 2>&1 | tee /tmp/migration_output_$.txt
 BEGIN;
 -- Apply migration
 \i $migration_file
@@ -825,12 +825,19 @@ VALUES ('$migration_name');
 COMMIT;
 EOF
             
-            if [ $? -eq 0 ]; then
+            # Check if the migration was successful by looking for ROLLBACK in output
+            if grep -q "ROLLBACK" /tmp/migration_output_$.txt; then
+                echo "     ❌ $migration_name failed (transaction rolled back)"
+                FAILED_MIGRATIONS=$((FAILED_MIGRATIONS + 1))
+                rm -f /tmp/migration_output_$.txt
+            elif [ $? -eq 0 ]; then
                 echo "     ✅ $migration_name applied successfully"
                 APPLIED_COUNT=$((APPLIED_COUNT + 1))
+                rm -f /tmp/migration_output_$.txt
             else
                 echo "     ❌ $migration_name failed"
                 FAILED_MIGRATIONS=$((FAILED_MIGRATIONS + 1))
+                rm -f /tmp/migration_output_$.txt
             fi
         done
         
@@ -959,4 +966,3 @@ fi
             echo ""
             read -p "   Choose option [1/2/3]: " -n 1 -r
             echo
-   
