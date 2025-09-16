@@ -5,12 +5,30 @@
 
 set -e  # Exit on any error
 
-# Check for debug mode
+# Check for command line options
 DEBUG_MODE=false
-if [[ "$1" == "--debug" ]]; then
-    DEBUG_MODE=true
-    echo "🐛 Debug mode enabled"
-fi
+RESET_PRODUCTION=false
+
+for arg in "$@"; do
+    case $arg in
+        --debug)
+            DEBUG_MODE=true
+            echo "🐛 Debug mode enabled"
+            ;;
+        --reset-production)
+            RESET_PRODUCTION=true
+            echo "⚠️  Production database reset mode enabled"
+            ;;
+        *)
+            echo "Usage: $0 [--debug] [--reset-production]"
+            echo ""
+            echo "Options:"
+            echo "  --debug             Enable debug output"
+            echo "  --reset-production  Completely reset production database (DESTRUCTIVE)"
+            exit 1
+            ;;
+    esac
+done
 
 echo "🚀 Starting Enhanced Production Deployment..."
 echo ""
@@ -193,6 +211,54 @@ pg_dump "$PRODUCTION_DB_URL" --schema-only --no-owner --no-privileges > "$BACKUP
 echo -e "${GREEN}✅ Database backup created: ${BACKUP_DIR}/*_${TIMESTAMP}.sql${NC}"
 echo ""
 
+# Handle production database reset if requested
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo -e "${RED}🚨 PRODUCTION DATABASE RESET REQUESTED${NC}"
+    echo ""
+    echo -e "${YELLOW}WARNING: This will completely WIPE the production database!${NC}"
+    echo "   • All tables and data will be permanently deleted"
+    echo "   • Migration history will be reset"
+    echo "   • This operation CANNOT be undone (except via backup restore)"
+    echo ""
+    echo "Backup created at: ${BACKUP_DIR}/*_${TIMESTAMP}.sql"
+    echo ""
+    read -p "   Are you ABSOLUTELY SURE you want to reset production? (type 'RESET' to confirm): " RESET_CONFIRMATION
+    
+    if [[ "$RESET_CONFIRMATION" != "RESET" ]]; then
+        echo -e "${GREEN}✅ Reset cancelled - deployment will continue normally${NC}"
+        RESET_PRODUCTION=false
+    else
+        echo ""
+        echo -e "${RED}⚠️  FINAL CONFIRMATION REQUIRED${NC}"
+        echo "   You are about to permanently delete ALL data in production database."
+        echo "   Project: xwsgyxlvxntgpochonwe"
+        echo "   Backup: ${BACKUP_DIR}/*_${TIMESTAMP}.sql"
+        echo ""
+        read -p "   Type 'DESTROY' to proceed with database reset: " FINAL_CONFIRMATION
+        
+        if [[ "$FINAL_CONFIRMATION" != "DESTROY" ]]; then
+            echo -e "${GREEN}✅ Reset cancelled - deployment will continue normally${NC}"
+            RESET_PRODUCTION=false
+        else
+            echo ""
+            echo -e "${RED}💥 RESETTING PRODUCTION DATABASE...${NC}"
+            echo "   This will take a few moments..."
+            
+            if supabase db reset --db-url "$PRODUCTION_DB_URL"; then
+                echo -e "${GREEN}✅ Production database reset complete${NC}"
+                echo "   Database is now empty and ready for fresh schema deployment"
+            else
+                echo -e "${RED}❌ Database reset failed${NC}"
+                echo "🔄 Rollback information:"
+                echo "   Restore from backup: $BACKUP_DIR/production_*_${TIMESTAMP}.sql"
+                echo "   Or run: $ROLLBACK_SCRIPT (when created)"
+                exit 1
+            fi
+        fi
+    fi
+    echo ""
+fi
+
 # Step 2: Generate Migration Diff and Check for Destructive Changes
 echo "🔍 Analyzing database changes for safety..."
 
@@ -357,57 +423,86 @@ echo "✅ Database rollback complete"
 EOF
 chmod +x "$ROLLBACK_SCRIPT"
 
-# Apply database migrations with migration history validation
-echo "   Validating migration history compatibility..."
-
-# Check for migration history mismatches first
-if ! supabase db push --db-url "$PRODUCTION_DB_URL" --dry-run 2>/dev/null; then
-    echo -e "${YELLOW}⚠️  Migration history mismatch detected${NC}"
-    echo "   This usually means the production database has migrations not present locally."
-    echo ""
-    read -p "   Auto-sync local migrations with production? [y/N]: " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "   Syncing local migrations with production database..."
-        if supabase db pull --db-url "$PRODUCTION_DB_URL"; then
-            echo -e "${GREEN}✅ Migration history synced successfully${NC}"
-            echo "   Re-attempting deployment..."
+# Apply database migrations with appropriate strategy based on reset status
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo "   Deploying fresh schema to reset database..."
+    echo "   (Skipping migration history validation since database was reset)"
+else
+    echo "   Validating migration history compatibility..."
+    
+    # Check for migration history mismatches first
+    if ! supabase db push --db-url "$PRODUCTION_DB_URL" --dry-run 2>/dev/null; then
+        echo -e "${YELLOW}⚠️  Migration history mismatch detected${NC}"
+        echo "   This usually means the production database has migrations not present locally."
+        echo ""
+        echo "Options:"
+        echo "1. Auto-sync local migrations with production"
+        echo "2. Reset production database and start fresh"
+        echo ""
+        read -p "   Choose option [1/2]: " -n 1 -r
+        echo
+        
+        if [[ $REPLY =~ ^[1]$ ]]; then
+            echo "   Syncing local migrations with production database..."
+            if supabase db pull --db-url "$PRODUCTION_DB_URL"; then
+                echo -e "${GREEN}✅ Migration history synced successfully${NC}"
+                echo "   Re-attempting deployment..."
+            else
+                echo -e "${RED}❌ Failed to sync migration history${NC}"
+                echo "   Manual intervention required:"
+                echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
+                echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
+                echo "   3. Or re-run with --reset-production flag"
+                echo ""
+                echo "🔄 Automatic rollback available:"
+                echo "   Run: $ROLLBACK_SCRIPT"
+                git checkout main
+                exit 1
+            fi
+        elif [[ $REPLY =~ ^[2]$ ]]; then
+            echo ""
+            echo -e "${YELLOW}⚠️  Converting to reset deployment...${NC}"
+            RESET_PRODUCTION=true
+            echo "   Database will be reset and fresh schema deployed"
         else
-            echo -e "${RED}❌ Failed to sync migration history${NC}"
+            echo -e "${RED}❌ Invalid option selected${NC}"
             echo "   Manual intervention required:"
             echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
             echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
-            echo "   3. Then re-run this deployment script"
+            echo "   3. Or re-run with --reset-production flag"
             echo ""
             echo "🔄 Automatic rollback available:"
             echo "   Run: $ROLLBACK_SCRIPT"
             git checkout main
             exit 1
         fi
-    else
-        echo -e "${RED}❌ Cannot proceed without migration history sync${NC}"
-        echo "   To fix manually:"
-        echo "   1. Run: supabase db pull --db-url \$PRODUCTION_DB_URL"
-        echo "   2. Or run: supabase migration repair --status reverted [migration-ids]"
-        echo "   3. Then re-run this deployment script"
-        echo ""
-        echo "🔄 Automatic rollback available:"
-        echo "   Run: $ROLLBACK_SCRIPT"
-        git checkout main
-        exit 1
     fi
 fi
 
-echo "   Applying database migrations to production..."
-# Note: We keep supabase db push as it's the proper way to apply migrations
-# and doesn't require Docker like db dump does
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo "   Applying fresh schema to reset production database..."
+else
+    echo "   Applying database migrations to production..."
+fi
+
+# Deploy database changes using supabase db push
 if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
-    echo -e "${RED}❌ Database migration failed${NC}"
-    echo ""
-    echo "🔍 Common fixes:"
-    echo "   • Migration history mismatch: supabase db pull --db-url \$PRODUCTION_DB_URL"
-    echo "   • Repair migration table: supabase migration repair --status reverted [ids]"
-    echo "   • Check migration file syntax and constraints"
+    if [[ "$RESET_PRODUCTION" == true ]]; then
+        echo -e "${RED}❌ Fresh schema deployment failed${NC}"
+        echo ""
+        echo "🔍 Possible causes:"
+        echo "   • Schema syntax errors in migration files"
+        echo "   • Database connection issues"
+        echo "   • Permission problems"
+    else
+        echo -e "${RED}❌ Database migration failed${NC}"
+        echo ""
+        echo "🔍 Common fixes:"
+        echo "   • Migration history mismatch: supabase db pull --db-url \$PRODUCTION_DB_URL"
+        echo "   • Repair migration table: supabase migration repair --status reverted [ids]"
+        echo "   • Check migration file syntax and constraints"
+        echo "   • Try with --reset-production flag for clean deployment"
+    fi
     echo ""
     echo "🔄 Automatic rollback available:"
     echo "   Run: $ROLLBACK_SCRIPT"
@@ -419,7 +514,11 @@ if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
     exit 1
 fi
 
-echo -e "${GREEN}✅ Database migration complete${NC}"
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo -e "${GREEN}✅ Fresh schema deployment complete${NC}"
+else
+    echo -e "${GREEN}✅ Database migration complete${NC}"
+fi
 echo ""
 
 # Step 5: Deploy Edge Functions
@@ -453,6 +552,11 @@ echo "   Timestamp: $TIMESTAMP"
 echo "   Backup Location: $BACKUP_DIR/*_${TIMESTAMP}.sql"
 echo "   Code Branch: realproduction"
 echo "   Database: xwsgyxlvxntgpochonwe"
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo "   Database Mode: 🔄 RESET (Fresh schema deployed)"
+else
+    echo "   Database Mode: 📦 MIGRATION (Incremental updates)"
+fi
 echo "   Frontend URL: https://canary.cards"
 echo "   Safety Checks: ✅ PASSED"
 echo "   Rollback Script: $ROLLBACK_SCRIPT"
@@ -460,10 +564,19 @@ echo ""
 echo "📍 Next Steps:"
 echo "   1. Test production site: https://canary.cards"
 echo "   2. Monitor Edge Function logs in Supabase dashboard"
-echo "   3. If issues occur: ./rollback-production.sh"
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo "   3. Verify all data is properly restored (if data was migrated)"
+    echo "   4. If issues occur: Use backup files in $BACKUP_DIR"
+else
+    echo "   3. If issues occur: ./rollback-production.sh"
+fi
 echo ""
 echo "📊 Monitoring Links:"
 echo "   • Production Dashboard: https://supabase.com/dashboard/project/xwsgyxlvxntgpochonwe"
 echo "   • Function Logs: https://supabase.com/dashboard/project/xwsgyxlvxntgpochonwe/functions"
 echo ""
-echo -e "${GREEN}✨ Your deployment is protected by automatic safety checks and rollback capabilities!${NC}"
+if [[ "$RESET_PRODUCTION" == true ]]; then
+    echo -e "${GREEN}✨ Your production database has been reset and is now in sync with staging!${NC}"
+else
+    echo -e "${GREEN}✨ Your deployment is protected by automatic safety checks and rollback capabilities!${NC}"
+fi
