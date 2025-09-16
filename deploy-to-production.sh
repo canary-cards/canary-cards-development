@@ -154,8 +154,8 @@ STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD
 PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
 # Use direct connection (port 5432) for migrations and resets (required for prepared statements)
-STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-1-us-east-1.connect.psdb.cloud:5432/postgres"
-PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.connect.psdb.cloud:5432/postgres"
+STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@db.pugnjgvdisdbdkbofwrc.supabase.co:5432/postgres"
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
 # Test database connections
 echo "🔗 Testing database connections..."
@@ -413,7 +413,7 @@ cat > "$ROLLBACK_SCRIPT" << EOF
 echo "🔄 Rolling back database to state before $TIMESTAMP"
 
 # Use direct database URL for rollback (required for migrations)
-PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.connect.psdb.cloud:5432/postgres"
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@db.xwsgyxlvxntgpochonwe.supabase.co:5432/postgres"
 
 echo "   Resetting production database..."
 supabase db reset --db-url "\$PRODUCTION_DB_DIRECT_URL"
