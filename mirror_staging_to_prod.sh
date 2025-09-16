@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # ===== Canary Cards — Mirror STAGING -> PROD =====
-# - Mirrors ONLY schema you own: public
-# - Keeps Supabase-managed storage base tables intact
-# - Applies storage post-data (policies/grants) for storage.objects ONLY (skips buckets to avoid ownership errors)
-# - Copies bucket rows (names/visibility), not files
+# - Mirrors ONLY the schema you own: public (tables, enums, functions, RLS, grants)
+# - Leaves Supabase-managed storage tables alone
+# - Copies storage.buckets rows (names/visibility) so buckets exist
+# - Exports storage policy SQL (objects + buckets) to a file for manual run in Supabase SQL editor (prod)
 # - Uses POOLER (IPv4) keyword DSNs (no URL-encoding)
 # - Single FULL backup of prod
 # - All changes applied in transactions
 
 # ===== Config =====
-SCHEMAS=("public")                 # you confirmed: only `public` is owned; do NOT include `storage`
+SCHEMAS=("public")                 # you confirmed: only `public` is owned
 MIGRATION_ANCHOR="normalize_from_staging"
 TS="$(date +%Y%m%d_%H%M%S)"
 
@@ -42,7 +42,7 @@ echo "💾 Backing up PROD (FULL dump) → ${BACKUP_DIR}/prod_full.sql"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${BACKUP_DIR}/prod_full.sql"
 
-# ===== Dump STAGING schema (exact owned schemas; keep privileges/GRANTs) =====
+# ===== Dump STAGING public schema (keep privileges/GRANTs) =====
 echo "🧾 Dumping STAGING schema-only for: ${SCHEMAS[*]}"
 STAGING_SCHEMA_DUMP="${BACKUP_DIR}/staging_public_schema.sql"
 DUMP_ARGS=(--schema-only)
@@ -50,8 +50,8 @@ for s in "${SCHEMAS[@]}"; do DUMP_ARGS+=(--schema="$s"); done
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres "${DUMP_ARGS[@]}" > "$STAGING_SCHEMA_DUMP"
 
-# ===== Robust sanitize: remove schema-public DDL & ALL ALTER DEFAULT PRIVILEGES =====
-echo "🧼 Sanitizing dump (strip CREATE/ALTER/COMMENT SCHEMA public + ALTER DEFAULT PRIVILEGES)…"
+# ===== Sanitize: strip CREATE/ALTER/COMMENT SCHEMA public + ALL ALTER DEFAULT PRIVILEGES =====
+echo "🧼 Sanitizing dump (strip schema-public DDL + ALTER DEFAULT PRIVILEGES)…"
 if command -v perl >/dev/null 2>&1; then
   perl -0777 -pe '
     s/^\s*CREATE\s+SCHEMA\s+(IF\s+NOT\s+EXISTS\s+)?("?public"?)\s*(AUTHORIZATION\s+\S+)?\s*;\s*$//gmi;
@@ -75,28 +75,37 @@ else
   ' "$STAGING_SCHEMA_DUMP" > "${STAGING_SCHEMA_DUMP}.tmp" && mv "${STAGING_SCHEMA_DUMP}.tmp" "$STAGING_SCHEMA_DUMP"
 fi
 
-# ===== Dump STAGING storage post-data ONLY for objects (skip buckets to avoid ownership errors) =====
-echo "🛡️  Dumping STAGING storage post-data (policies/grants) for objects only…"
-STAGING_STORAGE_POSTDATA="${BACKUP_DIR}/staging_storage_objects_postdata.sql"
-PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
-  -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
-  --section=post-data \
-  -t storage.objects > "$STAGING_STORAGE_POSTDATA"
-
-# Extra safety: strip any stray references to storage.buckets if they slip in
-if command -v perl >/dev/null 2>&1; then
-  perl -0777 -pe 's/^\s*.*\bstorage\.buckets\b.*;[ \t]*$//gmi' -i "$STAGING_STORAGE_POSTDATA"
-else
-  sed -i '' -E '/storage\.buckets/I d' "$STAGING_STORAGE_POSTDATA" 2>/dev/null || sed -i -E '/storage\.buckets/I d' "$STAGING_STORAGE_POSTDATA"
-fi
-
-# ===== Dump STAGING bucket rows (names/visibility), not objects =====
+# ===== Dump storage.buckets rows (names/visibility), not files =====
 echo "🪣 Dumping STAGING bucket definitions (storage.buckets)…"
 STAGING_BUCKETS_DUMP="${BACKUP_DIR}/staging_storage_buckets.sql"
 if PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
     -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
     --data-only --table=storage.buckets > "$STAGING_BUCKETS_DUMP" 2>/dev/null; then :; else
   echo "-- no buckets found" > "$STAGING_BUCKETS_DUMP"
+fi
+
+# ===== Export storage policy SQL for manual run (objects + buckets) — do NOT apply automatically =====
+echo "📝 Exporting STAGING storage policy SQL (objects + buckets) for manual apply…"
+STAGING_STORAGE_POLICY_RAW="${BACKUP_DIR}/staging_storage_policy_raw.sql"
+STAGING_STORAGE_POLICY_CLEAN="${BACKUP_DIR}/staging_storage_policy_MANUAL_APPLY.sql"
+PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
+  -U "postgres.${SUPABASE_STAGING_REF}" -d postgres \
+  --schema=storage --section=post-data > "$STAGING_STORAGE_POLICY_RAW"
+
+# Keep only policy-related statements + RLS toggles; drop GRANTs and owner-dependent bits.
+# This file is meant to be pasted into the Supabase SQL editor (prod) where ownership is sufficient.
+if command -v perl >/dev/null 2>&1; then
+  perl -0777 -ne '
+    while (/((?:CREATE|ALTER)\s+POLICY\b.*?;)/gis) { print "$1\n"; }
+    while (/(ALTER\s+TABLE\s+storage\.(?:objects|buckets)\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY\s*;)/gis) { print "$1\n"; }
+    while (/(ALTER\s+TABLE\s+storage\.(?:objects|buckets)\s+FORCE\s+ROW\s+LEVEL\s+SECURITY\s*;)/gis) { print "$1\n"; }
+    # Optional: include COMMENTs on policies
+    while (/(COMMENT\s+ON\s+POLICY\b.*?;)/gis) { print "$1\n"; }
+  ' "$STAGING_STORAGE_POLICY_RAW" > "$STAGING_STORAGE_POLICY_CLEAN"
+else
+  # sed/awk fallback: crude filter
+  grep -E '^(CREATE|ALTER)[[:space:]]+POLICY|ALTER[[:space:]]+TABLE[[:space:]]+storage\.(objects|buckets)[[:space:]]+(ENABLE|FORCE)[[:space:]]+ROW[[:space:]]+LEVEL[[:space:]]+SECURITY|^COMMENT[[:space:]]+ON[[:space:]]+POLICY' \
+    "$STAGING_STORAGE_POLICY_RAW" > "$STAGING_STORAGE_POLICY_CLEAN" || true
 fi
 
 # ===== Replace ONLY the owned schemas in PROD (here: public) =====
@@ -131,15 +140,6 @@ BEGIN;
 COMMIT;
 SQL
 
-# ===== Apply STAGING storage post-data (objects only) =====
-echo "🛡️  Applying storage policies/grants (objects only) to PROD…"
-PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
-\set ON_ERROR_STOP on
-BEGIN;
-\i ${STAGING_STORAGE_POSTDATA}
-COMMIT;
-SQL
-
 # ===== Normalize migration history with a single anchor row =====
 echo "🧾 Normalizing migration history (single anchor)…"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" <<SQL
@@ -170,8 +170,10 @@ if [ -d "supabase/functions" ]; then
   done
 fi
 
-echo "✅ PROD now mirrors STAGING:"
-echo "   • Schemas mirrored: public"
-echo "   • storage: base tables untouched; objects policies/grants applied; buckets copied (no bucket policy changes)"
+echo "✅ PROD now mirrors STAGING (public)."
+echo "   • storage base tables untouched; buckets copied"
+echo "   • storage policies exported for manual apply:"
+echo "       -> ${STAGING_STORAGE_POLICY_CLEAN}"
+echo "      Open Supabase dashboard (PROD) → SQL Editor, paste that file, run."
 echo "   • Backup: ${BACKUP_DIR}/prod_full.sql"
 echo "   • Anchor migration: ${MIGRATION_ANCHOR}_${TS}"
