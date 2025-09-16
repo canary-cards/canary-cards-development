@@ -50,46 +50,52 @@ get_database_password() {
     echo "$password"
 }
 
-# Function to fetch CLI secrets from Supabase (only for service role key)
-get_supabase_secret() {
-    local secret_name="$1"
-    local secret_value=""
+# Function to get service role key from environment or prompt
+get_service_role_key() {
+    local password=""
     
-    echo "   Fetching CLI secret: $secret_name..."
+    # Check if service role key is in environment variable
+    password="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
     
-    # Get secrets list output
-    local secrets_output
-    secrets_output=$(supabase secrets list --project-ref pugnjgvdisdbdkbofwrc 2>/dev/null || echo "")
-    
-    if [[ "$DEBUG_MODE" == true ]]; then
-        echo "   Debug: Secrets list output:"
-        echo "$secrets_output" | sed 's/^/     /'
+    if [[ -n "$password" ]]; then
+        echo "   Using service role key from environment variable"
+        echo "$password"
+        return
     fi
     
-    if [[ -z "$secrets_output" ]]; then
-        echo -e "${RED}❌ Failed to fetch secrets list${NC}"
-        echo "Please ensure you have the necessary permissions and the project is linked"
+    # Prompt for service role key interactively
+    echo -n "   Enter production Supabase service role key: "
+    read -s password
+    echo "" # New line after hidden input
+    
+    if [[ -z "$password" ]]; then
+        echo -e "${RED}❌ Service role key cannot be empty${NC}"
         exit 1
     fi
     
-    # Parse secret value from NAME=VALUE format
-    secret_value=$(echo "$secrets_output" | grep "^${secret_name}=" | cut -d'=' -f2- | tr -d '"' | head -n1)
-    
-    if [[ -z "$secret_value" ]]; then
-        echo -e "${RED}❌ Secret '$secret_name' not found${NC}"
-        echo "Available secrets:"
-        echo "$secrets_output" | grep "=" | cut -d'=' -f1 | sed 's/^/   - /'
-        echo ""
-        echo "To add the missing secret, run:"
-        echo "   supabase secrets set $secret_name=<your_value>"
+    # Validate service role key format
+    if [[ ! "$password" =~ ^eyJ ]]; then
+        echo -e "${RED}❌ Invalid service role key format (should start with 'eyJ')${NC}"
         exit 1
     fi
     
-    if [[ "$DEBUG_MODE" == true ]]; then
-        echo "   Debug: Found secret value for $secret_name (length: ${#secret_value})"
+    echo "$password"
+}
+
+# Function to test database connectivity
+test_database_connection() {
+    local db_url="$1"
+    local db_name="$2"
+    
+    echo "   Testing $db_name database connection..."
+    
+    if ! psql "$db_url" -c "SELECT 1;" >/dev/null 2>&1; then
+        echo -e "${RED}❌ Failed to connect to $db_name database${NC}"
+        echo "Please check your database password and network connectivity"
+        exit 1
     fi
     
-    echo "$secret_value"
+    echo -e "${GREEN}   ✅ $db_name database connection successful${NC}"
 }
 
 # Get database credentials
@@ -99,22 +105,24 @@ echo "🔐 Getting database credentials..."
 PRODUCTION_DB_PASSWORD=$(get_database_password "PRODUCTION_DB_PASSWORD" "Enter production database password")
 STAGING_DB_PASSWORD=$(get_database_password "STAGING_DB_PASSWORD" "Enter staging database password")
 
-# Get service role key from CLI secrets or environment
-if [[ -n "$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY" ]]; then
-    echo "   Using service role key from environment variable"
-else
-    PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_supabase_secret "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY")
-fi
-
-echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
-echo ""
+# Get service role key (from env var or interactive prompt)
+PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_service_role_key)
 
 # Set up authentication for Supabase CLI using service role key
 export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 
+echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
+echo ""
+
 # Database connection URLs (fixed regional endpoints)
 STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
 PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+
+# Test database connections
+echo "🔗 Testing database connections..."
+test_database_connection "$STAGING_DB_URL" "staging"
+test_database_connection "$PRODUCTION_DB_URL" "production"
+echo ""
 
 # Get current timestamp for backup naming
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
