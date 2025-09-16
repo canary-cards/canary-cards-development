@@ -149,8 +149,13 @@ echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
 echo ""
 
 # Database connection URLs (fixed regional endpoints)
+# Use PgBouncer (port 6543) for regular operations like pg_dump
 STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
 PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+
+# Use direct connection (port 5432) for migrations and resets (required for prepared statements)
+STAGING_DB_DIRECT_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-1-us-east-1.connect.psdb.cloud:5432/postgres"
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.connect.psdb.cloud:5432/postgres"
 
 # Test database connections
 echo "🔗 Testing database connections..."
@@ -244,7 +249,7 @@ if [[ "$RESET_PRODUCTION" == true ]]; then
             echo -e "${RED}💥 RESETTING PRODUCTION DATABASE...${NC}"
             echo "   This will take a few moments..."
             
-            if supabase db reset --db-url "$PRODUCTION_DB_URL"; then
+            if supabase db reset --db-url "$PRODUCTION_DB_DIRECT_URL"; then
                 echo -e "${GREEN}✅ Production database reset complete${NC}"
                 echo "   Database is now empty and ready for fresh schema deployment"
             else
@@ -407,11 +412,11 @@ cat > "$ROLLBACK_SCRIPT" << EOF
 # Automated rollback script for deployment $TIMESTAMP
 echo "🔄 Rolling back database to state before $TIMESTAMP"
 
-# Use direct database URL for rollback
-PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+# Use direct database URL for rollback (required for migrations)
+PRODUCTION_DB_DIRECT_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:\${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.connect.psdb.cloud:5432/postgres"
 
 echo "   Resetting production database..."
-supabase db reset --db-url "\$PRODUCTION_DB_URL"
+supabase db reset --db-url "\$PRODUCTION_DB_DIRECT_URL"
 
 echo "   Restoring schema..."
 psql "\$PRODUCTION_DB_URL" < "$BACKUP_DIR/production_schema_${TIMESTAMP}.sql"
@@ -431,7 +436,7 @@ else
     echo "   Validating migration history compatibility..."
     
     # Check for migration history mismatches first
-    if ! supabase db push --db-url "$PRODUCTION_DB_URL" --dry-run 2>/dev/null; then
+    if ! supabase db push --db-url "$PRODUCTION_DB_DIRECT_URL" --dry-run 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Migration history mismatch detected${NC}"
         echo "   This usually means the production database has migrations not present locally."
         echo ""
@@ -444,7 +449,7 @@ else
         
         if [[ $REPLY =~ ^[1]$ ]]; then
             echo "   Syncing local migrations with production database..."
-            if supabase db pull --db-url "$PRODUCTION_DB_URL"; then
+            if supabase db pull --db-url "$PRODUCTION_DB_DIRECT_URL"; then
                 echo -e "${GREEN}✅ Migration history synced successfully${NC}"
                 echo "   Re-attempting deployment..."
             else
@@ -486,7 +491,7 @@ else
 fi
 
 # Deploy database changes using supabase db push
-if ! supabase db push --db-url "$PRODUCTION_DB_URL"; then
+if ! supabase db push --db-url "$PRODUCTION_DB_DIRECT_URL"; then
     if [[ "$RESET_PRODUCTION" == true ]]; then
         echo -e "${RED}❌ Fresh schema deployment failed${NC}"
         echo ""
