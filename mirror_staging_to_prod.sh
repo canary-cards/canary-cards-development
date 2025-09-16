@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ===== Canary Cards — Mirror STAGING -> PROD (schemas, RLS, enums, functions) =====
-# - Mirrors ONLY schema you own: public
-# - Keeps Supabase-managed `storage` base tables; applies its policies/grants (post-data) and copies bucket rows
-# - Uses POOLER (IPv4) for everything; keyword DSNs (no URL encoding issues)
-# - Wraps each apply in a single transaction
-# - Takes a single FULL backup of prod (simpler restore than separate schema/data dumps)
+# ===== Canary Cards — Mirror STAGING -> PROD =====
+# Mirrors ONLY schema you own: public
+# Keeps Supabase-managed `storage` base tables; applies its policies/grants (post-data) and copies bucket rows
+# Uses POOLER (IPv4) for everything; keyword DSNs (no URL encoding issues)
+# Wraps each apply in a single transaction
+# Takes a single FULL backup of prod (simpler restore than separate schema/data dumps)
 
 # ===== Config =====
 SCHEMAS=("public")                 # you confirmed: only `public` is owned; do NOT include `storage`
@@ -40,13 +40,6 @@ echo "💾 Backing up PROD (FULL dump) → ${BACKUP_DIR}/prod_full.sql"
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_PROD_REF}" -d postgres > "${BACKUP_DIR}/prod_full.sql"
 
-# (If you ever want separate files instead, uncomment below and comment the full dump above)
-# echo "💾 Backing up PROD (schema & data separately)…"
-# PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
-#   -U "postgres.${SUPABASE_PROD_REF}" -d postgres --schema-only > "${BACKUP_DIR}/prod_schema.sql"
-# PGPASSWORD="$PRODUCTION_DB_PASSWORD" pg_dump -h aws-0-us-west-1.pooler.supabase.com -p 6543 \
-#   -U "postgres.${SUPABASE_PROD_REF}" -d postgres --data-only   > "${BACKUP_DIR}/prod_data.sql" || true
-
 # ===== Dump STAGING schema (exact owned schemas; keep privileges/GRANTs) =====
 echo "🧾 Dumping STAGING schema-only for: ${SCHEMAS[*]}"
 STAGING_SCHEMA_DUMP="${BACKUP_DIR}/staging_public_schema.sql"
@@ -54,6 +47,18 @@ DUMP_ARGS=(--schema-only)
 for s in "${SCHEMAS[@]}"; do DUMP_ARGS+=(--schema="$s"); done
 PGPASSWORD="$STAGING_DB_PASSWORD" pg_dump -h aws-1-us-east-1.pooler.supabase.com -p 6543 \
   -U "postgres.${SUPABASE_STAGING_REF}" -d postgres "${DUMP_ARGS[@]}" > "$STAGING_SCHEMA_DUMP"
+
+# ===== Sanitize dump: remove CREATE/ALTER SCHEMA public to avoid conflicts =====
+echo "🧼 Sanitizing dump (remove CREATE/ALTER SCHEMA public)…"
+if sed -i '' -e 's/^[[:space:]]*CREATE[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?[[:space:]]*;[[:space:]]*$/-- removed: CREATE SCHEMA public;/I' \
+             -e 's/^[[:space:]]*ALTER[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?.*;[[:space:]]*$/-- removed: ALTER SCHEMA public;/I' \
+             "$STAGING_SCHEMA_DUMP" 2>/dev/null; then
+  :
+else
+  sed -i -e 's/^[[:space:]]*CREATE[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?[[:space:]]*;[[:space:]]*$/-- removed: CREATE SCHEMA public;/I' \
+         -e 's/^[[:space:]]*ALTER[[:space:]]\+SCHEMA[[:space:]]\+"\?public"\?.*;[[:space:]]*$/-- removed: ALTER SCHEMA public;/I' \
+         "$STAGING_SCHEMA_DUMP"
+fi
 
 # ===== Dump STAGING storage post-data (policies/grants/triggers; no base tables) =====
 echo "🛡️  Dumping STAGING storage post-data (policies/grants/triggers)…"
