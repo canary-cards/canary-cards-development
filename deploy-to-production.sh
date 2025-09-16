@@ -22,19 +22,40 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Function to fetch secrets from Supabase
+# Function to get database password from environment or prompt
+get_database_password() {
+    local env_var="$1"
+    local prompt_text="$2"
+    local password=""
+    
+    # Check if password is in environment variable
+    password="${!env_var}"
+    
+    if [[ -n "$password" ]]; then
+        echo "   Using password from environment variable: $env_var"
+        echo "$password"
+        return
+    fi
+    
+    # Prompt for password interactively
+    echo -n "   $prompt_text: "
+    read -s password
+    echo "" # New line after hidden input
+    
+    if [[ -z "$password" ]]; then
+        echo -e "${RED}❌ Password cannot be empty${NC}"
+        exit 1
+    fi
+    
+    echo "$password"
+}
+
+# Function to fetch CLI secrets from Supabase (only for service role key)
 get_supabase_secret() {
     local secret_name="$1"
     local secret_value=""
     
-    echo "   Fetching secret: $secret_name..."
-    
-    # Check authentication first
-    if ! supabase projects list >/dev/null 2>&1; then
-        echo -e "${RED}❌ Not authenticated with Supabase CLI${NC}"
-        echo "Please run: supabase login"
-        exit 1
-    fi
+    echo "   Fetching CLI secret: $secret_name..."
     
     # Get secrets list output
     local secrets_output
@@ -71,21 +92,28 @@ get_supabase_secret() {
     echo "$secret_value"
 }
 
-# Fetch required secrets from Supabase
-echo "🔐 Fetching deployment secrets from Supabase..."
+# Get database credentials
+echo "🔐 Getting database credentials..."
 
-PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_supabase_secret "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY")
-PRODUCTION_DB_PASSWORD=$(get_supabase_secret "PRODUCTION_DB_PASSWORD")
-STAGING_DB_PASSWORD=$(get_supabase_secret "STAGING_DB_PASSWORD")
+# Get database passwords (from env vars or interactive prompts)
+PRODUCTION_DB_PASSWORD=$(get_database_password "PRODUCTION_DB_PASSWORD" "Enter production database password")
+STAGING_DB_PASSWORD=$(get_database_password "STAGING_DB_PASSWORD" "Enter staging database password")
 
-echo -e "${GREEN}✅ All secrets fetched successfully${NC}"
+# Get service role key from CLI secrets or environment
+if [[ -n "$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY" ]]; then
+    echo "   Using service role key from environment variable"
+else
+    PRODUCTION_SUPABASE_SERVICE_ROLE_KEY=$(get_supabase_secret "PRODUCTION_SUPABASE_SERVICE_ROLE_KEY")
+fi
+
+echo -e "${GREEN}✅ All credentials obtained successfully${NC}"
 echo ""
 
 # Set up authentication for Supabase CLI using service role key
 export SUPABASE_ACCESS_TOKEN="$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
 
-# Database connection URLs
-STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+# Database connection URLs (fixed regional endpoints)
+STAGING_DB_URL="postgresql://postgres.pugnjgvdisdbdkbofwrc:${STAGING_DB_PASSWORD}@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
 PRODUCTION_DB_URL="postgresql://postgres.xwsgyxlvxntgpochonwe:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
 # Get current timestamp for backup naming
