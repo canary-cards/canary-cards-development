@@ -17,6 +17,7 @@ export function CraftMessageScreen() {
   const [personalImpact, setPersonalImpact] = useState(state.postcardData.personalImpact || '');
   const [isRecording, setIsRecording] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
   const [recordingField, setRecordingField] = useState<'concerns' | 'impact' | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcribingField, setTranscribingField] = useState<'concerns' | 'impact' | null>(null);
@@ -218,61 +219,67 @@ export function CraftMessageScreen() {
 
 
   const handleSkipAI = async () => {
-    // Convert list-style inputs to sentences first
-    const processedConcerns = convertListToSentence(concerns);
-    const processedPersonalImpact = convertListToSentence(personalImpact);
-    const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
+    setIsSkipping(true);
     
     try {
-      // Create a manual draft in the database
-      const { data, error } = await supabase.functions.invoke('postcard-draft', {
-        body: {
-          action: 'create',
-          zipCode: state.postcardData.zipCode,
-          concerns: processedConcerns,
-          personalImpact: processedPersonalImpact,
-        },
-      });
+      // Convert list-style inputs to sentences first
+      const processedConcerns = convertListToSentence(concerns);
+      const processedPersonalImpact = convertListToSentence(personalImpact);
+      const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
+      
+      try {
+        // Create a manual draft in the database
+        const { data, error } = await supabase.functions.invoke('postcard-draft', {
+          body: {
+            action: 'create',
+            zipCode: state.postcardData.zipCode,
+            concerns: processedConcerns,
+            personalImpact: processedPersonalImpact,
+          },
+        });
 
-      if (error) {
-        console.error('Failed to create manual draft:', error);
-        toast({
-          title: "Error creating draft",
-          description: "Please try again or continue without saving.",
-          variant: "destructive",
+        if (error) {
+          console.error('Failed to create manual draft:', error);
+          toast({
+            title: "Error creating draft",
+            description: "Please try again or continue without saving.",
+            variant: "destructive",
+          });
+        }
+
+        // Update state with processed data and draftId
+        dispatch({ 
+          type: 'UPDATE_POSTCARD_DATA', 
+          payload: { 
+            concerns: processedConcerns,
+            personalImpact: processedPersonalImpact,
+            originalMessage: combinedMessage,
+            draftMessage: combinedMessage,
+            finalMessage: combinedMessage,
+            draftId: data?.draftId || null
+          }
+        });
+        
+      } catch (error) {
+        console.error('Error creating manual draft:', error);
+        // Continue anyway with just state updates
+        dispatch({ 
+          type: 'UPDATE_POSTCARD_DATA', 
+          payload: { 
+            concerns: processedConcerns,
+            personalImpact: processedPersonalImpact,
+            originalMessage: combinedMessage,
+            draftMessage: combinedMessage,
+            finalMessage: combinedMessage
+          }
         });
       }
-
-      // Update state with processed data and draftId
-      dispatch({ 
-        type: 'UPDATE_POSTCARD_DATA', 
-        payload: { 
-          concerns: processedConcerns,
-          personalImpact: processedPersonalImpact,
-          originalMessage: combinedMessage,
-          draftMessage: combinedMessage,
-          finalMessage: combinedMessage,
-          draftId: data?.draftId || null
-        }
-      });
       
-    } catch (error) {
-      console.error('Error creating manual draft:', error);
-      // Continue anyway with just state updates
-      dispatch({ 
-        type: 'UPDATE_POSTCARD_DATA', 
-        payload: { 
-          concerns: processedConcerns,
-          personalImpact: processedPersonalImpact,
-          originalMessage: combinedMessage,
-          draftMessage: combinedMessage,
-          finalMessage: combinedMessage
-        }
-      });
+      // Navigate directly to the review screen
+      dispatch({ type: 'SET_STEP', payload: 3 });
+    } finally {
+      setIsSkipping(false);
     }
-    
-    // Navigate directly to the review screen
-    dispatch({ type: 'SET_STEP', payload: 3 });
   };
 
   const goBack = () => {
@@ -459,9 +466,17 @@ export function CraftMessageScreen() {
                 <Button
                   variant="secondary"
                   onClick={handleSkipAI}
+                  disabled={isSkipping}
                   className="flex-1 button-warm h-10"
                 >
-                  Write it myself
+                  {isSkipping ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-secondary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Write it myself"
+                  )}
                 </Button>
               </div>
             </div>
