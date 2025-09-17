@@ -469,14 +469,7 @@ export function CraftMessageScreen() {
                   disabled={isSkipping}
                   className="flex-1 button-warm h-10"
                 >
-                  {isSkipping ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-secondary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Write it myself"
-                  )}
+                  <span>{isSkipping ? 'Saving...' : 'Write it myself'}</span>
                 </Button>
               </div>
             </div>
