@@ -2,8 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -55,6 +53,34 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('No email provided, skipping email confirmation');
       return new Response(JSON.stringify({ message: 'No email provided' }), {
         status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Initialize Resend client with proper error handling
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY environment variable is not configured");
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Email service not configured" 
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    let resend;
+    try {
+      resend = new Resend(resendApiKey);
+      console.log("Resend client initialized successfully");
+    } catch (resendInitError: any) {
+      console.error("Failed to initialize Resend client:", resendInitError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Email service initialization failed: ${resendInitError.message}` 
+      }), {
+        status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
