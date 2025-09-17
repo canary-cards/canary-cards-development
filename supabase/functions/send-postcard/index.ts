@@ -242,12 +242,11 @@ serve(async (req) => {
         sender_city: senderAddress.city,
         sender_state: senderAddress.state,
         sender_zip: senderAddress.zip,
-        uid: `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`,
+        uid: orderId,
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[userEmail]': userEmail,
-        'metadata[uid]': `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`
+        'metadata[order_id]': orderId
       };
 
       console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));
@@ -358,7 +357,7 @@ serve(async (req) => {
       results.push({
         type: 'representative',
         recipient: representative.name,
-        orderId: repResult.id,
+        orderId: orderId, // Use database order ID, not IgnitePost ID
         status: 'success'
       });
     } catch (error) {
@@ -392,7 +391,7 @@ serve(async (req) => {
           results.push({
             type: 'senator',
             recipient: senator.name,
-            orderId: senResult.id,
+            orderId: orderId, // Use database order ID, not IgnitePost ID
             status: 'success'
           });
         } catch (error) {
@@ -429,16 +428,33 @@ serve(async (req) => {
         const unitPrice = 5.00;
         const amount = successCount === 2 ? 10.00 : successCount >= 3 ? 12.00 : unitPrice;
         
-        // Generate order ID
-        const orderId = `CC-${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        // Extract actual mailing date from first successful postcard
+        let actualMailingDate = null;
+        const successfulResults = results.filter(r => r.status === 'success');
+        if (successfulResults.length > 0) {
+          try {
+            // Query the database for the actual mailing date from any successful postcard
+            const { data: postcardData, error: postcardError } = await supabase
+              .from('postcards')
+              .select('ignitepost_send_on')
+              .eq('order_id', orderId)
+              .eq('delivery_status', 'submitted')
+              .limit(1)
+              .single();
+            
+            if (!postcardError && postcardData?.ignitepost_send_on) {
+              actualMailingDate = postcardData.ignitepost_send_on;
+              console.log('Using actual IgnitePost mailing date for email:', actualMailingDate);
+            } else {
+              console.log('No IgnitePost mailing date available for email, will use fallback');
+            }
+          } catch (error) {
+            console.error('Error fetching mailing date for email:', error);
+          }
+        }
         
-        const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-order-confirmation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-          },
-          body: JSON.stringify({
+        const { data: emailResult, error: emailInvokeError } = await supabase.functions.invoke('send-order-confirmation', {
+          body: {
             userInfo: {
               fullName: userInfo.fullName,
               email: userEmail,
@@ -450,16 +466,23 @@ serve(async (req) => {
             representative,
             senators,
             sendOption,
-            orderResults: results.filter(r => r.status === 'success'),
+            orderResults: results.filter(r => r.status === 'success').map(r => ({
+              ...r,
+              orderId: orderId // Use database order ID instead of IgnitePost ID
+            })),
             amount,
             orderId,
             paymentMethod: 'card',
-            finalMessage
-          })
+            finalMessage,
+            actualMailingDate: actualMailingDate
+          }
         });
         
-        const emailResult = await emailResponse.json();
-        console.log('Email confirmation result:', emailResult);
+        if (emailInvokeError) {
+          console.error('Email function invocation error:', emailInvokeError);
+        } else {
+          console.log('Email confirmation result:', emailResult);
+        }
       } catch (emailError) {
         console.error('Failed to send confirmation email (non-blocking):', emailError);
         // Don't fail the main flow if email fails

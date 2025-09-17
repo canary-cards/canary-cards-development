@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useLocation, Link } from 'react-router-dom';
+import { formatOrderNumber } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,11 +62,22 @@ export default function PaymentSuccess() {
     });
   };
 
-  // Calculate mailing date (4 days from now)
+  // Calculate mailing date (5 days from now as fallback)
   const getMailingDate = () => {
+    // Check if we have actual mailing date from IgnitePost
+    const actualMailingDate = location.state?.actualMailingDate;
+    if (actualMailingDate) {
+      const date = new Date(actualMailingDate);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric'
+      });
+    }
+    
+    // Fallback: 5 days from now
     const today = new Date();
     const mailingDate = new Date(today);
-    mailingDate.setDate(mailingDate.getDate() + 4);
+    mailingDate.setDate(mailingDate.getDate() + 5);
     
     return mailingDate.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -75,9 +87,9 @@ export default function PaymentSuccess() {
 
   // Get order data from search params or localStorage
   const getOrderData = () => {
-    const sessionId = searchParams.get('session_id');
-    // Use a consistent order number based on session_id, not random
-    const orderNumber = sessionId ? sessionId.slice(-8).toUpperCase() : 'CC000000';
+    // Get order ID from navigation state (passed from PaymentReturn)
+    const orderId = location.state?.orderId;
+    const orderNumber = orderId ? formatOrderNumber(orderId) : 'CC000000';
     
     try {
       const storedData = localStorage.getItem('postcardData');

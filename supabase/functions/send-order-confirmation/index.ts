@@ -37,6 +37,7 @@ interface OrderConfirmationRequest {
     status: string;
   }>;
   finalMessage?: string;
+  actualMailingDate?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -46,12 +47,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userInfo, representative, senators, sendOption, orderResults, finalMessage }: OrderConfirmationRequest = await req.json();
-
-    console.log('Sending order confirmation email to:', userInfo.email);
+    const { userInfo, representative, senators, sendOption, orderResults, finalMessage, actualMailingDate }: OrderConfirmationRequest = await req.json();
 
     if (!userInfo.email) {
-      console.log('No email provided, skipping email confirmation');
       return new Response(JSON.stringify({ message: 'No email provided' }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -65,38 +63,13 @@ const handler = async (req: Request): Promise<Response> => {
       return 'https://canary.cards';
     };
 
-    // Initialize Supabase client to fetch logo
+    // Initialize Supabase client for any future needs
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Try to get logo from direct URL first, then fallback to storage
-    let logoUrl = '';
     
-    // First priority: Direct EMAIL_LOGO_URL from environment
-    const emailLogoUrl = Deno.env.get('EMAIL_LOGO_URL');
-    if (emailLogoUrl) {
-      try {
-        // Validate the URL by making a HEAD request
-        const response = await fetch(emailLogoUrl, { method: 'HEAD' });
-        if (response.ok) {
-          logoUrl = emailLogoUrl;
-          console.log('Using direct EMAIL_LOGO_URL:', logoUrl);
-        } else {
-          console.log('EMAIL_LOGO_URL validation failed:', response.status);
-        }
-      } catch (error) {
-        console.log('EMAIL_LOGO_URL validation error:', error);
-      }
-    }
-    
-
-    // Fallback to SVG if no EMAIL_LOGO_URL configured
-    if (!logoUrl) {
-      logoUrl = 'https://www.canary.cards/postallogov1.svg';
-      console.log('Using fallback SVG logo');
-    }
 
     const successfulOrders = orderResults.filter(order => order.status === 'success');
     
@@ -108,15 +81,32 @@ const handler = async (req: Request): Promise<Response> => {
       day: 'numeric' 
     });
     
-    const expectedMailingDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    // Use actual mailing date if provided, otherwise fallback to 5 days from now
+    let expectedMailingDate;
+    if (actualMailingDate) {
+      expectedMailingDate = new Date(actualMailingDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } else {
+      expectedMailingDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
     
-    // Generate order number from successful orders
-    const orderNumber = successfulOrders.map(order => order.orderId).join('-');
+    // Generate order number from the first successful order's ID (all should be the same order)
+    const formatOrderNumber = (uuid: string): string => {
+      if (!uuid) return 'CC000000';
+      return uuid.replace(/-/g, '').slice(-8).toUpperCase();
+    };
+    
+    const orderNumber = successfulOrders.length > 0 ? formatOrderNumber(successfulOrders[0].orderId) : 'CC000000';
+    console.log('Formatting order number from:', successfulOrders[0]?.orderId, 'Result:', orderNumber);
     
     // Calculate total amount based on number of successful postcards
     const unitPrice = 5.00;
@@ -476,7 +466,6 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="text-align: center; margin-bottom: 2rem;">
           <h1 style="font-family: 'Spectral', Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: #2F4156; margin: 0 0 0.5rem 0;">Order confirmed</h1>
           <h3 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 1.25rem; line-height: 1.3; color: #B25549; margin: 0 0 1rem 0;">Your message is in motion</h3>
-          <img src="https://xwsgyxlvxntgpochonwe.supabase.co/storage/v1/object/public/Email%20logo%20bucket/canaryholdingpen.png" alt="Canary holding pen" style="max-width: 150px; height: auto; margin: 0;" />
         </div>
         
         <!-- Order Details Section -->
@@ -618,25 +607,46 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    const emailResponse = await resend.emails.send({
-      from: "Canary Cards <hello@canary.cards>",
-      to: [userInfo.email],
-      subject: "Order confirmed — Your message is in motion",
-      html: emailHtml,
-    });
+    console.log('About to send email to:', userInfo.email);
+    console.log('Email HTML length:', emailHtml.length);
+    
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Canary Cards <hello@canary.cards>",
+        to: [userInfo.email],
+        subject: "Order confirmed — Your message is in motion",
+        html: emailHtml,
+      });
 
-    console.log("Order confirmation email sent successfully:", emailResponse);
+      console.log("Order confirmation email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      emailId: emailResponse.data?.id 
-    }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+      return new Response(JSON.stringify({ 
+        success: true, 
+        emailId: emailResponse.data?.id 
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    } catch (emailError: any) {
+      console.error("Failed to send email via Resend:", emailError);
+      console.error("Email error details:", {
+        message: emailError.message,
+        status: emailError.status,
+        response: emailError.response
+      });
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Email sending failed: ${emailError.message}`,
+        details: emailError.response || emailError.status
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
   } catch (error: any) {
     console.error("Error in send-order-confirmation function:", error);
     return new Response(

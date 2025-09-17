@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw, ArrowLeft, AlertCircle } from 'lucide-react';
+import { formatOrderNumber } from '@/lib/utils';
 
 export default function PaymentRefunded() {
   const location = useLocation();
@@ -13,7 +14,8 @@ export default function PaymentRefunded() {
     failedCount = 1, 
     totalCount = 1, 
     refundAmountCents, 
-    refundId, 
+    refundId,
+    orderId,
     results = [],
     errors = [] 
   } = location.state || {};
@@ -54,6 +56,12 @@ export default function PaymentRefunded() {
               <h1 className="text-2xl display-title">
                 Hmm, something went wrong
               </h1>
+              
+              {orderId && (
+                <p className="text-sm text-muted-foreground">
+                  Order #{formatOrderNumber(orderId)}
+                </p>
+              )}
               
               {displayFailedCount === displayTotalCount ? (
                 <p className="body-text text-muted-foreground">

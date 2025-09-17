@@ -137,7 +137,9 @@ export default function PaymentReturn() {
           navigate('/payment-success', { 
             state: { 
               sessionId: searchParams.get('session_id'),
-              orderingResults: data 
+              orderId: data.orderId,
+              orderingResults: data,
+              actualMailingDate: data.actualMailingDate
             }
           });
         }, remainingTime);
@@ -174,15 +176,16 @@ export default function PaymentReturn() {
             }
             
             dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
-            navigate('/payment-refunded', {
-              state: {
-                failedCount: totalFailed,
-                totalCount: totalRecipients,
-                refundAmountCents,
-                refundId: refundData?.refund_id || null,
-                results: data.results || []
-              }
-            });
+          navigate('/payment-refunded', {
+            state: {
+              failedCount: totalFailed,
+              totalCount: totalRecipients,
+              refundAmountCents,
+              refundId: refundData?.refund_id || null,
+              orderId: data.orderId,
+              results: data.results || []
+            }
+          });
             return;
           } catch (refundError) {
             console.error("Error during partial refund process:", refundError);
@@ -258,7 +261,13 @@ export default function PaymentReturn() {
         
         // Handle postcard results from verify-payment (server-side orchestration)
         if (verificationResult.postcardResults) {
-          handlePostcardResults(verificationResult.postcardResults);
+          // Add orderId and actualMailingDate to the results for proper navigation
+          const resultsWithOrderId = {
+            ...verificationResult.postcardResults,
+            orderId: verificationResult.orderId,
+            actualMailingDate: verificationResult.actualMailingDate
+          };
+          handlePostcardResults(resultsWithOrderId);
         } else {
           // If no postcard results, assume success and proceed to success page
           const elapsed = Date.now() - startTime;
@@ -270,7 +279,9 @@ export default function PaymentReturn() {
             navigate('/payment-success', { 
               state: { 
                 sessionId: searchParams.get('session_id'),
-                orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } }
+                orderId: verificationResult.orderId,
+                orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } },
+                actualMailingDate: verificationResult.actualMailingDate
               }
             });
           }, remainingTime);
