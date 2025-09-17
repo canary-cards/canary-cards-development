@@ -271,7 +271,7 @@ echo "🧮 Generating diff (prod → staging) with migra…"
 DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_DSN" "$STAGING_DSN"'
 
 docker run --rm \
-    -v PGPASS_LOCAL="$(pwd)/${WORKDIR}/pgpass"
+    -v "$PGPASS_LOCAL":/tmp/pgpass:ro \
     -e PGPASSFILE=/tmp/pgpass \
     -e PROD_DSN="$PROD_DSN_KW" \
     -e STAGING_DSN="$STAGING_DSN_KW" \
