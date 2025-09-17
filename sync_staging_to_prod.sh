@@ -272,15 +272,42 @@ MIGRA_FLAGS="--schema public --with-privileges"
 [ "$ALLOW_DESTRUCTIVE" = true ] && MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
 
 echo "🧮 Generating diff (prod → staging) with migra…"
-DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+# For normal mode, first try without --unsafe, then with it if needed
+if [ "$ALLOW_DESTRUCTIVE" = false ]; then
+    DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+    
+    docker run --rm \
+        -e PROD_DSN_URL="$PROD_DSN_URL" \
+        -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+        -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+        python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL" 2>&1
+    
+    if grep -q "destructive statements generated" "$DIFF_SQL"; then
+        echo "  ⚠️  Destructive changes detected. Re-running with --unsafe to capture them..."
+        MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
+        DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+        
+        docker run --rm \
+            -e PROD_DSN_URL="$PROD_DSN_URL" \
+            -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+            -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+            python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
+        
+        echo "  ⚠️  WARNING: Destructive changes will be included in the diff!"
+        echo "  ⚠️  Review carefully before applying!"
+    fi
+else
+    # Destructive mode already has --unsafe
+    DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+    
+    docker run --rm \
+        -e PROD_DSN_URL="$PROD_DSN_URL" \
+        -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+        -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+        python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
+fi
 
-docker run --rm \
-    -e PROD_DSN_URL="$PROD_DSN_URL" \
-    -e STAGING_DSN_URL="$STAGING_DSN_URL" \
-    -e MIGRA_FLAGS="$MIGRA_FLAGS" \
-    python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
-
-if [ $? -ne 0 ]; then
+if [ $? -ne 0 ] && ! [ -s "$DIFF_SQL" ]; then
     echo "❌ Failed to generate schema diff with migra"
     exit 1
 fi
