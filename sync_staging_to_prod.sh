@@ -255,7 +255,7 @@ else
 fi
 
 # ===== Build pgpass for Docker (avoid embedding passwords) =====
-PGPASS_LOCAL="${WORKDIR}/pgpass"
+PGPASS_LOCAL="$(pwd)/${WORKDIR}/pgpass"
 cat > "$PGPASS_LOCAL" <<EOF
 aws-1-us-east-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}
 aws-0-us-west-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}
