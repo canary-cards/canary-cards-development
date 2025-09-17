@@ -115,8 +115,13 @@ const handler = async (req: Request): Promise<Response> => {
       day: 'numeric' 
     });
     
-    // Generate order number from successful orders
-    const orderNumber = successfulOrders.map(order => order.orderId).join('-');
+    // Generate order number from the first successful order's ID (all should be the same order)
+    const formatOrderNumber = (uuid: string): string => {
+      if (!uuid) return 'CC000000';
+      return uuid.replace(/-/g, '').slice(-8).toUpperCase();
+    };
+    
+    const orderNumber = successfulOrders.length > 0 ? formatOrderNumber(successfulOrders[0].orderId) : 'CC000000';
     
     // Calculate total amount based on number of successful postcards
     const unitPrice = 5.00;
