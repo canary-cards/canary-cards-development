@@ -163,6 +163,8 @@ serve(async (req) => {
 
       // Auto-trigger postcard sending only for new orders
       let postcardResults = null;
+      let actualMailingDate = null;
+      
       if (isNewOrder) {
         try {
           const sendResponse = await supabase.functions.invoke('send-postcard', {
@@ -175,6 +177,24 @@ serve(async (req) => {
           console.log("Postcard sending triggered:", sendResponse);
           if (sendResponse.data) {
             postcardResults = sendResponse.data;
+            
+            // Get actual mailing date from first successful postcard
+            if (postcardResults.success && postcardResults.summary?.totalSent > 0) {
+              const { data: postcardData, error: postcardError } = await supabase
+                .from('postcards')
+                .select('ignitepost_send_on')
+                .eq('order_id', order.id)
+                .not('ignitepost_send_on', 'is', null)
+                .limit(1)
+                .single();
+              
+              if (!postcardError && postcardData?.ignitepost_send_on) {
+                actualMailingDate = postcardData.ignitepost_send_on;
+                console.log("Using actual IgnitePost mailing date:", actualMailingDate);
+              } else {
+                console.log("No IgnitePost mailing date available, will use fallback");
+              }
+            }
           }
         } catch (sendError) {
           console.error("Failed to trigger postcard sending:", sendError);
@@ -208,7 +228,8 @@ serve(async (req) => {
         customerEmail: session.customer_email,
         orderId: order.id,
         postcardData: postcardData,
-        postcardResults: postcardResults
+        postcardResults: postcardResults,
+        actualMailingDate: actualMailingDate
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

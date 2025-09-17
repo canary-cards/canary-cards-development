@@ -62,11 +62,22 @@ export default function PaymentSuccess() {
     });
   };
 
-  // Calculate mailing date (4 days from now)
+  // Calculate mailing date (5 days from now as fallback)
   const getMailingDate = () => {
+    // Check if we have actual mailing date from IgnitePost
+    const actualMailingDate = location.state?.actualMailingDate;
+    if (actualMailingDate) {
+      const date = new Date(actualMailingDate);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric'
+      });
+    }
+    
+    // Fallback: 5 days from now
     const today = new Date();
     const mailingDate = new Date(today);
-    mailingDate.setDate(mailingDate.getDate() + 4);
+    mailingDate.setDate(mailingDate.getDate() + 5);
     
     return mailingDate.toLocaleDateString('en-US', { 
       month: 'short', 

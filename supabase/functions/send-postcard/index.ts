@@ -432,6 +432,29 @@ serve(async (req) => {
         // Generate order ID
         const orderId = `CC-${Date.now()}${Math.floor(Math.random() * 1000)}`;
         
+        // Extract actual mailing date from first successful postcard
+        let actualMailingDate = null;
+        const successfulResults = results.filter(r => r.status === 'success');
+        if (successfulResults.length > 0 && successfulResults[0].orderId) {
+          try {
+            // Query the database for the actual mailing date
+            const { data: postcardData, error: postcardError } = await supabase
+              .from('postcards')
+              .select('ignitepost_send_on')
+              .eq('id', successfulResults[0].orderId)
+              .single();
+            
+            if (!postcardError && postcardData?.ignitepost_send_on) {
+              actualMailingDate = postcardData.ignitepost_send_on;
+              console.log('Using actual IgnitePost mailing date for email:', actualMailingDate);
+            } else {
+              console.log('No IgnitePost mailing date available for email, will use fallback');
+            }
+          } catch (error) {
+            console.error('Error fetching mailing date for email:', error);
+          }
+        }
+        
         const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-order-confirmation`, {
           method: 'POST',
           headers: {
@@ -454,7 +477,8 @@ serve(async (req) => {
             amount,
             orderId,
             paymentMethod: 'card',
-            finalMessage
+            finalMessage,
+            actualMailingDate: actualMailingDate
           })
         });
         

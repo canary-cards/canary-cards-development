@@ -37,6 +37,7 @@ interface OrderConfirmationRequest {
     status: string;
   }>;
   finalMessage?: string;
+  actualMailingDate?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -46,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userInfo, representative, senators, sendOption, orderResults, finalMessage }: OrderConfirmationRequest = await req.json();
+    const { userInfo, representative, senators, sendOption, orderResults, finalMessage, actualMailingDate }: OrderConfirmationRequest = await req.json();
 
     console.log('Sending order confirmation email to:', userInfo.email);
 
@@ -108,12 +109,23 @@ const handler = async (req: Request): Promise<Response> => {
       day: 'numeric' 
     });
     
-    const expectedMailingDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    // Use actual mailing date if provided, otherwise fallback to 5 days from now
+    let expectedMailingDate;
+    if (actualMailingDate) {
+      expectedMailingDate = new Date(actualMailingDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } else {
+      expectedMailingDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
     
     // Generate order number from the first successful order's ID (all should be the same order)
     const formatOrderNumber = (uuid: string): string => {

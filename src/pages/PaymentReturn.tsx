@@ -138,7 +138,8 @@ export default function PaymentReturn() {
             state: { 
               sessionId: searchParams.get('session_id'),
               orderId: data.orderId,
-              orderingResults: data 
+              orderingResults: data,
+              actualMailingDate: data.actualMailingDate
             }
           });
         }, remainingTime);
@@ -260,10 +261,11 @@ export default function PaymentReturn() {
         
         // Handle postcard results from verify-payment (server-side orchestration)
         if (verificationResult.postcardResults) {
-          // Add orderId to the results for proper navigation
+          // Add orderId and actualMailingDate to the results for proper navigation
           const resultsWithOrderId = {
             ...verificationResult.postcardResults,
-            orderId: verificationResult.orderId
+            orderId: verificationResult.orderId,
+            actualMailingDate: verificationResult.actualMailingDate
           };
           handlePostcardResults(resultsWithOrderId);
         } else {
@@ -278,7 +280,8 @@ export default function PaymentReturn() {
               state: { 
                 sessionId: searchParams.get('session_id'),
                 orderId: verificationResult.orderId,
-                orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } }
+                orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } },
+                actualMailingDate: verificationResult.actualMailingDate
               }
             });
           }, remainingTime);
