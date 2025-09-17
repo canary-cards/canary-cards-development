@@ -134,6 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
     };
     
     const orderNumber = successfulOrders.length > 0 ? formatOrderNumber(successfulOrders[0].orderId) : 'CC000000';
+    console.log('Formatting order number from:', successfulOrders[0]?.orderId, 'Result:', orderNumber);
     
     // Calculate total amount based on number of successful postcards
     const unitPrice = 5.00;

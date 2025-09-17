@@ -358,7 +358,7 @@ serve(async (req) => {
       results.push({
         type: 'representative',
         recipient: representative.name,
-        orderId: repResult.id,
+        orderId: orderId, // Use database order ID, not IgnitePost ID
         status: 'success'
       });
     } catch (error) {
@@ -392,7 +392,7 @@ serve(async (req) => {
           results.push({
             type: 'senator',
             recipient: senator.name,
-            orderId: senResult.id,
+            orderId: orderId, // Use database order ID, not IgnitePost ID
             status: 'success'
           });
         } catch (error) {
@@ -429,19 +429,18 @@ serve(async (req) => {
         const unitPrice = 5.00;
         const amount = successCount === 2 ? 10.00 : successCount >= 3 ? 12.00 : unitPrice;
         
-        // Generate order ID
-        const orderId = `CC-${Date.now()}${Math.floor(Math.random() * 1000)}`;
-        
         // Extract actual mailing date from first successful postcard
         let actualMailingDate = null;
         const successfulResults = results.filter(r => r.status === 'success');
-        if (successfulResults.length > 0 && successfulResults[0].orderId) {
+        if (successfulResults.length > 0) {
           try {
-            // Query the database for the actual mailing date
+            // Query the database for the actual mailing date from any successful postcard
             const { data: postcardData, error: postcardError } = await supabase
               .from('postcards')
               .select('ignitepost_send_on')
-              .eq('id', successfulResults[0].orderId)
+              .eq('order_id', orderId)
+              .eq('delivery_status', 'submitted')
+              .limit(1)
               .single();
             
             if (!postcardError && postcardData?.ignitepost_send_on) {
@@ -473,7 +472,10 @@ serve(async (req) => {
             representative,
             senators,
             sendOption,
-            orderResults: results.filter(r => r.status === 'success'),
+            orderResults: results.filter(r => r.status === 'success').map(r => ({
+              ...r,
+              orderId: orderId // Use database order ID instead of IgnitePost ID
+            })),
             amount,
             orderId,
             paymentMethod: 'card',
