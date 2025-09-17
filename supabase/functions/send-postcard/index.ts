@@ -454,13 +454,8 @@ serve(async (req) => {
           }
         }
         
-        const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-order-confirmation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-          },
-          body: JSON.stringify({
+        const { data: emailResult, error: emailInvokeError } = await supabase.functions.invoke('send-order-confirmation', {
+          body: {
             userInfo: {
               fullName: userInfo.fullName,
               email: userEmail,
@@ -481,11 +476,14 @@ serve(async (req) => {
             paymentMethod: 'card',
             finalMessage,
             actualMailingDate: actualMailingDate
-          })
+          }
         });
         
-        const emailResult = await emailResponse.json();
-        console.log('Email confirmation result:', emailResult);
+        if (emailInvokeError) {
+          console.error('Email function invocation error:', emailInvokeError);
+        } else {
+          console.log('Email confirmation result:', emailResult);
+        }
       } catch (emailError) {
         console.error('Failed to send confirmation email (non-blocking):', emailError);
         // Don't fail the main flow if email fails
