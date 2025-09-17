@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  ssr: {
+    noExternal: ['posthog-js', 'posthog-js/react']
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
