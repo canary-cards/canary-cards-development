@@ -49,7 +49,7 @@ export default function Onboarding() {
   const [progress, setProgress] = useState(0);
   const [showSharedBanner, setShowSharedBanner] = useState(false);
   const [sharedBy, setSharedBy] = useState('');
-  const [showControls, setShowControls] = useState(false);
+  
 
 
   // Check for shared link
@@ -258,69 +258,12 @@ export default function Onboarding() {
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative h-full w-full touch-pan-x select-none group"
+        className="relative h-full w-full touch-pan-x select-none"
         style={{ 
           paddingTop: showSharedBanner ? 'calc(3.25rem + 4.5rem)' : '4.5rem'
         }}
         onClick={handleClick}
-        onMouseEnter={() => setShowControls(true)}
-        onMouseLeave={() => setShowControls(false)}
       >
-        {/* Desktop Hover Navigation Controls */}
-        <div className={`hidden md:block transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-          {/* Left Navigation Area */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setAutoplayStopped(true);
-              setProgress(100);
-              prevSlide();
-            }}
-            disabled={currentSlide === 0}
-            className={`absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/40 transition-all ${
-              currentSlide === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'
-            }`}
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-          {/* Right Navigation Area */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setAutoplayStopped(true);
-              setProgress(100);
-              nextSlide();
-            }}
-            disabled={currentSlide === TOTAL_SLIDES - 1}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/40 transition-all ${
-              currentSlide === TOTAL_SLIDES - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'
-            }`}
-            aria-label="Next slide"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Slide Indicator Dots */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-            {Array.from({ length: TOTAL_SLIDES }, (_, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToSlide(index);
-                }}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentSlide 
-                    ? 'bg-white scale-125' 
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
 
         <div className="h-full max-w-lg mx-auto w-full">
           <Slide 

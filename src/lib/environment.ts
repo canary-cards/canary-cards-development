@@ -7,6 +7,8 @@ interface EnvironmentConfig {
   frontendUrl: string;
   isProduction: boolean;
   stripePublishableKey: string;
+  posthogKey: string;
+  posthogHost: string;
 }
 
 const environments: Record<string, EnvironmentConfig> = {
@@ -17,6 +19,8 @@ const environments: Record<string, EnvironmentConfig> = {
     frontendUrl: 'https://canary.cards',
     isProduction: true,
     stripePublishableKey: 'pk_test_51QW85r031IcR46V5cTgJ4dH1ZGGVyqpfgtBu4yE7rPsv9mN5GNTlhpjbK2FkKl5Y4OPR8QClmOgOSzQgbpZi4cLQ004pR7nF7K', // Temporarily using test key
+    posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
+    posthogHost: 'https://us.i.posthog.com',
   },
   'www.canary.cards': {
     supabaseUrl: 'https://xwsgyxlvxntgpochonwe.supabase.co',
@@ -24,6 +28,8 @@ const environments: Record<string, EnvironmentConfig> = {
     frontendUrl: 'https://canary.cards',
     isProduction: true,
     stripePublishableKey: 'pk_test_51QW85r031IcR46V5cTgJ4dH1ZGGVyqpfgtBu4yE7rPsv9mN5GNTlhpjbK2FkKl5Y4OPR8QClmOgOSzQgbpZi4cLQ004pR7nF7K', // Temporarily using test key
+    posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
+    posthogHost: 'https://us.i.posthog.com',
   },
   // Staging environment - canary staging domain
   'staging.canary.cards': {
@@ -32,6 +38,8 @@ const environments: Record<string, EnvironmentConfig> = {
     frontendUrl: 'https://staging.canary.cards',
     isProduction: false,
     stripePublishableKey: 'pk_test_51QW85r031IcR46V5cTgJ4dH1ZGGVyqpfgtBu4yE7rPsv9mN5GNTlhpjbK2FkKl5Y4OPR8QClmOgOSzQgbpZi4cLQ004pR7nF7K',
+    posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
+    posthogHost: 'https://us.i.posthog.com',
   },
   // Staging environment - lovable domain
   'lovable.app': {
@@ -40,6 +48,8 @@ const environments: Record<string, EnvironmentConfig> = {
     frontendUrl: 'https://lovable.app',
     isProduction: false,
     stripePublishableKey: 'pk_test_51QW85r031IcR46V5cTgJ4dH1ZGGVyqpfgtBu4yE7rPsv9mN5GNTlhpjbK2FkKl5Y4OPR8QClmOgOSzQgbpZi4cLQ004pR7nF7K', // Staging Stripe publishable key
+    posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
+    posthogHost: 'https://us.i.posthog.com',
   },
   // Default staging for any other Lovable subdomain
   default: {
@@ -48,6 +58,8 @@ const environments: Record<string, EnvironmentConfig> = {
     frontendUrl: 'https://lovable.app',
     isProduction: false,
     stripePublishableKey: 'pk_test_51QW85r031IcR46V5cTgJ4dH1ZGGVyqpfgtBu4yE7rPsv9mN5GNTlhpjbK2FkKl5Y4OPR8QClmOgOSzQgbpZi4cLQ004pR7nF7K', // Staging Stripe publishable key
+    posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
+    posthogHost: 'https://us.i.posthog.com',
   }
 };
 
@@ -80,3 +92,5 @@ export const getSupabaseUrl = () => getEnvironmentConfig().supabaseUrl;
 export const getSupabaseAnonKey = () => getEnvironmentConfig().supabaseAnonKey;
 export const getFrontendUrl = () => getEnvironmentConfig().frontendUrl;
 export const getStripePublishableKey = () => getEnvironmentConfig().stripePublishableKey;
+export const getPostHogKey = () => getEnvironmentConfig().posthogKey;
+export const getPostHogHost = () => getEnvironmentConfig().posthogHost;
