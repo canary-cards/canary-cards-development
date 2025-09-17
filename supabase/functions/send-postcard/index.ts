@@ -242,12 +242,11 @@ serve(async (req) => {
         sender_city: senderAddress.city,
         sender_state: senderAddress.state,
         sender_zip: senderAddress.zip,
-        uid: `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`,
+        uid: orderId,
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[userEmail]': userEmail,
-        'metadata[uid]': `${Date.now()}-${recipientType}-${recipient.id || 'unknown'}`
+        'metadata[order_id]': orderId
       };
 
       console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));

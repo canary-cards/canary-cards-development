@@ -146,34 +146,40 @@ serve(async (req) => {
         console.log('Updated postcard delivery status:', updatedPostcard);
       }
       
-      // Try to extract user info from metadata
+      // Extract user info from our database using the UID (order ID)
       let userEmail = null;
       let recipientType = null;
       let representativeId = null;
       
-      if (metadata) {
-        console.log('Extracting user info from metadata...');
+      if (uid) {
+        console.log('Looking up order using UID (order ID):', uid);
         
-        // Try to get user email if stored in metadata
-        if (metadata.userEmail) {
-          userEmail = metadata.userEmail;
-          console.log('User email from metadata:', userEmail);
+        // Look up the order in our database to get user email
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('email_for_receipt')
+          .eq('id', uid)
+          .single();
+          
+        if (orderError) {
+          console.error('Error looking up order:', orderError);
+          console.warn('⚠️ Could not find order - delivery notification cannot be sent');
+        } else if (orderData) {
+          userEmail = orderData.email_for_receipt;
+          console.log('User email from our database:', userEmail);
         } else {
-          console.warn('⚠️ No userEmail found in metadata - delivery notification cannot be sent');
+          console.warn('⚠️ Order not found - delivery notification cannot be sent');
         }
         
-        // Get recipient type and ID for context
-        if (metadata.recipient_type) {
+        // Get recipient type and ID for context from metadata
+        if (metadata) {
           recipientType = metadata.recipient_type;
-          console.log('Recipient type:', recipientType);
-        }
-        
-        if (metadata.representative_id) {
           representativeId = metadata.representative_id;
+          console.log('Recipient type:', recipientType);
           console.log('Representative ID:', representativeId);
         }
       } else {
-        console.warn('⚠️ No metadata found in webhook payload - delivery notification cannot be sent');
+        console.warn('⚠️ No UID provided in webhook - delivery notification cannot be sent');
       }
 
       // Call the delivery notification function
