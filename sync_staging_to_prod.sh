@@ -240,6 +240,10 @@ mkdir -p "$WORKDIR"
 STAGING_DSN_KW="host=aws-1-us-east-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_STAGING_REF} dbname=postgres sslmode=require"
 PROD_DSN_KW="host=aws-0-us-west-1.pooler.supabase.com port=6543 user=postgres.${SUPABASE_PROD_REF} dbname=postgres sslmode=require"
 
+# Migra needs URL format
+STAGING_DSN_URL="postgresql://postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
+PROD_DSN_URL="postgresql://postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require"
+
 echo "🔗 Probing connectivity (pooler)…"
 PGPASSWORD="$STAGING_DB_PASSWORD" psql "$STAGING_DSN_KW" -c "select 1;" >/dev/null
 PGPASSWORD="$PRODUCTION_DB_PASSWORD" psql "$PROD_DSN_KW" -c "select 1;" >/dev/null
@@ -255,7 +259,7 @@ else
 fi
 
 # ===== Build pgpass for Docker (avoid embedding passwords) =====
-PGPASS_LOCAL="$(pwd)/${WORKDIR}/pgpass"
+PGPASS_LOCAL="${WORKDIR}/pgpass"
 cat > "$PGPASS_LOCAL" <<EOF
 aws-1-us-east-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_STAGING_REF}:${STAGING_DB_PASSWORD}
 aws-0-us-west-1.pooler.supabase.com:6543:postgres:postgres.${SUPABASE_PROD_REF}:${PRODUCTION_DB_PASSWORD}
@@ -268,14 +272,45 @@ MIGRA_FLAGS="--schema public --with-privileges"
 [ "$ALLOW_DESTRUCTIVE" = true ] && MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
 
 echo "🧮 Generating diff (prod → staging) with migra…"
-DOCKER_CMD='pip install --no-cache-dir migra >/dev/null && migra '"$MIGRA_FLAGS"' "$PROD_DSN" "$STAGING_DSN"'
+# For normal mode, first try without --unsafe, then with it if needed
+if [ "$ALLOW_DESTRUCTIVE" = false ]; then
+    DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+    
+    docker run --rm \
+        -e PROD_DSN_URL="$PROD_DSN_URL" \
+        -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+        -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+        python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL" 2>&1
+    
+    if grep -q "destructive statements generated" "$DIFF_SQL"; then
+        echo "  ⚠️  Destructive changes detected. Re-running with --unsafe to capture them..."
+        MIGRA_FLAGS="${MIGRA_FLAGS} --unsafe"
+        DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+        
+        docker run --rm \
+            -e PROD_DSN_URL="$PROD_DSN_URL" \
+            -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+            -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+            python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
+        
+        echo "  ⚠️  WARNING: Destructive changes will be included in the diff!"
+        echo "  ⚠️  Review carefully before applying!"
+    fi
+else
+    # Destructive mode already has --unsafe
+    DOCKER_CMD='pip install --no-cache-dir psycopg2-binary migra >/dev/null 2>&1 && migra '"$MIGRA_FLAGS"' "'"$PROD_DSN_URL"'" "'"$STAGING_DSN_URL"'"'
+    
+    docker run --rm \
+        -e PROD_DSN_URL="$PROD_DSN_URL" \
+        -e STAGING_DSN_URL="$STAGING_DSN_URL" \
+        -e MIGRA_FLAGS="$MIGRA_FLAGS" \
+        python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL"
+fi
 
-docker run --rm \
-    -v "$PGPASS_LOCAL":/tmp/pgpass:ro \
-    -e PGPASSFILE=/tmp/pgpass \
-    -e PROD_DSN="$PROD_DSN_KW" \
-    -e STAGING_DSN="$STAGING_DSN_KW" \
-    python:3.11-slim bash -lc "$DOCKER_CMD" > "$DIFF_SQL" || true
+if [ $? -ne 0 ] && ! [ -s "$DIFF_SQL" ]; then
+    echo "❌ Failed to generate schema diff with migra"
+    exit 1
+fi
 
 # ===== Sanitize diff: strip owner changes & ALTER DEFAULT PRIVILEGES =====
 SANITIZED_SQL="${WORKDIR}/sync_diff_sanitized.sql"
