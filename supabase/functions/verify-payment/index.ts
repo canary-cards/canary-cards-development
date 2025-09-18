@@ -55,26 +55,59 @@ serve(async (req) => {
       
       console.log("Draft ID from metadata:", draftId);
       
-      // Parse address with fallback
-      const parseAddress = (rawText) => {
-        if (!rawText) return {};
+      // Parse address with robust fallback logic (same as send-postcard function)
+      const parseAddress = (fullAddress: string, userInfo: any) => {
+        if (!fullAddress) return {};
         
-        // Simple regex parsing as fallback
-        const match = rawText.match(/^([^,]+)(?:,\s*([^,]+))?(?:,\s*([A-Z]{2}))?\s*(\d{5}(?:-\d{4})?)?$/);
-        if (match) {
-          return {
-            address_line1: match[1]?.trim() || rawText,
-            city: match[2]?.trim(),
-            state: match[3]?.trim(),
-            postal_code: match[4]?.trim(),
-            parsed_via: 'regex'
-          };
+        // Try parsing format: "123 Main St, City, State ZIP"
+        const parts = fullAddress.split(',').map(p => p.trim());
+        if (parts.length >= 3) {
+          const streetAddress = parts[0];
+          const city = parts[1];
+          const stateZipPart = parts[2];
+          // Extract state and zip from "State ZIP" format
+          const stateZipMatch = stateZipPart.match(/^([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+          if (stateZipMatch) {
+            const state = stateZipMatch[1];
+            const zip = stateZipMatch[2];
+            return { 
+              address_line1: streetAddress, 
+              city, 
+              state, 
+              postal_code: zip,
+              parsed_via: 'full_address'
+            };
+          } else {
+            // Try to split by space and take last part as zip
+            const lastSpaceIndex = stateZipPart.lastIndexOf(' ');
+            if (lastSpaceIndex > 0) {
+              const state = stateZipPart.substring(0, lastSpaceIndex);
+              const zip = stateZipPart.substring(lastSpaceIndex + 1);
+              return { 
+                address_line1: streetAddress, 
+                city, 
+                state, 
+                postal_code: zip,
+                parsed_via: 'split_address'
+              };
+            }
+          }
         }
-        return { address_line1: rawText, parsed_via: 'fallback' };
+        // Fallback - use the provided userInfo (this is the key fix!)
+        return {
+          address_line1: fullAddress,
+          city: userInfo.city || '',
+          state: userInfo.state || '',
+          postal_code: userInfo.zipCode || '',
+          parsed_via: 'fallback'
+        };
       };
 
       const userInfo = metadata.postcard_userInfo ? JSON.parse(metadata.postcard_userInfo) : {};
-      const parsedAddress = parseAddress(userInfo.streetAddress);
+      const parsedAddress = parseAddress(userInfo.streetAddress, userInfo);
+      
+      // Create complete address text for raw_address_text field
+      const completeAddress = `${userInfo.streetAddress || ''}, ${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`.trim();
 
       // Upsert customer using normalized email
       const { data: customer, error: customerError } = await supabase
@@ -82,7 +115,7 @@ serve(async (req) => {
         .upsert({
           email: session.customer_email || metadata.user_email,
           full_name: metadata.user_full_name || userInfo.fullName || '',
-          raw_address_text: userInfo.streetAddress || '',
+          raw_address_text: completeAddress,
           ...parsedAddress
         }, {
           onConflict: 'email_normalized',
@@ -239,26 +272,59 @@ serve(async (req) => {
       const metadata = session.metadata;
       
       try {
-        // Parse address with fallback
-        const parseAddress = (rawText) => {
-          if (!rawText) return {};
+        // Parse address with robust fallback logic (same as send-postcard function)
+        const parseAddress = (fullAddress: string, userInfo: any) => {
+          if (!fullAddress) return {};
           
-          // Simple regex parsing as fallback
-          const match = rawText.match(/^([^,]+)(?:,\s*([^,]+))?(?:,\s*([A-Z]{2}))?\s*(\d{5}(?:-\d{4})?)?$/);
-          if (match) {
-            return {
-              address_line1: match[1]?.trim() || rawText,
-              city: match[2]?.trim(),
-              state: match[3]?.trim(),
-              postal_code: match[4]?.trim(),
-              parsed_via: 'regex'
-            };
+          // Try parsing format: "123 Main St, City, State ZIP"
+          const parts = fullAddress.split(',').map(p => p.trim());
+          if (parts.length >= 3) {
+            const streetAddress = parts[0];
+            const city = parts[1];
+            const stateZipPart = parts[2];
+            // Extract state and zip from "State ZIP" format
+            const stateZipMatch = stateZipPart.match(/^([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+            if (stateZipMatch) {
+              const state = stateZipMatch[1];
+              const zip = stateZipMatch[2];
+              return { 
+                address_line1: streetAddress, 
+                city, 
+                state, 
+                postal_code: zip,
+                parsed_via: 'full_address'
+              };
+            } else {
+              // Try to split by space and take last part as zip
+              const lastSpaceIndex = stateZipPart.lastIndexOf(' ');
+              if (lastSpaceIndex > 0) {
+                const state = stateZipPart.substring(0, lastSpaceIndex);
+                const zip = stateZipPart.substring(lastSpaceIndex + 1);
+                return { 
+                  address_line1: streetAddress, 
+                  city, 
+                  state, 
+                  postal_code: zip,
+                  parsed_via: 'split_address'
+                };
+              }
+            }
           }
-          return { address_line1: rawText, parsed_via: 'fallback' };
+          // Fallback - use the provided userInfo (this is the key fix!)
+          return {
+            address_line1: fullAddress,
+            city: userInfo.city || '',
+            state: userInfo.state || '',
+            postal_code: userInfo.zipCode || '',
+            parsed_via: 'fallback'
+          };
         };
 
         const userInfo = metadata.postcard_userInfo ? JSON.parse(metadata.postcard_userInfo) : {};
-        const parsedAddress = parseAddress(userInfo.streetAddress);
+        const parsedAddress = parseAddress(userInfo.streetAddress, userInfo);
+        
+        // Create complete address text for raw_address_text field
+        const completeAddress = `${userInfo.streetAddress || ''}, ${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`.trim();
 
         // Upsert customer even for failed payments using normalized email
         const { data: customer, error: customerError } = await supabase
@@ -266,7 +332,7 @@ serve(async (req) => {
           .upsert({
             email: session.customer_email || metadata.user_email,
             full_name: metadata.user_full_name || userInfo.fullName || '',
-            raw_address_text: userInfo.streetAddress || '',
+            raw_address_text: completeAddress,
             ...parsedAddress
           }, {
             onConflict: 'email_normalized',
