@@ -229,8 +229,44 @@ serve(async (req) => {
       // Get recipient address using the helper function
       const recipientAddress = deriveOfficeAddress(recipient, recipientType);
 
+      // First, create postcard record in database to get the postcard ID
+      const postcardRecord = {
+        order_id: orderId,
+        recipient_type: recipientType,
+        recipient_snapshot: recipient,
+        recipient_name: recipientName,
+        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
+        recipient_office_address: recipientAddress.address_one,
+        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
+        message_text: message,
+        ignitepost_template_id: templateId,
+        sender_snapshot: {
+          fullName: userInfo.fullName,
+          streetAddress: senderAddress.streetAddress,
+          city: senderAddress.city,
+          state: senderAddress.state,
+          zipCode: senderAddress.zip
+        },
+        delivery_status: 'failed' // Will be updated on successful IgnitePost submission
+      };
+
+      const { data: insertedPostcard, error: postcardError } = await supabase
+        .from('postcards')
+        .insert(postcardRecord)
+        .select()
+        .single();
+
+      if (postcardError) {
+        console.error('Error creating postcard record:', postcardError);
+        throw new Error(`Failed to create postcard record: ${postcardError.message}`);
+      }
+
+      const postcardId = insertedPostcard.id;
+      console.log(`Created postcard record with ID: ${postcardId}`);
+
+      // Now use the postcard ID as the UID for IgnitePost
       const orderData = {
-        letter_template_id: templateId, // Use selected template instead of hardcoded font/image
+        letter_template_id: templateId,
         message: message,
         recipient_name: recipientName,
         recipient_address_one: recipientAddress.address_one,
@@ -242,14 +278,15 @@ serve(async (req) => {
         sender_city: senderAddress.city,
         sender_state: senderAddress.state,
         sender_zip: senderAddress.zip,
-        uid: orderId,
+        uid: postcardId, // Use postcard ID instead of order ID
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[order_id]': orderId
+        'metadata[order_id]': orderId,
+        'metadata[postcard_id]': postcardId
       };
 
-      console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));
+      console.log(`Creating ${recipientType} postcard order with UID ${postcardId}:`, JSON.stringify(orderData, null, 2));
 
       let ignitepostResult = null;
       let deliveryStatus = 'failed';
@@ -279,39 +316,25 @@ serve(async (req) => {
         console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
-      // Create postcard record in database
-      const postcardRecord = {
-        order_id: orderId,
-        recipient_type: recipientType,
-        recipient_snapshot: recipient,
-        recipient_name: recipientName,
-        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
-        recipient_office_address: recipientAddress.address_one,
-        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
-        message_text: message,
-        ignitepost_template_id: templateId,
-        ignitepost_order_id: ignitepostResult?.id || null,
-        ignitepost_send_on: ignitepostResult?.send_on || null,
-        ignitepost_created_at: ignitepostResult?.created_at ? new Date(ignitepostResult.created_at).toISOString() : null,
-        ignitepost_error: ignitepostError,
-        sender_snapshot: {
-          fullName: userInfo.fullName,
-          streetAddress: senderAddress.streetAddress,
-          city: senderAddress.city,
-          state: senderAddress.state,
-          zipCode: senderAddress.zip
-        },
-        delivery_status: deliveryStatus
+      // Update postcard record with IgnitePost response
+      const updateData: any = {
+        delivery_status: deliveryStatus,
+        ignitepost_error: ignitepostError
       };
 
-      const { data: insertedPostcard, error: postcardError } = await supabase
-        .from('postcards')
-        .insert(postcardRecord)
-        .select()
-        .single();
+      if (ignitepostResult) {
+        updateData.ignitepost_order_id = ignitepostResult.id;
+        updateData.ignitepost_send_on = ignitepostResult.send_on;
+        updateData.ignitepost_created_at = ignitepostResult.created_at ? new Date(ignitepostResult.created_at).toISOString() : null;
+      }
 
-      if (postcardError) {
-        console.error('Error creating postcard record:', postcardError);
+      const { error: updateError } = await supabase
+        .from('postcards')
+        .update(updateData)
+        .eq('id', postcardId);
+
+      if (updateError) {
+        console.error('Error updating postcard record:', updateError);
       }
 
       if (deliveryStatus === 'failed') {
@@ -320,7 +343,7 @@ serve(async (req) => {
 
       return { 
         ...ignitepostResult, 
-        postcard_id: insertedPostcard?.id,
+        postcard_id: postcardId,
         delivery_status: deliveryStatus 
       };
     };
