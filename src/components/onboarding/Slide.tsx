@@ -15,8 +15,8 @@ interface SlideProps {
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
     <div className="h-full flex flex-col">
-      {/* Top half - Icon placeholder */}
-      <div className="flex-1 flex items-center justify-center px-6 py-4">
+      {/* Fixed height icon area */}
+      <div className="h-[50vh] flex items-center justify-center px-6 py-4">
         <div 
           className="flex items-center justify-center relative aspect-square"
           style={{
@@ -50,8 +50,8 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Bottom half - Content */}
-      <div className="flex-1 flex flex-col justify-center px-6 pb-[max(env(safe-area-inset-bottom),2rem)]">
+      {/* Fixed positioned content area */}
+      <div className="flex-1 px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-8">
         <div className="text-center space-y-4">
           <h2 className="text-2xl display-title leading-tight">
             {title}
