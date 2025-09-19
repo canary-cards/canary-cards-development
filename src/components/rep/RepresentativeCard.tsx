@@ -30,35 +30,38 @@ export function RepresentativeCard({
       onClick={onClick}
     >
       <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
-        <div className="flex items-start gap-4">
-          <div className="relative w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
-            <img 
-              src={representative.photo} 
-              alt={representative.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/placeholder.svg';
-              }}
-            />
-            {showBadge && isSelected && (
-              <Badge variant="default" className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs px-2 py-0.5 bg-amber-400 text-amber-900 hover:bg-amber-400 shadow-sm">
-                My Rep
-              </Badge>
-            )}
-          </div>
-          <div className="flex-grow min-w-0">
-            <h3 className="text-primary font-semibold text-lg mb-1">
-              {representative.name}
-            </h3>
-            <p className="text-muted-foreground text-sm mb-2">
-              {representative.district} • {representative.city}, {representative.state}
-            </p>
-            {representative.bio && isSelected && (
-              <p className="text-sm text-foreground leading-relaxed mt-2">
-                {representative.bio}
+        <div className="space-y-3">
+          <div className="flex items-start gap-4">
+            <div className="relative w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+              <img 
+                src={representative.photo} 
+                alt={representative.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.svg';
+                }}
+              />
+              {showBadge && isSelected && (
+                <Badge variant="default" className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs px-2 py-0.5 bg-amber-400 text-amber-900 hover:bg-amber-400 shadow-sm">
+                  My Rep
+                </Badge>
+              )}
+            </div>
+            <div className="flex-grow min-w-0">
+              <h3 className="text-primary font-semibold text-lg mb-1">
+                {representative.name}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {representative.district} • {representative.city}, {representative.state}
               </p>
-            )}
+            </div>
           </div>
+          
+          {representative.bio && isSelected && (
+            <p className="text-sm text-foreground leading-relaxed">
+              {representative.bio}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
