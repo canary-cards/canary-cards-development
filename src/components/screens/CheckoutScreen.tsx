@@ -482,7 +482,7 @@ export function CheckoutScreen() {
           <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
             <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white ${isOrderSummaryOpen ? 'border-primary' : 'border-border'}`}>
               <CollapsibleTrigger className="w-full text-left">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <span className="display-title text-lg">
                       Order summary — {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
@@ -491,7 +491,9 @@ export function CheckoutScreen() {
                       Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
                     </p>
                   </div>
-                  {isOrderSummaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+                  <div className="flex items-center h-7 mt-0.5">
+                    {isOrderSummaryOpen ? <ChevronUp className="w-6 h-6 text-muted-foreground" /> : <ChevronDown className="w-6 h-6 text-muted-foreground" />}
+                  </div>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
