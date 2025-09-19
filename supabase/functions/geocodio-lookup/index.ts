@@ -62,42 +62,112 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to get biographical information
-function getBiographicalInfo(firstName: string, lastName: string, state: string, party: string): string {
-  console.log(`Getting bio for ${firstName} ${lastName} (${party}) from ${state}`);
+// Helper function to get real biographical information from Congress API
+async function getRealBiographicalInfo(firstName: string, lastName: string, state: string, party: string, type: string): Promise<string> {
+  console.log(`Getting real bio for ${firstName} ${lastName} (${party}) from ${state}`);
   
-  // Default biographical templates based on party and common roles
-  const bioTemplates = {
-    'Republican': [
-      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
-      `Member of the House Armed Services Committee. Advocates for defense modernization and veteran support programs.`,
-      `Serves on the House Judiciary Committee. Focuses on constitutional law and criminal justice reform.`,
-      `Member of the House Energy and Commerce Committee. Champions healthcare access and technology innovation.`
-    ],
-    'Democratic': [
-      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
-      `Member of the House Education and Labor Committee. Advocates for affordable healthcare and workers' rights.`,
-      `Serves on the House Transportation Committee. Focuses on infrastructure investment and climate action.`,
-      `Member of the House Ways and Means Committee. Champions tax fairness and social programs.`
-    ],
-    'Democrat': [
-      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
-      `Member of the House Education and Labor Committee. Advocates for affordable healthcare and workers' rights.`,
-      `Serves on the House Transportation Committee. Focuses on infrastructure investment and climate action.`,
-      `Member of the House Ways and Means Committee. Champions tax fairness and social programs.`
-    ],
-    'Independent': [
-      `Independent member of Congress from ${state}. Known for bipartisan collaboration and pragmatic solutions.`,
-      `Serves as an independent representative from ${state}. Advocates for government accountability and reform.`
-    ]
-  };
+  try {
+    const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
+    if (!congressApiKey) {
+      console.log('Congress API key not available, using fallback bio');
+      return getFallbackBio(firstName, lastName, state, party, type);
+    }
 
-  // Select appropriate template based on party
-  const templates = bioTemplates[party as keyof typeof bioTemplates] || bioTemplates['Independent'];
-  const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+    // Search for the member in Congress API
+    const searchUrl = `https://api.congress.gov/v3/member?format=json&api_key=${congressApiKey}&limit=250`;
+    const response = await fetch(searchUrl);
+    
+    if (!response.ok) {
+      console.log(`Congress API error: ${response.status}, using fallback bio`);
+      return getFallbackBio(firstName, lastName, state, party, type);
+    }
+    
+    const data = await response.json();
+    const members = data.members || [];
+    
+    // Find matching member by name and state
+    const matchingMember = members.find((member: any) => {
+      const memberFirstName = member.name?.split(' ')[0]?.toLowerCase();
+      const memberLastName = member.name?.split(' ').pop()?.toLowerCase();
+      const memberState = member.state;
+      
+      return memberFirstName === firstName.toLowerCase() && 
+             memberLastName === lastName.toLowerCase() && 
+             memberState === state;
+    });
+    
+    if (matchingMember) {
+      // Get detailed member information
+      const memberUrl = `${matchingMember.url}?format=json&api_key=${congressApiKey}`;
+      const memberResponse = await fetch(memberUrl);
+      
+      if (memberResponse.ok) {
+        const memberData = await memberResponse.json();
+        const member = memberData.member;
+        
+        // Build biographical information from real data
+        let bio = '';
+        
+        // Add current terms info
+        if (member.terms && member.terms.item && member.terms.item.length > 0) {
+          const currentTerm = member.terms.item[0]; // Most recent term
+          if (currentTerm.chamber) {
+            bio += `Currently serves in the ${currentTerm.chamber === 'House of Representatives' ? 'House' : 'Senate'}. `;
+          }
+        }
+        
+        // Add party affiliation
+        if (member.partyHistory && member.partyHistory.item && member.partyHistory.item.length > 0) {
+          const currentParty = member.partyHistory.item[0];
+          if (currentParty.partyName && currentParty.partyName !== party) {
+            bio += `Member of the ${currentParty.partyName} Party. `;
+          }
+        }
+        
+        // Add served since information
+        if (member.depiction && member.depiction.attribution) {
+          bio += `${member.depiction.attribution}. `;
+        }
+        
+        // Add any leadership positions or notable roles
+        if (member.leadership && member.leadership.item && member.leadership.item.length > 0) {
+          const leadership = member.leadership.item[0];
+          if (leadership.type) {
+            bio += `${leadership.type}. `;
+          }
+        }
+        
+        if (bio.trim()) {
+          console.log(`Found real bio: ${bio.trim()}`);
+          return bio.trim();
+        }
+      }
+    }
+    
+    console.log('No matching member found in Congress API, using fallback bio');
+    return getFallbackBio(firstName, lastName, state, party, type);
+    
+  } catch (error) {
+    console.error('Error fetching from Congress API:', error);
+    return getFallbackBio(firstName, lastName, state, party, type);
+  }
+}
+
+// Fallback biographical information when real data isn't available
+function getFallbackBio(firstName: string, lastName: string, state: string, party: string, type: string): string {
+  const title = type === 'representative' ? 'Representative' : 'Senator';
+  const chamber = type === 'representative' ? 'House' : 'Senate';
   
-  console.log(`Generated bio: ${randomTemplate}`);
-  return randomTemplate;
+  // More personalized fallback based on actual person
+  const fallbackBios = [
+    `${title} from ${state}. Serves constituents in the U.S. ${chamber} as a member of the ${party} party.`,
+    `Elected ${title} representing ${state}. Active in legislative work and constituent services.`,
+    `${party} ${title} from ${state}. Focuses on issues important to ${state} residents.`
+  ];
+  
+  const randomBio = fallbackBios[Math.floor(Math.random() * fallbackBios.length)];
+  console.log(`Using fallback bio: ${randomBio}`);
+  return randomBio;
 }
 
 serve(async (req) => {
@@ -178,12 +248,13 @@ serve(async (req) => {
     if (result.fields?.congressional_districts) {
       for (const cd of result.fields.congressional_districts) {
         for (const [index, legislator] of cd.current_legislators.entries()) {
-          // Get biographical information
-          const bio = getBiographicalInfo(
+          // Get real biographical information
+          const bio = await getRealBiographicalInfo(
             legislator.bio.first_name,
             legislator.bio.last_name,
             result.address_components.state,
-            legislator.bio.party
+            legislator.bio.party,
+            legislator.type
           );
 
           const legislatorData = {
