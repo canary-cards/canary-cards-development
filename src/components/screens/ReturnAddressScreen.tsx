@@ -288,7 +288,7 @@ export function ReturnAddressScreen() {
                 
                 {showSuggestions && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1">
-                    <Command className="rounded-xl border border-border shadow-lg bg-background">
+                    <Command className="rounded-xl border border-border shadow-lg bg-white">
                       <CommandList className="max-h-48">
                         {streetAddress.length < 3 ? (
                           <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
