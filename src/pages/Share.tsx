@@ -67,9 +67,9 @@ export default function Share() {
       <div className="mx-auto max-w-2xl px-4 py-12 md:py-20">
         <div className="text-center">
           {/* Postcard Icon */}
-            <div className="mx-auto mb-8">
-              <ShareIcon className="h-20 w-20 text-primary" />
-            </div>
+          <div className="mb-8 flex justify-center">
+            <ShareIcon className="h-20 w-20 text-primary" />
+          </div>
 
           {/* Header */}
           <h1 className="display-title mb-6 text-primary">
