@@ -475,68 +475,6 @@ export function CheckoutScreen() {
             <div className="mb-2">
               <span className="display-title text-lg">Mix and Match Recipients</span>
             </div>
-            <div className="flex items-center justify-between mb-3 pr-8">
-              <p className="text-sm text-muted-foreground">
-                Choose any combination of your representatives
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {rep?.photo ? (
-                  <img 
-                    src={rep.photo} 
-                    alt={`Photo of Rep. ${rep.name}`} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                    {rep?.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                )}
-              </div>
-              {senators[0] && <>
-                  <span className="text-muted-foreground">·</span>
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {senators[0].photo ? (
-                      <img 
-                        src={senators[0].photo} 
-                        alt={`Photo of Sen. ${senators[0].name}`} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                        {senators[0].name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
-                  </div>
-                </>}
-              {senators[1] && <>
-                  <span className="text-muted-foreground">·</span>
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {senators[1].photo ? (
-                      <img 
-                        src={senators[1].photo} 
-                        alt={`Photo of Sen. ${senators[1].name}`} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                        {senators[1].name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
-                  </div>
-                </>}
-            </div>
-            
-            <div className="mb-3">
-              <span className="font-bold text-lg text-foreground">
-                {selection === 'custom' && getSelectedCount() > 0 
-                  ? `Total: $${getTotalPrice()}`
-                  : 'Total: $5 each'
-                }
-              </span>
-            </div>
             
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
