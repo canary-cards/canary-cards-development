@@ -349,15 +349,24 @@ All colors MUST be HSL.
     }
   }
 
-  /* Writing progress bar animation - synced with 2s message timing */
-  .writing-progress {
-    animation: writing-fill 2s ease-out forwards;
+  /* Text fill animation for drafting screen */
+  .text-fill-yellow {
+    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--accent)) 50%, hsl(var(--background)) 50%, hsl(var(--background)) 100%);
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: text-fill-progress 2s ease-out forwards;
   }
 
-  @keyframes writing-fill {
-    0% { width: 0%; }
-    90% { width: 85%; }
-    100% { width: 100%; }
+  @keyframes text-fill-progress {
+    0% { 
+      background-position: 100% 0;
+    }
+    100% { 
+      background-position: 0% 0;
+    }
   }
 
   /* Scale-in animation for messages */

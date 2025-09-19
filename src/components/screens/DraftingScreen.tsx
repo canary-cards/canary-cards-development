@@ -176,15 +176,11 @@ export function DraftingScreen() {
               className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
             />
           )}
-          <div className="flex items-center justify-center space-x-3">
-            {/* Progress writing bar synced with message timing */}
-            <div className="w-8 h-1 bg-background/20 rounded-full overflow-hidden">
-              <div 
-                key={currentMessageIndex} 
-                className="h-full bg-accent rounded-full writing-progress"
-              ></div>
-            </div>
-            <h1 className="text-2xl font-semibold text-background">
+          <div className="flex items-center justify-center">
+            <h1 
+              key={currentMessageIndex}
+              className="text-2xl font-semibold text-background text-fill-yellow"
+            >
               Drafting your postcard
             </h1>
           </div>
