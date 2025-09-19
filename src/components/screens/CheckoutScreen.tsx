@@ -478,20 +478,6 @@ export function CheckoutScreen() {
           {/* Validation Error */}
           {validationError && <p className="text-sm text-destructive mb-4">{validationError}</p>}
 
-          {/* Panel-level reassurance */}
-          <div className="text-left mb-6">
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 flex-shrink-0" />
-                <span>Congressional addresses verified</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 flex-shrink-0" />
-                <span>Representative names and titles</span>
-              </div>
-            </div>
-          </div>
-
           {/* Section 3 - Order Summary */}
           <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
             <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white ${isOrderSummaryOpen ? 'border-primary' : 'border-border'}`}>
