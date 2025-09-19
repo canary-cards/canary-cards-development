@@ -31,7 +31,7 @@ export function RepresentativeCard({
     >
       <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
         <div className="flex items-start gap-4">
-          <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+          <div className="relative w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
             <img 
               src={representative.photo} 
               alt={representative.name}
@@ -40,6 +40,11 @@ export function RepresentativeCard({
                 e.currentTarget.src = '/placeholder.svg';
               }}
             />
+            {showBadge && isSelected && (
+              <Badge variant="default" className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs px-2 py-0.5 bg-amber-400 text-amber-900 hover:bg-amber-400 shadow-sm">
+                My Rep
+              </Badge>
+            )}
           </div>
           <div className="flex-grow min-w-0">
             <h3 className="text-primary font-semibold text-lg mb-1">
@@ -48,13 +53,8 @@ export function RepresentativeCard({
             <p className="text-muted-foreground text-sm mb-2">
               {representative.district} • {representative.city}, {representative.state}
             </p>
-            {showBadge && isSelected && (
-              <Badge variant="default" className="mb-3 bg-amber-400 text-amber-900 hover:bg-amber-400">
-                My Rep
-              </Badge>
-            )}
             {representative.bio && isSelected && (
-              <p className="text-sm text-foreground leading-relaxed">
+              <p className="text-sm text-foreground leading-relaxed mt-2">
                 {representative.bio}
               </p>
             )}

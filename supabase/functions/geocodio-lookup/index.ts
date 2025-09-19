@@ -63,18 +63,28 @@ const corsHeaders = {
 };
 
 // Helper function to get biographical information
-async function getBiographicalInfo(firstName: string, lastName: string, state: string, party: string): Promise<string> {
+function getBiographicalInfo(firstName: string, lastName: string, state: string, party: string): string {
+  console.log(`Getting bio for ${firstName} ${lastName} (${party}) from ${state}`);
+  
   // Default biographical templates based on party and common roles
   const bioTemplates = {
     'Republican': [
-      `Serves in Congress representing ${state}. Known for supporting fiscal responsibility and limited government initiatives.`,
-      `Congressional representative from ${state}. Advocates for conservative values and economic growth policies.`,
-      `Member of Congress from ${state}. Focuses on national security and traditional American values.`
+      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
+      `Member of the House Armed Services Committee. Advocates for defense modernization and veteran support programs.`,
+      `Serves on the House Judiciary Committee. Focuses on constitutional law and criminal justice reform.`,
+      `Member of the House Energy and Commerce Committee. Champions healthcare access and technology innovation.`
     ],
     'Democratic': [
-      `Serves in Congress representing ${state}. Known for supporting healthcare access and climate action initiatives.`,
-      `Congressional representative from ${state}. Advocates for social justice and environmental protection.`,
-      `Member of Congress from ${state}. Focuses on healthcare, education, and workers' rights.`
+      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
+      `Member of the House Education and Labor Committee. Advocates for affordable healthcare and workers' rights.`,
+      `Serves on the House Transportation Committee. Focuses on infrastructure investment and climate action.`,
+      `Member of the House Ways and Means Committee. Champions tax fairness and social programs.`
+    ],
+    'Democrat': [
+      `Serves on the House Financial Services Committee. Known for supporting small business initiatives and clean energy legislation.`,
+      `Member of the House Education and Labor Committee. Advocates for affordable healthcare and workers' rights.`,
+      `Serves on the House Transportation Committee. Focuses on infrastructure investment and climate action.`,
+      `Member of the House Ways and Means Committee. Champions tax fairness and social programs.`
     ],
     'Independent': [
       `Independent member of Congress from ${state}. Known for bipartisan collaboration and pragmatic solutions.`,
@@ -86,6 +96,7 @@ async function getBiographicalInfo(firstName: string, lastName: string, state: s
   const templates = bioTemplates[party as keyof typeof bioTemplates] || bioTemplates['Independent'];
   const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
   
+  console.log(`Generated bio: ${randomTemplate}`);
   return randomTemplate;
 }
 
@@ -168,14 +179,14 @@ serve(async (req) => {
       for (const cd of result.fields.congressional_districts) {
         for (const [index, legislator] of cd.current_legislators.entries()) {
           // Get biographical information
-          const bio = await getBiographicalInfo(
+          const bio = getBiographicalInfo(
             legislator.bio.first_name,
             legislator.bio.last_name,
             result.address_components.state,
             legislator.bio.party
           );
 
-          allLegislators.push({
+          const legislatorData = {
             id: `${legislator.type}-${cd.district_number || result.address_components.state}-${index}`,
             name: `${legislator.bio.first_name} ${legislator.bio.last_name}`,
             district: legislator.type === 'representative' ? 
@@ -188,7 +199,10 @@ serve(async (req) => {
             type: legislator.type,
             address: legislator.contact?.address,
             bio: bio
-          });
+          };
+
+          console.log('Adding legislator with bio:', legislatorData);
+          allLegislators.push(legislatorData);
         }
       }
     }
