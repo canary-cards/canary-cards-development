@@ -462,16 +462,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Mix & Match Card */}
-          <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white cursor-pointer relative ${selection === 'custom' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => setShowMixMatch(true)}>
-            {/* Checkbox in top-right corner */}
-            <div className="absolute top-4 right-4">
-              <Checkbox 
-                checked={selection === 'custom'} 
-                onCheckedChange={() => setShowMixMatch(true)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-
+          <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white cursor-pointer ${selection === 'custom' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => setShowMixMatch(true)}>
             <div className="mb-2">
               <span className="display-title text-lg">Mix and Match Recipients</span>
             </div>
