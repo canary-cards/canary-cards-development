@@ -62,8 +62,10 @@ export function CivicPostcardApp() {
 
   return (
     <div className={`civic-postcard-app ${state.currentStep === 7 ? 'bg-primary' : ''}`}>
-      {/* Header - show on all pages */}
-      <Header isDark={state.currentStep === 7} />
+      {/* Header - hide on drafting screen and when payment is loading */}
+      {state.currentStep !== 7 && !state.isPaymentLoading && (
+        <Header isDark={state.currentStep === 7} />
+      )}
       
       {/* Standard spacing after header */}
       <div className={state.currentStep === 7 ? 'bg-primary' : ''}>

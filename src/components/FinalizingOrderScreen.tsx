@@ -1,4 +1,3 @@
-import { Header } from './Header';
 import { DynamicSvg } from './DynamicSvg';
 
 interface FinalizingOrderScreenProps {
@@ -9,8 +8,7 @@ interface FinalizingOrderScreenProps {
 export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreenProps) => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+      <div className="flex items-center justify-center p-4 min-h-screen">
         <div className="text-center space-y-6 max-w-2xl">
           {status === 'loading' && (
             <div className="space-y-6">
