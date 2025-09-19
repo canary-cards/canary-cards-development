@@ -311,9 +311,8 @@ All colors MUST be HSL.
   }
   
   .hover-blue-standard:hover {
-    /* Match primary/10 over the app background regardless of underlying element */
-    background-color: hsl(var(--primary) / 0.1); /* fallback */
-    background-color: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--background)) 90%);
+    /* Exact color match for white component hover state */
+    background-color: #E6E3DD;
   }
 
   /* Mobile-first touch targets */
