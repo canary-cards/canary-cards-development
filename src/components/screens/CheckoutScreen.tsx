@@ -487,12 +487,12 @@ export function CheckoutScreen() {
                     <span className="display-title text-lg">
                       Order summary — {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
                     </span>
-                    <p className="text-sm text-muted-foreground">
-                      Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
-                    </p>
-                  </div>
-                  <div className="flex items-center h-7 mt-0.5">
-                    {isOrderSummaryOpen ? <ChevronUp className="w-6 h-6 text-muted-foreground" /> : <ChevronDown className="w-6 h-6 text-muted-foreground" />}
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
+                      </p>
+                      {isOrderSummaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground ml-2" /> : <ChevronDown className="w-5 h-5 text-muted-foreground ml-2" />}
+                    </div>
                   </div>
                 </div>
               </CollapsibleTrigger>
