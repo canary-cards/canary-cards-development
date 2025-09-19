@@ -41,19 +41,21 @@ export function RepresentativeCard({
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />
-              {showBadge && isSelected && (
-                <Badge variant="default" className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
-                  My Rep
-                </Badge>
-              )}
             </div>
             <div className="flex-grow min-w-0">
               <h3 className="text-primary font-semibold text-lg mb-1">
                 {representative.name}
               </h3>
-              <p className="text-muted-foreground text-sm">
-                {representative.district} • {representative.city}, {representative.state}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-muted-foreground text-sm">
+                  {representative.district} • {representative.city}, {representative.state}
+                </p>
+                {showBadge && isSelected && (
+                  <Badge variant="default" className="text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
+                    My Rep
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           
