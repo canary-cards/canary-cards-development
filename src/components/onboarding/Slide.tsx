@@ -14,13 +14,44 @@ interface SlideProps {
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
-    <div className="h-full flex flex-col">
-      {/* Fixed height icon area */}
-      <div className="h-[50vh] flex items-center justify-center px-6 py-4">
+    <div className="relative h-full">
+      {/* Fixed positioned text area - always at bottom */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 px-6 text-center"
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 2rem)',
+          height: '280px', // Fixed height for consistent positioning
+        }}
+      >
+        <div className="flex flex-col justify-center h-full space-y-4">
+          <h2 className="display-title">
+            {title}
+          </h2>
+          <h3 className="subtitle text-base leading-relaxed">
+            {subtitle}
+          </h3>
+          {finePrint && (
+            <p className="text-xs text-muted-foreground/70 mt-6">
+              {finePrint}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Icon area - fills remaining space above text */}
+      <div 
+        className="absolute top-0 left-0 right-0 flex items-center justify-center px-6"
+        style={{
+          bottom: '280px', // Same as text area height
+        }}
+      >
         <div 
-          className="flex items-center justify-center relative aspect-square"
+          className="flex items-center justify-center relative"
           style={{
-            width: 'clamp(240px, 35vw, 400px)',
+            width: 'min(60vw, 300px)',
+            height: 'min(60vw, 300px)',
+            maxWidth: '300px',
+            maxHeight: '300px',
           }}
         >
           {/* Render all SVGs at once for smooth transitions */}
@@ -46,23 +77,6 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             <span className="text-xs font-medium text-muted-foreground text-center px-2">
               {iconPlaceholder}
             </span>
-          )}
-        </div>
-      </div>
-
-      {/* Fixed positioned content area */}
-      <div className="flex-1 px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-8">
-        <div className="text-center space-y-4">
-          <h2 className="display-title">
-            {title}
-          </h2>
-          <h3 className="subtitle text-base leading-relaxed">
-            {subtitle}
-          </h3>
-          {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-6">
-              {finePrint}
-            </p>
           )}
         </div>
       </div>
