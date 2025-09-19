@@ -28,27 +28,28 @@ serve(async (req) => {
     let postcardMetadata = {};
     if (postcardData) {
       try {
-        // Store essential postcard data in metadata (Stripe has size limits of 500 chars per value)
-        // Strip down senators data to essential fields only to avoid size limits
-        const essentialSenatorsData = (postcardData.senators || []).map(senator => ({
-          id: senator.id,
-          name: senator.name,
-          type: senator.type,
-          party: senator.party,
-          state: senator.state,
-          address: senator.address
-        }));
-        
+        // Stripe metadata has a hard 500 char limit per value.
+        // Only include truly essential, compact fields.
+        const essentialUserInfo = postcardData.userInfo
+          ? {
+              fullName: postcardData.userInfo.fullName,
+              streetAddress: postcardData.userInfo.streetAddress,
+              city: postcardData.userInfo.city,
+              state: postcardData.userInfo.state,
+              zipCode: postcardData.userInfo.zipCode,
+            }
+          : {};
+
         postcardMetadata = {
-          postcard_userInfo: JSON.stringify(postcardData.userInfo || {}),
-          postcard_representative: JSON.stringify(postcardData.representative || {}),
-          postcard_senators: JSON.stringify(essentialSenatorsData),
+          // Keep address basics for post-payment processing
+          postcard_userInfo: JSON.stringify(essentialUserInfo),
+          // Message can be up to ~295 chars (postcard limit) – safe for Stripe
           postcard_finalMessage: postcardData.finalMessage || "",
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
-          postcard_draftId: postcardData.draftId || ""
+          postcard_draftId: postcardData.draftId || "",
         };
-        console.log("Prepared postcard metadata for session (senators data stripped to essential fields)");
+        console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {
         console.error("Error preparing postcard metadata:", error);
         postcardMetadata = {}; // Fallback to empty metadata
