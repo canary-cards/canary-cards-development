@@ -2,7 +2,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { useToast } from '@/hooks/use-toast';
 import { HamburgerMenu } from './HamburgerMenu';
 import { Logo } from './Logo';
 
@@ -15,7 +14,6 @@ export function Header({ className, isDark = false }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch } = useAppContext();
-  const { toast } = useToast();
 
   const handleLogoClick = () => {
     console.log('🖱️ Logo clicked - current path:', location.pathname);
@@ -24,18 +22,10 @@ export function Header({ className, isDark = false }: HeaderProps) {
       // Already on home page, directly reset state
       console.log('🏠 Already on home - directly resetting state');
       dispatch({ type: 'RESET_TO_HOME' });
-      toast({
-        description: "Returned to start",
-        duration: 2000,
-      });
     } else {
       // Navigate to home page
       console.log('🔄 Navigating to home');
       navigate('/', { state: { skipOnboarding: true } });
-      toast({
-        description: "Returned to start",
-        duration: 2000,
-      });
     }
   };
 
