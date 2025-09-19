@@ -21,10 +21,10 @@ export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreen
                   alt="Finalizing order"
                 />
                 <div className="text-center space-y-2">
-                  <h1 className="display-title text-primary">
+                  <h1 className="display-title">
                     Finalizing your order…
                   </h1>
-                  <p className="subtitle text-muted-foreground">
+                  <p className="subtitle">
                     Your postcard details are on their way to be written and mailed.
                   </p>
                 </div>
