@@ -306,20 +306,13 @@ All colors MUST be HSL.
   }
 
   /* Interactive hover states for consistent appearance across backgrounds */
-  .hover-blue-on-cream {
+  .hover-blue-standard {
     @apply transition-colors;
   }
   
-  .hover-blue-on-cream:hover {
-    background-color: hsl(var(--primary) / 0.1);
-  }
-  
-  .hover-blue-on-white {
-    @apply transition-colors;
-  }
-  
-  .hover-blue-on-white:hover {
-    background-color: hsl(var(--primary) / 0.08);
+  .hover-blue-standard:hover {
+    /* Calculated to match the visual appearance of primary/10 over cream background */
+    background-color: hsl(210 25% 92%);
   }
 
   /* Mobile-first touch targets */

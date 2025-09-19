@@ -81,7 +81,7 @@ export function ReviewCardScreen() {
           <CardContent className="p-0">
             <Collapsible open={isMessageExpanded} onOpenChange={setIsMessageExpanded}>
               <CollapsibleTrigger asChild>
-                <button className="w-full p-6 text-left hover-blue-on-white flex items-center justify-between rounded-xl">
+                <button className="w-full p-6 text-left hover-blue-standard flex items-center justify-between rounded-xl">
                   <span className="text-primary font-medium">See your message (optional)</span>
                   {isMessageExpanded ? 
                     <ChevronUp className="w-4 h-4 text-muted-foreground" /> : 
