@@ -246,17 +246,11 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
             )}
           </div>
           
-          {/* Content area with slide transitions */}
-          <div className="flex-1 overflow-hidden">
-            <div 
-              className="flex transition-transform duration-300 ease-out h-full"
-              style={{ 
-                transform: `translateX(${currentView === 'main' ? '0%' : '-100%'})`,
-                width: '200%'
-              }}
-            >
-              {/* Main Menu */}
-              <nav className="w-1/2 px-4 md:px-5 lg:px-6 py-2 overflow-y-auto">
+          {/* Content area with smooth transitions */}
+          <div className="flex-1 overflow-y-auto">
+            {currentView === 'main' ? (
+              /* Main Menu */
+              <nav className="px-4 md:px-5 lg:px-6 py-2 animate-fade-in">
                 <div className="space-y-2">
                   <button
                     onClick={() => handleNavigation('about')}
@@ -284,14 +278,14 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                   </button>
                 </div>
               </nav>
-
-              {/* Content Views */}
-              <div className="w-1/2 px-4 md:px-5 lg:px-6 py-4 overflow-y-auto">
+            ) : (
+              /* Content Views */
+              <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
                 {currentView === 'about' && <AboutContent />}
                 {currentView === 'faq' && <FAQContent />}
                 {currentView === 'contact' && <ContactContent />}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </SheetContent>
