@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
 import { EmbeddedCheckout } from '../EmbeddedCheckout';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle, Sparkles } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -370,10 +370,29 @@ export function CheckoutScreen() {
 
           {/* Recommended - Maximum Impact Card */}
           <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} onClick={() => handleSelectionChange('all-three')}>
-            {/* Save $3 Badge */}
+            {/* Save $3 Badge with Sparkles */}
             <div className="absolute -top-2 -left-2 z-10">
-              <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
-                Save $3
+              <div className="relative">
+                <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
+                  Save $3
+                </div>
+                {/* Animated Sparkles */}
+                {selection === 'all-three' && (
+                  <>
+                    <Sparkles 
+                      className="absolute -top-1 -right-2 w-4 h-4 text-yellow-500 animate-pulse" 
+                      style={{ animationDelay: '0s' }}
+                    />
+                    <Sparkles 
+                      className="absolute -bottom-1 -left-2 w-3 h-3 text-yellow-400 animate-pulse" 
+                      style={{ animationDelay: '0.3s' }}
+                    />
+                    <Sparkles 
+                      className="absolute top-2 -right-4 w-3 h-3 text-yellow-600 animate-pulse" 
+                      style={{ animationDelay: '0.6s' }}
+                    />
+                  </>
+                )}
               </div>
             </div>
             
