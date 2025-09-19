@@ -68,7 +68,7 @@ export default function Share() {
         <div className="text-center">
           {/* Postcard Icon */}
           <div className="mb-8">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white border-2 border-primary">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
               <ShareIcon className="h-10 w-10 text-primary" />
             </div>
           </div>
