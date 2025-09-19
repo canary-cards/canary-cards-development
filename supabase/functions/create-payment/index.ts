@@ -28,17 +28,27 @@ serve(async (req) => {
     let postcardMetadata = {};
     if (postcardData) {
       try {
-        // Store essential postcard data in metadata (Stripe has size limits)
+        // Store essential postcard data in metadata (Stripe has size limits of 500 chars per value)
+        // Strip down senators data to essential fields only to avoid size limits
+        const essentialSenatorsData = (postcardData.senators || []).map(senator => ({
+          id: senator.id,
+          name: senator.name,
+          type: senator.type,
+          party: senator.party,
+          state: senator.state,
+          address: senator.address
+        }));
+        
         postcardMetadata = {
           postcard_userInfo: JSON.stringify(postcardData.userInfo || {}),
           postcard_representative: JSON.stringify(postcardData.representative || {}),
-          postcard_senators: JSON.stringify(postcardData.senators || []),
+          postcard_senators: JSON.stringify(essentialSenatorsData),
           postcard_finalMessage: postcardData.finalMessage || "",
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
           postcard_draftId: postcardData.draftId || ""
         };
-        console.log("Prepared postcard metadata for session");
+        console.log("Prepared postcard metadata for session (senators data stripped to essential fields)");
       } catch (error) {
         console.error("Error preparing postcard metadata:", error);
         postcardMetadata = {}; // Fallback to empty metadata
