@@ -68,7 +68,7 @@ export default function Share() {
         <div className="text-center">
           {/* Postcard Icon */}
           <div className="mb-8 flex justify-center">
-            <ShareIcon className="h-20 w-20 text-primary" />
+            <ShareIcon className="h-16 w-16 text-primary" />
           </div>
 
           {/* Header */}
