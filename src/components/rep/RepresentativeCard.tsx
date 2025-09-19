@@ -46,7 +46,7 @@ export function RepresentativeCard({
               <h3 className="text-primary font-semibold text-lg mb-1">
                 {representative.name}
               </h3>
-              <p className="text-muted-foreground text-sm mb-2">
+              <p className="text-muted-foreground text-sm mb-2 leading-tight">
                 {representative.district} • {representative.city}, {representative.state}
               </p>
               {showBadge && isSelected && (
