@@ -138,7 +138,7 @@ export function SuccessScreen() {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             🎉 Congratulations!
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="subtitle text-base">
             You've taken meaningful action for your country!
           </p>
         </div>

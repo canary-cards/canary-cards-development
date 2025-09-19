@@ -174,7 +174,7 @@ ${userInfo?.fullName}`;
               <h1 className="display-title mb-2">
                 Review Your Postcard
               </h1>
-              <h3 className="subtitle">Finalize the message you want to send to your locally elected official</h3>
+              <h3 className="subtitle text-base">Finalize the message you want to send to your locally elected official</h3>
             </div>
 
             <div className="space-y-6">
