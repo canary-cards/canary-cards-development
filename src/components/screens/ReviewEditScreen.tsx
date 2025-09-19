@@ -195,7 +195,8 @@ ${userInfo?.fullName}`;
                   />
                   <button 
                     onClick={handleEditClick}
-                    className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation"
+                    className="absolute bottom-3 right-3 w-10 h-10 aspect-square rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation"
+                    style={{ borderRadius: '50%' }}
                     aria-label="Edit message"
                   >
                     <Edit3 className="w-6 h-6 text-accent" />
