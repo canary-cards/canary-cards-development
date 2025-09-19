@@ -57,11 +57,6 @@ export function RepresentativeCard({
             </div>
           </div>
           
-          {representative.bio && isSelected && (
-            <p className="text-sm text-foreground leading-relaxed">
-              {representative.bio}
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>
