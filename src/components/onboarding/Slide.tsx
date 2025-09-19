@@ -15,34 +15,11 @@ interface SlideProps {
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
     <div className="relative h-full">
-      {/* Fixed positioned text area - always at bottom */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 px-6 text-center"
-        style={{
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 2rem)',
-          height: '280px', // Fixed height for consistent positioning
-        }}
-      >
-        <div className="flex flex-col justify-center h-full space-y-4">
-          <h2 className="display-title">
-            {title}
-          </h2>
-          <h3 className="subtitle text-base leading-relaxed">
-            {subtitle}
-          </h3>
-          {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-6">
-              {finePrint}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Icon area - fills remaining space above text */}
+      {/* Icon area - centered between progress bar and title */}
       <div 
         className="absolute top-0 left-0 right-0 flex items-center justify-center px-6"
         style={{
-          bottom: '280px', // Same as text area height
+          height: '66.67vh', // From top to where title starts (2/3 up screen)
         }}
       >
         <div 
@@ -77,6 +54,29 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             <span className="text-xs font-medium text-muted-foreground text-center px-2">
               {iconPlaceholder}
             </span>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed positioned text area - title always at 2/3 up screen */}
+      <div 
+        className="absolute left-0 right-0 px-6 text-center"
+        style={{
+          top: '66.67vh', // 2/3 up the screen
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 2rem)',
+        }}
+      >
+        <div className="space-y-4">
+          <h2 className="display-title">
+            {title}
+          </h2>
+          <h3 className="subtitle text-base leading-relaxed">
+            {subtitle}
+          </h3>
+          {finePrint && (
+            <p className="text-xs text-muted-foreground/70 mt-6">
+              {finePrint}
+            </p>
           )}
         </div>
       </div>
