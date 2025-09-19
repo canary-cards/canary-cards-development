@@ -32,7 +32,7 @@ export function RepresentativeCard({
       <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
         <div className="space-y-3">
           <div className="flex items-start gap-4 mb-3">
-            <div className="relative w-25 h-25 rounded-lg bg-muted flex-shrink-0">
+            <div className="relative w-[100px] h-[100px] rounded-lg bg-muted flex-shrink-0">
               <img 
                 src={representative.photo} 
                 alt={representative.name}
