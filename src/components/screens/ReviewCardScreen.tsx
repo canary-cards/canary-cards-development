@@ -77,7 +77,7 @@ export function ReviewCardScreen() {
         </Card>
 
         {/* User's Message (Progressive Disclosure) */}
-        <Card className="bg-white shadow-sm mb-8">
+        <Card className="bg-white shadow-sm mb-6">
           <CardContent className="p-0">
             <Collapsible open={isMessageExpanded} onOpenChange={setIsMessageExpanded}>
               <CollapsibleTrigger asChild>
