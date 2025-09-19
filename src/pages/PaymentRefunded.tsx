@@ -45,7 +45,7 @@ export default function PaymentRefunded() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col">
       <Header />
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-start justify-center p-4 pt-8">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center space-y-6">
             <div className="flex justify-center">
