@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
 import { EmbeddedCheckout } from '../EmbeddedCheckout';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +44,7 @@ export function CheckoutScreen() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [validationError, setValidationError] = useState('');
+  const [confettiTriggered, setConfettiTriggered] = useState(false);
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
 
@@ -175,6 +176,12 @@ export function CheckoutScreen() {
   const handleSelectionChange = (newSelection: RecipientSelection) => {
     setSelection(newSelection);
     setValidationError('');
+    
+    // Trigger confetti when "all-three" is selected for the first time
+    if (newSelection === 'all-three' && !confettiTriggered) {
+      showCardConfetti();
+      setConfettiTriggered(true);
+    }
   };
   const handleCustomSelection = (recipient: keyof typeof customSelection, checked: boolean) => {
     setCustomSelection(prev => ({
@@ -210,6 +217,58 @@ export function CheckoutScreen() {
     if (selected.senator1 && senators[0]) result.push(senators[0]);
     if (selected.senator2 && senators[1]) result.push(senators[1]);
     return result;
+  };
+
+  const showCardConfetti = () => {
+    const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
+    
+    // Get the card element position
+    const cardElement = document.querySelector('[data-confetti-card]') as HTMLElement;
+    if (!cardElement) return;
+    
+    const cardRect = cardElement.getBoundingClientRect();
+    const cardCenterX = cardRect.left + cardRect.width / 2;
+    const cardTop = cardRect.top;
+    
+    for (let i = 0; i < 30; i++) {
+      createCardConfettiPiece(colors[Math.floor(Math.random() * colors.length)], cardCenterX, cardTop);
+    }
+  };
+
+  const createCardConfettiPiece = (color: string, centerX: number, startY: number) => {
+    const confetti = document.createElement('div');
+    const offsetX = (Math.random() - 0.5) * 200; // Spread confetti horizontally around card center
+    
+    confetti.style.cssText = `
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: ${color};
+      left: ${centerX + offsetX}px;
+      top: ${startY - 20}px;
+      z-index: 1000;
+      border-radius: 50%;
+      animation: card-confetti-fall ${Math.random() * 2 + 1.5}s linear forwards;
+    `;
+    
+    document.body.appendChild(confetti);
+
+    // Add CSS animation if not already present
+    if (!document.querySelector('#card-confetti-style')) {
+      const style = document.createElement('style');
+      style.id = 'card-confetti-style';
+      style.textContent = `
+        @keyframes card-confetti-fall {
+          to {
+            transform: translateY(200px) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    setTimeout(() => confetti.remove(), 3000);
   };
   const handlePayment = async () => {
     const validation = validateEmailWithSuggestion(email);
@@ -369,30 +428,15 @@ export function CheckoutScreen() {
           </div>
 
           {/* Recommended - Maximum Impact Card */}
-          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} onClick={() => handleSelectionChange('all-three')}>
-            {/* Save $3 Badge with Sparkles */}
+          <div 
+            className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} 
+            onClick={() => handleSelectionChange('all-three')}
+            data-confetti-card
+          >
+            {/* Save $3 Badge */}
             <div className="absolute -top-2 -left-2 z-10">
-              <div className="relative">
-                <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
-                  Save $3
-                </div>
-                {/* Animated Sparkles */}
-                {selection === 'all-three' && (
-                  <>
-                    <Sparkles 
-                      className="absolute -top-1 -right-2 w-4 h-4 text-yellow-500 animate-pulse" 
-                      style={{ animationDelay: '0s' }}
-                    />
-                    <Sparkles 
-                      className="absolute -bottom-1 -left-2 w-3 h-3 text-yellow-400 animate-pulse" 
-                      style={{ animationDelay: '0.3s' }}
-                    />
-                    <Sparkles 
-                      className="absolute top-2 -right-4 w-3 h-3 text-yellow-600 animate-pulse" 
-                      style={{ animationDelay: '0.6s' }}
-                    />
-                  </>
-                )}
+              <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
+                Save $3
               </div>
             </div>
             
