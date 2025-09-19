@@ -20,6 +20,7 @@ export function DraftingScreen() {
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
   const [lottieError, setLottieError] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     // Reset error if we re-enter the screen
@@ -117,21 +118,27 @@ export function DraftingScreen() {
           console.log('🎯 DraftingScreen: Draft message:', data.draftMessage);
           console.log('🎯 DraftingScreen: Sources:', data.sources);
           
-          // Update the postcard data with the drafted message and draft ID
-          dispatch({
-            type: 'UPDATE_POSTCARD_DATA',
-            payload: {
-              originalMessage: `${concerns}\n\n${personalImpact}`,
-              draftMessage: data.draftMessage || '', // Empty if AI generation failed
-              sources: data.sources || [],
-              draftId: data.draftId // Store the draft ID for later updates
-            }
-          });
+          // Mark as completed to finish the progress animation
+          setIsCompleted(true);
+          
+          // Wait a brief moment for the animation to complete
+          setTimeout(() => {
+            // Update the postcard data with the drafted message and draft ID
+            dispatch({
+              type: 'UPDATE_POSTCARD_DATA',
+              payload: {
+                originalMessage: `${concerns}\n\n${personalImpact}`,
+                draftMessage: data.draftMessage || '', // Empty if AI generation failed
+                sources: data.sources || [],
+                draftId: data.draftId // Store the draft ID for later updates
+              }
+            });
 
-          console.log('🎯 DraftingScreen: Dispatched postcard data update');
+            console.log('🎯 DraftingScreen: Dispatched postcard data update');
 
-          // Navigate to review screen (step 3)
-          dispatch({ type: 'SET_STEP', payload: 3 });
+            // Navigate to review screen (step 3)
+            dispatch({ type: 'SET_STEP', payload: 3 });
+          }, 500);
         }, remainingTime);
 
       } catch (error) {
@@ -144,8 +151,11 @@ export function DraftingScreen() {
 
     // Set timeout for 45 seconds
     const timeout = setTimeout(() => {
-      // If still on this screen after 45 seconds, navigate to review
-      dispatch({ type: 'SET_STEP', payload: 3 });
+      // Mark as completed and navigate to review
+      setIsCompleted(true);
+      setTimeout(() => {
+        dispatch({ type: 'SET_STEP', payload: 3 });
+      }, 500);
     }, 45000);
 
     return () => clearTimeout(timeout);
@@ -178,8 +188,9 @@ export function DraftingScreen() {
           )}
           <div className="flex items-center justify-center">
             <h1 
-              key={currentMessageIndex}
-              className="text-2xl font-semibold text-background text-fill-yellow"
+              className={`text-2xl font-semibold text-background text-fill-yellow-progress ${
+                isCompleted ? 'completed' : ''
+              }`}
             >
               Drafting your postcard
             </h1>

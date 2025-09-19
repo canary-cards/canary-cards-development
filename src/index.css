@@ -349,22 +349,32 @@ All colors MUST be HSL.
     }
   }
 
-  /* Text fill animation for drafting screen */
-  .text-fill-yellow {
+  /* Text fill animation for drafting screen - overall progress */
+  .text-fill-yellow-progress {
     background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--accent)) 50%, hsl(var(--background)) 50%, hsl(var(--background)) 100%);
     background-size: 200% 100%;
     background-position: 100% 0;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: text-fill-progress 2s ease-out forwards;
+    animation: text-fill-overall-progress 15s linear forwards;
   }
 
-  @keyframes text-fill-progress {
+  .text-fill-yellow-progress.completed {
+    animation: text-fill-complete 0.5s ease-out forwards;
+  }
+
+  @keyframes text-fill-overall-progress {
     0% { 
       background-position: 100% 0;
     }
     100% { 
+      background-position: 0% 0;
+    }
+  }
+
+  @keyframes text-fill-complete {
+    to { 
       background-position: 0% 0;
     }
   }
