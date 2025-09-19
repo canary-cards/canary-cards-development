@@ -318,7 +318,7 @@ export function ReturnAddressScreen() {
                                   <CommandItem
                                     key={suggestion.place_id || index}
                                     onSelect={() => handleSuggestionClick(suggestion)}
-                                    className="cursor-pointer hover:bg-accent"
+                                    className="cursor-pointer hover:bg-primary/10 hover:text-primary data-[selected='true']:bg-primary/10 data-[selected=true]:text-primary"
                                   >
                                     <div className="flex items-start gap-2 w-full">
                                       <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
