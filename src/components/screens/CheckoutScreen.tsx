@@ -491,7 +491,7 @@ export function CheckoutScreen() {
                       <p className="text-sm text-muted-foreground">
                         Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
                       </p>
-                      {isOrderSummaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground ml-2" /> : <ChevronDown className="w-5 h-5 text-muted-foreground ml-2" />}
+                      {isOrderSummaryOpen ? <ChevronUp className="w-6 h-6 text-muted-foreground ml-2" /> : <ChevronDown className="w-6 h-6 text-muted-foreground ml-2" />}
                     </div>
                   </div>
                 </div>
