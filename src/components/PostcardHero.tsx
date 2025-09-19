@@ -376,8 +376,8 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
                 e.stopPropagation();
                 performFlip();
               }}
-              className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover:shadow-xl transition-all p-0 min-w-0 ${
-                isFlipping ? 'scale-110 rotate-180' : 'hover:scale-105'
+               className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${
+                 isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'
               }`}
               aria-label="Flip postcard"
               disabled={isFlipping}

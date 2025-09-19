@@ -133,9 +133,9 @@ function ContactContent() {
             </p>
           </div>
           <div className="pt-4">
-            <p className="body-text">
-              <strong>📧 <a href="mailto:hello@canary.cards" className="text-primary underline decoration-primary hover:no-underline">hello@canary.cards</a></strong>
-            </p>
+             <p className="body-text">
+               <strong>📧 <a href="mailto:hello@canary.cards" className="text-primary underline decoration-primary hover-safe:no-underline">hello@canary.cards</a></strong>
+             </p>
           </div>
         </div>
       </div>
@@ -207,14 +207,14 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative z-50 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2 hover:bg-primary/10 hover:text-primary"
-          aria-controls="site-menu"
-          aria-expanded={open}
-          aria-label="Open menu"
-        >
+         <Button
+           variant="ghost"
+           size="icon"
+           className="relative z-50 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2 hover-safe:bg-primary/10 hover-safe:text-primary"
+           aria-controls="site-menu"
+           aria-expanded={open}
+           aria-label="Open menu"
+         >
           <Menu className={`h-5 w-5 ${isDark ? 'text-background' : 'text-primary'}`} />
         </Button>
       </SheetTrigger>
@@ -232,23 +232,23 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
           {/* Header with back navigation */}
           <div className="px-4 md:px-5 lg:px-6 pt-4 pb-2 border-b border-[#E8DECF] flex items-center gap-2">
             {currentView !== 'main' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                className="hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary h-8 w-8 -ml-2"
-                aria-label="Go back to main menu"
-              >
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 onClick={handleBack}
+                 className="hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary h-8 w-8 -ml-2"
+                 aria-label="Go back to main menu"
+               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             
             {currentView === 'main' ? (
-              <Link 
-                to="/" 
-                onClick={() => setOpen(false)}
-                className="block hover:opacity-80 transition-opacity"
-              >
+               <Link 
+                 to="/" 
+                 onClick={() => setOpen(false)}
+                 className="block hover-safe:opacity-80 transition-opacity"
+               >
                 <h2 id="menu-title" className="display-title">
                   {getViewTitle()}
                 </h2>
@@ -266,28 +266,28 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
               /* Main Menu */
               <nav className="px-4 md:px-5 lg:px-6 py-2 animate-fade-in">
                 <div className="space-y-2">
-                  <button
-                    onClick={() => handleNavigation('about')}
-                    className="w-full text-left py-3 body-text hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
-                  >
+                   <button
+                     onClick={() => handleNavigation('about')}
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                   >
                     <div className="text-primary">About Canary</div>
                   </button>
                   
                   <div className="border-b border-[#E8DECF] my-2"></div>
                   
-                  <button
-                    onClick={() => handleNavigation('faq')}
-                    className="w-full text-left py-3 body-text hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
-                  >
+                   <button
+                     onClick={() => handleNavigation('faq')}
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                   >
                     <div className="text-primary">FAQ</div>
                   </button>
                   
                   <div className="border-b border-[#E8DECF] my-2"></div>
                   
-                  <button
-                    onClick={() => handleNavigation('contact')}
-                    className="w-full text-left py-3 body-text hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
-                  >
+                   <button
+                     onClick={() => handleNavigation('contact')}
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                   >
                     <div className="text-primary">Contact Us</div>
                   </button>
                 </div>

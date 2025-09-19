@@ -32,11 +32,11 @@ export function Header({ className, isDark = false }: HeaderProps) {
   return (
     <header className={`h-14 md:h-16 ${isDark ? 'bg-primary' : 'bg-background'} ${className || ''}`}>
       <div className="flex items-center justify-between px-4 h-full">
-        <button 
-          onClick={handleLogoClick}
-          className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-          aria-label="Go to home"
-        >
+         <button 
+           onClick={handleLogoClick}
+           className="flex items-center space-x-3 hover-safe:opacity-80 transition-opacity"
+           aria-label="Go to home"
+         >
           <Logo className="h-10" />
           <div className="hidden md:flex flex-col text-left">
             <span className={`font-semibold text-left ${isDark ? 'text-background' : 'text-primary'}`} style={{ fontFamily: 'Spectral', fontWeight: 600 }}>

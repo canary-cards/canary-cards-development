@@ -197,7 +197,13 @@ All colors MUST be HSL.
   }
 
   .button-warm {
-    @apply rounded-xl shadow-md hover:shadow-lg transition-all duration-200;
+    @apply rounded-xl shadow-md transition-all duration-200;
+  }
+  
+  @media (hover: hover) {
+    .button-warm:hover {
+      @apply shadow-lg;
+    }
   }
 
   .input-warm {
@@ -310,9 +316,11 @@ All colors MUST be HSL.
     @apply transition-colors;
   }
   
-  .hover-blue-standard:hover {
-    /* Exact color match for white component hover state */
-    background-color: #E6E3DD;
+  @media (hover: hover) {
+    .hover-blue-standard:hover {
+      /* Exact color match for white component hover state */
+      background-color: #E6E3DD;
+    }
   }
 
   /* Mobile-first touch targets */
@@ -439,5 +447,100 @@ All colors MUST be HSL.
   }
   50% {
     transform: scale(1.05);
+  }
+}
+
+/* Hover-safe utilities - only apply hover states on devices that can hover */
+@layer utilities {
+  /* Hover-safe modifier that can be used like hover-safe:bg-primary */
+  @media (hover: hover) {
+    .hover-safe\:bg-primary:hover {
+      background-color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:bg-primary\/10:hover {
+      background-color: hsl(var(--primary) / 0.1);
+    }
+    
+    .hover-safe\:bg-primary\/20:hover {
+      background-color: hsl(var(--primary) / 0.2);
+    }
+    
+    .hover-safe\:bg-accent:hover {
+      background-color: hsl(var(--accent));
+    }
+    
+    .hover-safe\:text-primary-foreground:hover {
+      color: hsl(var(--primary-foreground));
+    }
+    
+    .hover-safe\:text-accent-foreground:hover {
+      color: hsl(var(--accent-foreground));
+    }
+    
+    .hover-safe\:text-primary:hover {
+      color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:border-primary:hover {
+      border-color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:shadow-md:hover {
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:shadow-lg:hover {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:shadow-sm:hover {
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    
+    .hover-safe\:shadow-xl:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:underline:hover {
+      text-decoration-line: underline;
+    }
+    
+    .hover-safe\:no-underline:hover {
+      text-decoration-line: none;
+    }
+    
+    .hover-safe\:decoration-2:hover {
+      text-decoration-thickness: 2px;
+    }
+    
+    .hover-safe\:opacity-80:hover {
+      opacity: 0.8;
+    }
+    
+    .hover-safe\:scale-105:hover {
+      transform: scale(1.05);
+    }
+    
+    .hover-safe\:bg-muted\/50:hover {
+      background-color: hsl(var(--muted) / 0.5);
+    }
+    
+    .hover-safe\:bg-muted\/30:hover {
+      background-color: hsl(var(--muted) / 0.3);
+    }
+    
+    /* Specific color combinations for backward compatibility */
+    .hover-safe\:bg-\[hsl\(212_29\%_22\%\)\]:hover {
+      background-color: hsl(212 29% 22%);
+    }
+    
+    .hover-safe\:bg-\[hsl\(46_100\%_61\%\)\]:hover {
+      background-color: hsl(46 100% 61%);
+    }
+    
+    .hover-safe\:bg-\[hsl\(3_58\%_46\%\)\]:hover {
+      background-color: hsl(3 58% 46%);
+    }
   }
 }
