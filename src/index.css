@@ -192,7 +192,7 @@ All colors MUST be HSL.
 
   /* Warmer, friendlier styling */
   .card-warm {
-    @apply bg-card border border-border/60 shadow-lg shadow-primary/5;
+    @apply bg-card border border-border shadow-lg shadow-primary/5;
     border-radius: 1.25rem;
   }
 
