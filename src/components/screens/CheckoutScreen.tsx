@@ -485,7 +485,7 @@ export function CheckoutScreen() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <span className="display-title text-lg">
-                      Order summary — {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
+                      Order summary - {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
                     </span>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
