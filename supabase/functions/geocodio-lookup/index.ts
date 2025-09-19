@@ -247,7 +247,8 @@ serve(async (req) => {
     // Extract all legislators (representatives and senators)
     if (result.fields?.congressional_districts) {
       for (const cd of result.fields.congressional_districts) {
-        for (const [index, legislator] of cd.current_legislators.entries()) {
+        // Process all legislators in this district concurrently
+        const legislatorPromises = cd.current_legislators.map(async (legislator, index) => {
           // Get real biographical information
           const bio = await getRealBiographicalInfo(
             legislator.bio.first_name,
@@ -273,8 +274,12 @@ serve(async (req) => {
           };
 
           console.log('Adding legislator with bio:', legislatorData);
-          allLegislators.push(legislatorData);
-        }
+          return legislatorData;
+        });
+
+        // Wait for all legislators in this district to be processed
+        const districtLegislators = await Promise.all(legislatorPromises);
+        allLegislators.push(...districtLegislators);
       }
     }
     
