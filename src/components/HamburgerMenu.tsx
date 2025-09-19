@@ -155,6 +155,20 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
     }
   }, [open]);
 
+  // Prevent auto-focus on first button when drawer opens
+  useEffect(() => {
+    if (open) {
+      // Small delay to ensure drawer is rendered
+      setTimeout(() => {
+        // Remove focus from any focused element in the drawer
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.blur) {
+          activeElement.blur();
+        }
+      }, 100);
+    }
+  }, [open]);
+
   // Handle ESC key to close menu or go back
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
