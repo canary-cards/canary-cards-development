@@ -41,8 +41,8 @@ export function LawmakerSelectCard({
     <Card 
       className={`transition-all duration-200 ${
         isSelected 
-          ? 'border-2 border-primary bg-primary/5 shadow-md cursor-pointer' 
-          : 'border border-border bg-card hover:bg-muted/20 cursor-pointer'
+          ? 'ring-2 ring-primary bg-primary/5 border-primary shadow-md cursor-pointer' 
+          : 'border border-border bg-card hover:bg-muted/20 hover:border-primary/50 cursor-pointer'
       } ${isDisabled ? 'cursor-default' : ''} ${className}`}
       onClick={handleCardClick}
     >

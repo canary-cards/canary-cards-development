@@ -24,8 +24,8 @@ export function RepresentativeCard({
     <Card 
       className={`cursor-pointer transition-all duration-200 bg-card border border-border shadow-sm relative ${
         isSelected 
-          ? 'ring-2 ring-primary bg-card border-primary shadow-md' 
-          : 'hover:shadow-md border-border/60'
+          ? 'ring-2 ring-primary bg-primary/5 border-primary shadow-md' 
+          : 'hover:shadow-md hover:border-primary/50'
       } ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onClick}
     >
