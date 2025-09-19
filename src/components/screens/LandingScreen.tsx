@@ -186,7 +186,7 @@ export function LandingScreen() {
         </Card>
 
         {/* Proof Card */}
-        <Card className="mb-6 bg-card border-2 border-border/60">
+        <Card className="mb-6 bg-card border-border">
           <CardContent className="p-6 text-center">
             <p className="text-sm font-semibold text-secondary mb-3 tracking-wide uppercase">
               The Research
