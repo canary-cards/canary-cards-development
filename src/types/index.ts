@@ -8,6 +8,7 @@ export interface Representative {
   party: string;
   type: string;
   address?: string;
+  bio?: string;
 }
 
 export interface UserInfo {
