@@ -31,12 +31,12 @@ export function RepresentativeCard({
     >
       <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
         <div className="space-y-3">
-          <div className="flex items-start gap-4">
-            <div className="relative w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+          <div className="flex items-start gap-4 mb-3">
+            <div className="relative w-20 h-20 rounded-lg bg-muted flex-shrink-0">
               <img 
                 src={representative.photo} 
                 alt={representative.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }}
