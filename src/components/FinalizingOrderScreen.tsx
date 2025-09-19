@@ -7,9 +7,8 @@ interface FinalizingOrderScreenProps {
 
 export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreenProps) => {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-center p-4 min-h-screen">
-        <div className="text-center space-y-6 max-w-2xl">
+    <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-background px-4">
+      <div className="text-center space-y-6 max-w-2xl">
           {status === 'loading' && (
             <div className="space-y-6">
               <div className="flex flex-col items-center space-y-6">
@@ -50,7 +49,6 @@ export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreen
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 };
