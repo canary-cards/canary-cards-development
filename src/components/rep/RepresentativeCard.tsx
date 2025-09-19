@@ -42,7 +42,7 @@ export function RepresentativeCard({
                 }}
               />
               {showBadge && isSelected && (
-                <Badge variant="default" className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
+                <Badge variant="default" className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
                   My Rep
                 </Badge>
               )}
