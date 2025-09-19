@@ -386,7 +386,7 @@ export function CheckoutScreen() {
               />
             </div>
             
-            <div className="mb-2">
+            <div className="mb-2 pr-16">
               <span className="display-title text-lg">Recommended – Maximum Impact</span>
             </div>
             <div className="flex items-center justify-between mb-3 pr-8">
