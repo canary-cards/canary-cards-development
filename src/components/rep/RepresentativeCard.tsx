@@ -22,10 +22,10 @@ export function RepresentativeCard({
   
   return (
     <Card 
-      className={`cursor-pointer transition-all duration-200 shadow-sm relative ${
+      className={`cursor-pointer transition-all duration-200 bg-card border shadow-sm relative ${
         isSelected 
-          ? 'border-2 border-primary bg-primary text-primary-foreground shadow-md' 
-          : 'border border-border bg-card hover:shadow-md hover:border-primary/50'
+          ? 'border-2 border-primary bg-primary/10 shadow-md' 
+          : 'border-border hover:shadow-md hover:border-primary/50'
       } ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onClick}
     >
@@ -43,10 +43,10 @@ export function RepresentativeCard({
               />
             </div>
             <div className="flex-grow min-w-0">
-              <h3 className={`font-semibold text-lg mb-1 ${isSelected ? 'text-primary-foreground' : 'text-primary'}`}>
+              <h3 className="text-primary font-semibold text-lg mb-1">
                 {representative.name}
               </h3>
-              <p className={`text-sm mb-2 leading-tight ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+              <p className="text-muted-foreground text-sm mb-2 leading-tight">
                 {representative.district} • {representative.city}, {representative.state}
               </p>
               {showBadge && isSelected && (
@@ -58,7 +58,7 @@ export function RepresentativeCard({
           </div>
           
           {representative.bio && isSelected && (
-            <p className="text-sm text-primary-foreground/90 leading-relaxed">
+            <p className="text-sm text-foreground leading-relaxed">
               {representative.bio}
             </p>
           )}
