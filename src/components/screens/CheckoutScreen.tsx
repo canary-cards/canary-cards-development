@@ -324,7 +324,7 @@ export function CheckoutScreen() {
 
           {/* Section 1 - Recipients Panel */}
           {/* Single Voice Card */}
-          <div className={`rounded-lg border-4 p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-primary' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('rep-only')}>
+          <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-primary' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('rep-only')}>
             {/* Checkbox in top-right corner */}
             <div className="absolute top-4 right-4">
               <Checkbox 
@@ -369,7 +369,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Recommended - Maximum Impact Card */}
-          <div className={`rounded-lg border-4 p-4 transition-all mb-6 bg-card cursor-pointer relative shadow-lg hover:shadow-xl ${selection === 'all-three' ? 'border-primary shadow-xl' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('all-three')}>
+          <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-card cursor-pointer relative shadow-lg hover:shadow-xl ${selection === 'all-three' ? 'border-primary shadow-xl' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('all-three')}>
             {/* Save $3 Badge */}
             <div className="absolute -top-2 -left-2 z-10">
               <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
@@ -462,7 +462,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Mix & Match Card */}
-          <div className={`rounded-lg border-4 p-4 transition-all mb-6 bg-card cursor-pointer ${selection === 'custom' ? 'border-primary' : 'border-border hover:border-primary/50'}`} onClick={() => setShowMixMatch(true)}>
+          <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-card cursor-pointer ${selection === 'custom' ? 'border-primary' : 'border-border hover:border-primary/50'}`} onClick={() => setShowMixMatch(true)}>
             <div className="flex items-center justify-between mb-2">
               <span className="display-title text-lg">Mix and Match Recipients</span>
               <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
