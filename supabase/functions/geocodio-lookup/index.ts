@@ -51,6 +51,10 @@ interface GeocodioResponse {
             phone?: string;
             address?: string;
           };
+          references?: {
+            bioguide_id?: string;
+            govtrack_id?: string;
+          };
         }>;
       }>;
     };
@@ -170,6 +174,65 @@ function getFallbackBio(firstName: string, lastName: string, state: string, part
   return randomBio;
 }
 
+// Attempt to build a bio for a legislator using the most reliable identifier first (bioguide_id)
+async function getBioForLegislator(legislator: any, state: string): Promise<string> {
+  const party = legislator?.bio?.party || 'Independent';
+  const type = legislator?.type || 'representative';
+
+  try {
+    const congressApiKey = Deno.env.get('CONGRESS_API_KEY');
+
+    // If we have a bioguide id and API key, try Congress API by id
+    const bioguideId = legislator?.references?.bioguide_id;
+    if (congressApiKey && bioguideId) {
+      const memberUrl = `https://api.congress.gov/v3/member/${bioguideId}?format=json&api_key=${congressApiKey}`;
+      const resp = await fetch(memberUrl);
+      if (resp.ok) {
+        const data = await resp.json();
+        const member = data?.member || data?.members?.[0];
+        const parts: string[] = [];
+
+        // Chamber (known from legislator.type)
+        const chamber = type === 'representative' ? 'House' : 'Senate';
+        parts.push(`Currently serves in the U.S. ${chamber}.`);
+
+        // Party
+        const partyName = member?.partyHistory?.item?.[0]?.partyName || party;
+        if (partyName) parts.push(`Member of the ${partyName} Party.`);
+
+        // Leadership
+        const leadership = member?.leadership?.item?.[0]?.type;
+        if (leadership) parts.push(`${leadership}.`);
+
+        // Attribution / served since (best-effort)
+        const attribution = member?.depiction?.attribution;
+        if (attribution) parts.push(`${attribution}.`);
+
+        const bio = parts.join(' ').trim();
+        if (bio) return bio;
+      }
+    }
+
+    // Fall back to name-based lookup if needed
+    return await getRealBiographicalInfo(
+      legislator?.bio?.first_name || '',
+      legislator?.bio?.last_name || '',
+      state,
+      party,
+      type
+    );
+  } catch (err) {
+    console.error('Error building legislator bio:', err);
+    return getFallbackBio(
+      legislator?.bio?.first_name || '',
+      legislator?.bio?.last_name || '',
+      state,
+      party,
+      type
+    );
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -250,13 +313,7 @@ serve(async (req) => {
         // Process all legislators in this district concurrently
         const legislatorPromises = cd.current_legislators.map(async (legislator, index) => {
           // Get real biographical information
-          const bio = await getRealBiographicalInfo(
-            legislator.bio.first_name,
-            legislator.bio.last_name,
-            result.address_components.state,
-            legislator.bio.party,
-            legislator.type
-          );
+          const bio = await getBioForLegislator(legislator, result.address_components.state);
 
           const legislatorData = {
             id: `${legislator.type}-${cd.district_number || result.address_components.state}-${index}`,
