@@ -37,7 +37,7 @@ export function ReviewCardScreen() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pb-32 max-w-2xl">
+      <div className="container mx-auto px-4 pb-20 max-w-2xl">
         
         {/* Hero Visual Carousel */}
         <PostcardHero className="mb-8" />
