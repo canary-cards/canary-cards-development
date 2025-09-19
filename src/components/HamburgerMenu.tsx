@@ -235,12 +235,12 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                 onClick={() => setOpen(false)}
                 className="block hover:opacity-80 transition-opacity"
               >
-                <h2 id="menu-title" className="subtitle text-secondary">
+                <h2 id="menu-title" className="display-title">
                   {getViewTitle()}
                 </h2>
               </Link>
             ) : (
-              <h2 id="menu-title" className="subtitle text-secondary">
+              <h2 id="menu-title" className="display-title">
                 {getViewTitle()}
               </h2>
             )}
