@@ -463,15 +463,15 @@ export function CheckoutScreen() {
 
           {/* Mix & Match Card */}
           <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white cursor-pointer ${selection === 'custom' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => setShowMixMatch(true)}>
-            <div className="mb-2">
+            <div className="flex items-center justify-between mb-2">
               <span className="display-title text-lg">Mix and Match Recipients</span>
+              <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
             </div>
             
-            <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm text-muted-foreground">
                 $5 each. Choose any combination
               </p>
-              <ChevronRight className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
             </div>
           </div>
 
