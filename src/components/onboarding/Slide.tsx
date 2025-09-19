@@ -15,20 +15,18 @@ interface SlideProps {
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
     <div className="relative h-full">
-      {/* Icon area - centered between top and title */}
+      {/* Icon area - responsive height based on screen aspect ratio */}
       <div 
         className="absolute top-0 left-0 right-0 flex items-center justify-center px-6"
         style={{
-          height: 'calc(60% - 2rem)', // 60% of content area minus padding
+          height: 'clamp(50%, calc(60% - 2rem), 70%)', // More flexible range
         }}
       >
         <div 
           className="flex items-center justify-center relative"
           style={{
-            width: 'min(60vw, 300px)',
-            height: 'min(60vw, 300px)',
-            maxWidth: '300px',
-            maxHeight: '300px',
+            width: 'clamp(200px, min(50vw, 50vh), 300px)', // Better responsive sizing
+            height: 'clamp(200px, min(50vw, 50vh), 300px)',
           }}
         >
           {/* Render all SVGs at once for smooth transitions */}
@@ -58,23 +56,24 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Fixed positioned text area - title starts at 60% of content area */}
+      {/* Responsive text area */}
       <div 
-        className="absolute left-0 right-0 px-6 text-center"
+        className="absolute left-0 right-0 px-4 sm:px-6 text-center"
         style={{
-          top: 'calc(60% - 2rem)', // Start title at 60% of content height
-          bottom: 'max(env(safe-area-inset-bottom, 0px), 2rem)',
+          top: 'clamp(50%, calc(60% - 2rem), 70%)', // Matches icon area
+          bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
+          overflow: 'hidden', // Prevent text overflow
         }}
       >
-        <div className="space-y-4">
-          <h2 className="display-title">
+        <div className="space-y-2 sm:space-y-4 max-h-full">
+          <h2 className="display-title text-xl sm:text-2xl md:text-3xl leading-tight">
             {title}
           </h2>
-          <h3 className="subtitle text-base leading-relaxed">
+          <h3 className="subtitle text-sm sm:text-base leading-relaxed">
             {subtitle}
           </h3>
           {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-6">
+            <p className="text-xs text-muted-foreground/70 mt-4 sm:mt-6">
               {finePrint}
             </p>
           )}
