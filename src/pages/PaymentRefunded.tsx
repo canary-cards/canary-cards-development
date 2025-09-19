@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Info, ArrowLeft, AlertCircle, RefreshCcw } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 
 export default function PaymentRefunded() {
@@ -49,12 +49,12 @@ export default function PaymentRefunded() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center space-y-6">
             <div className="flex justify-center">
-              <RefreshCcw className="h-16 w-16 text-yellow-500" />
+              <Info className="h-16 w-16 text-muted-foreground" />
             </div>
             
             <div className="space-y-3">
               <h1 className="text-2xl display-title">
-                Hmm, something went wrong
+                Payment couldn't be processed
               </h1>
               
               {orderId && (
@@ -65,7 +65,7 @@ export default function PaymentRefunded() {
               
               {displayFailedCount === displayTotalCount ? (
                 <p className="body-text text-muted-foreground">
-                  We weren't able to order your postcard{displayTotalCount > 1 ? 's' : ''}, and your payment has been refunded.
+                  Don't worry - no charge was made to your card. This can happen due to network issues or payment processing delays.
                 </p>
               ) : (
                 <p className="body-text text-muted-foreground">
