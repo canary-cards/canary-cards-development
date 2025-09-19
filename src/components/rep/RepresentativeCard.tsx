@@ -22,10 +22,10 @@ export function RepresentativeCard({
   
   return (
     <Card 
-      className={`cursor-pointer transition-all duration-200 bg-card border border-border shadow-sm relative ${
+      className={`cursor-pointer transition-all duration-200 bg-card border shadow-sm relative ${
         isSelected 
-          ? 'ring-2 ring-primary bg-primary/5 border-primary shadow-md' 
-          : 'hover:shadow-md hover:border-primary/50'
+          ? 'border-2 border-primary bg-primary/10 shadow-md' 
+          : 'border-border hover:shadow-md hover:border-primary/50'
       } ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onClick}
     >
