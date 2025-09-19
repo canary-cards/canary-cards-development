@@ -369,7 +369,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Recommended - Maximum Impact Card */}
-          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => handleSelectionChange('all-three')}>
+          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} onClick={() => handleSelectionChange('all-three')}>
             {/* Save $3 Badge */}
             <div className="absolute -top-2 -left-2 z-10">
               <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
