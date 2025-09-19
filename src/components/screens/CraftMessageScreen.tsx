@@ -447,7 +447,7 @@ export function CraftMessageScreen() {
                 ) : (
                   <>
                     <Wand2 className="w-4 h-4 mr-2" />
-                    Draft My Postcard
+                    Draft My Postcard With Canary
                   </>
                 )}
               </Button>
