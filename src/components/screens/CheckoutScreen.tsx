@@ -227,25 +227,26 @@ export function CheckoutScreen() {
     if (!cardElement) return;
     
     const cardRect = cardElement.getBoundingClientRect();
-    const cardCenterX = cardRect.left + cardRect.width / 2;
+    const cardLeft = cardRect.left;
+    const cardWidth = cardRect.width;
     const cardTop = cardRect.top;
     
     for (let i = 0; i < 30; i++) {
-      createCardConfettiPiece(colors[Math.floor(Math.random() * colors.length)], cardCenterX, cardTop);
+      createCardConfettiPiece(colors[Math.floor(Math.random() * colors.length)], cardLeft, cardWidth, cardTop);
     }
   };
 
-  const createCardConfettiPiece = (color: string, centerX: number, startY: number) => {
+  const createCardConfettiPiece = (color: string, cardLeft: number, cardWidth: number, startY: number) => {
     const confetti = document.createElement('div');
-    const offsetX = (Math.random() - 0.5) * 200; // Spread confetti horizontally around card center
+    const randomX = cardLeft + (Math.random() * cardWidth); // Spread confetti across card width
     
     confetti.style.cssText = `
       position: fixed;
       width: 8px;
       height: 8px;
       background: ${color};
-      left: ${centerX + offsetX}px;
-      top: ${startY - 20}px;
+      left: ${randomX}px;
+      top: ${startY}px;
       z-index: 1000;
       border-radius: 50%;
       animation: card-confetti-fall ${Math.random() * 2 + 1.5}s linear forwards;
