@@ -145,8 +145,8 @@ All colors MUST be HSL.
     font-family: Spectral, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     font-weight: 700;
     color: hsl(var(--primary));
-    font-size: 1.5rem; /* text-2xl */
-    line-height: 2rem;
+    font-size: 1.75rem; /* Larger on mobile */
+    line-height: 1.25; /* Tighter line height for better mobile display */
   }
 
   @media (min-width: 768px) {

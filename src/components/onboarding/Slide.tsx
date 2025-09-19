@@ -53,7 +53,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
       {/* Fixed positioned content area */}
       <div className="flex-1 px-6 pb-[max(env(safe-area-inset-bottom),2rem)] pt-8">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl display-title leading-tight">
+          <h2 className="display-title">
             {title}
           </h2>
           <h3 className="subtitle text-base leading-relaxed">
