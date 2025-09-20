@@ -236,7 +236,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                  variant="ghost"
                  size="icon"
                  onClick={handleBack}
-                 className="hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary h-8 w-8 -ml-2"
+                 className="hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary h-8 w-8 -ml-2 touch-manipulation"
                  aria-label="Go back to main menu"
                >
                 <ArrowLeft className="h-4 w-4" />
@@ -268,7 +268,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                 <div className="space-y-2">
                    <button
                      onClick={() => handleNavigation('about')}
-                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation"
                    >
                     <div className="text-primary">About Canary</div>
                   </button>
@@ -277,7 +277,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                   
                    <button
                      onClick={() => handleNavigation('faq')}
-                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation"
                    >
                     <div className="text-primary">FAQ</div>
                   </button>
@@ -286,7 +286,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                   
                    <button
                      onClick={() => handleNavigation('contact')}
-                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2"
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation"
                    >
                     <div className="text-primary">Contact Us</div>
                   </button>
