@@ -20,8 +20,8 @@ All colors MUST be HSL.
 
     --primary: 212 29% 26%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 212 29% 30%;
-    --primary-pressed: 212 29% 34%;
+    --primary-hover: 212 29% 22%;
+    --primary-pressed: 212 29% 18%;
 
     --secondary: 7 45% 42%;
     --secondary-foreground: 7 42% 49%;
