@@ -220,7 +220,7 @@ ${userInfo?.fullName}`;
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
-                <Button type="button" variant="secondary" onClick={goBack} className="w-full button-warm h-12 text-base">
+                <Button type="button" variant="secondary" onClick={goBack} className="w-full button-warm h-12 text-base hover-safe:bg-primary/10">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Back</span>
                 </Button>

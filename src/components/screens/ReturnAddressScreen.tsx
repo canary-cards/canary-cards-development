@@ -389,7 +389,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="secondary"
                   onClick={goBack}
-                  className="button-warm h-12"
+                  className="button-warm h-12 hover-safe:bg-primary/10"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
