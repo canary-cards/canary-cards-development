@@ -215,7 +215,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
            aria-expanded={open}
            aria-label="Open menu"
          >
-          <Menu className={`h-6 w-6 ${isDark ? 'text-background' : 'text-primary'}`} />
+          <Menu className={`h-7 w-7 ${isDark ? 'text-background' : 'text-primary'}`} />
         </Button>
       </SheetTrigger>
       <SheetContent 
