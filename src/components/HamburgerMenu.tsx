@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowLeft } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -166,6 +166,42 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
           activeElement.blur();
         }
       }, 100);
+    }
+  }, [open]);
+
+  // Darken browser UI (iOS Safari) while menu is open
+  const themeMetaRef = useRef<HTMLMetaElement | null>(null)
+  const prevThemeColorRef = useRef<string | null>(null)
+  const createdRef = useRef<boolean>(false)
+
+  useEffect(() => {
+    let meta = themeMetaRef.current || (document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null)
+    if (!themeMetaRef.current && meta) {
+      themeMetaRef.current = meta
+      prevThemeColorRef.current = meta.getAttribute('content')
+    }
+
+    if (open) {
+      if (!meta) {
+        meta = document.createElement('meta')
+        meta.setAttribute('name', 'theme-color')
+        document.head.appendChild(meta)
+        themeMetaRef.current = meta
+        createdRef.current = true
+      }
+      themeMetaRef.current!.setAttribute('content', '#000000')
+    } else {
+      if (themeMetaRef.current) {
+        if (createdRef.current && !prevThemeColorRef.current) {
+          themeMetaRef.current.remove()
+          themeMetaRef.current = null
+          createdRef.current = false
+        } else if (prevThemeColorRef.current) {
+          themeMetaRef.current.setAttribute('content', prevThemeColorRef.current)
+        } else {
+          themeMetaRef.current.removeAttribute('content')
+        }
+      }
     }
   }, [open]);
 
