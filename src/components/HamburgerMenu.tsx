@@ -210,7 +210,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
          <Button
            variant="ghost"
            size="icon"
-           className="relative z-50 h-10 w-10 [&_svg]:!size-7 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2 hover-safe:bg-primary/10 hover-safe:text-primary hover-primary-tint hover-primary-text"
+           className="relative z-50 h-10 w-10 [&_svg]:!size-6 focus:outline-none focus:ring-2 focus:ring-[--ring] focus:ring-offset-2 hover-safe:bg-primary/10 hover-safe:text-primary hover-primary-tint hover-primary-text"
            aria-controls="site-menu"
            aria-expanded={open}
            aria-label="Open menu"
