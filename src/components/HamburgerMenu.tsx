@@ -256,7 +256,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="bg-white text-primary border-l-0 max-h-screen overflow-y-auto"
+        className="bg-white text-primary border-l-0 max-h-screen overflow-y-auto shadow-xl shadow-primary/10"
         data-hamburger-menu="true"
       >
         <div 
