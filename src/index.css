@@ -467,6 +467,14 @@ All colors MUST be HSL.
       background-color: hsl(var(--primary) / 0.2);
     }
     
+    /* High-priority primary tint for overriding other hover backgrounds */
+    .hover-primary-tint:hover {
+      background-color: hsl(var(--primary) / 0.1) !important;
+    }
+    .hover-primary-text:hover {
+      color: hsl(var(--primary)) !important;
+    }
+    
     .hover-safe\:bg-accent:hover {
       background-color: hsl(var(--accent));
     }
