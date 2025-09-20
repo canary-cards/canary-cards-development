@@ -338,7 +338,7 @@ export default function PaymentSuccess() {
                 Invite Others to Take Action
               </Button>
               
-              <Button variant="secondary" size="lg" className="w-full button-warm" asChild>
+              <Button variant="secondary" size="lg" className="w-full" asChild>
                 <Link to="/">Home</Link>
               </Button>
             </div>

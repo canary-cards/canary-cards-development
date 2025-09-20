@@ -258,7 +258,6 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
               type="button" 
               variant="secondary" 
               onClick={onBack}
-              className="button-warm"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Review

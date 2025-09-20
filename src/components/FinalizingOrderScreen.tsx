@@ -40,7 +40,7 @@ export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreen
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors button-warm"
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
                   aria-label="Retry postcard order"
                 >
                   Try Again

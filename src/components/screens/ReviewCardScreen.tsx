@@ -113,7 +113,7 @@ export function ReviewCardScreen() {
               type="button" 
               variant="secondary" 
               onClick={goBack} 
-              className="flex-shrink-0 button-warm"
+              className="flex-shrink-0"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back

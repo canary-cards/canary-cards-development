@@ -389,7 +389,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="secondary"
                   onClick={goBack}
-                  className="button-warm h-12"
+                  className="h-12"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -397,7 +397,7 @@ export function ReturnAddressScreen() {
                 
                 <Button
                   type="submit"
-                  className="flex-1 button-warm h-12"
+                  className="flex-1 h-12"
                   disabled={!isFormComplete}
                 >
                   Continue

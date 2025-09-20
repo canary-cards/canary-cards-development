@@ -198,16 +198,6 @@ All colors MUST be HSL.
     border-radius: 1.25rem;
   }
 
-  .button-warm {
-    @apply rounded-xl shadow-md transition-all duration-200;
-  }
-  
-  @media (hover: hover) {
-    .button-warm:hover {
-      @apply shadow-lg;
-      background-color: hsl(var(--primary) / 0.1) !important;
-    }
-  }
 
   .input-warm {
     @apply rounded-xl border-2 border-border/60 focus:border-primary/40 transition-colors;

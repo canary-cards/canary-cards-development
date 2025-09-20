@@ -342,7 +342,7 @@ export function CraftMessageScreen() {
                           }
                         }
                       }}
-      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${
         showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
       } ${
         isRecording && recordingField === 'concerns'
@@ -401,7 +401,7 @@ export function CraftMessageScreen() {
                       aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
                       aria-pressed={isRecording && recordingField === 'impact'}
                       onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 button-warm transition-all duration-200 flex-shrink-0 ${
+      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${
         isRecording && recordingField === 'impact'
           ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
           : 'bg-primary text-white hover:bg-primary/90'
@@ -437,7 +437,7 @@ export function CraftMessageScreen() {
                 variant="spotlight"
                 onClick={handleDraftMessage}
                 disabled={(!concerns.trim() && !personalImpact.trim()) || isDrafting}
-                className="w-full button-warm h-10"
+                className="w-full h-10"
               >
                 {isDrafting ? (
                   <>
@@ -457,7 +457,7 @@ export function CraftMessageScreen() {
                   type="button"
                   variant="secondary"
                   onClick={goBack}
-                  className="flex-1 button-warm h-10"
+                  className="flex-1 h-10"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -467,7 +467,7 @@ export function CraftMessageScreen() {
                   variant="secondary"
                   onClick={handleSkipAI}
                   disabled={isSkipping}
-                  className="flex-1 button-warm h-10"
+                  className="flex-1 h-10"
                 >
                   <span>{isSkipping ? 'Saving...' : 'Write it myself'}</span>
                 </Button>

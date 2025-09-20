@@ -216,11 +216,11 @@ ${userInfo?.fullName}`;
               )}
 
               <div className="space-y-3 pt-4">
-                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || isUpdating} className="w-full button-warm h-12 text-base">
+                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || isUpdating} className="w-full h-12 text-base">
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
-                <Button type="button" variant="secondary" onClick={goBack} className="w-full button-warm h-12 text-base">
+                <Button type="button" variant="secondary" onClick={goBack} className="w-full h-12 text-base">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Back</span>
                 </Button>
