@@ -167,7 +167,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       <Collapsible open={isOpen} onOpenChange={debouncedToggle}>
         <CollapsibleTrigger asChild>
            <button 
-             className="w-full min-h-[44px] bg-white hover-safe:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none"
+             className="w-full min-h-[44px] bg-white hover-safe:bg-primary/10 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none"
              aria-expanded={isOpen}
              aria-label={`${isOpen ? 'Collapse' : 'Expand'} sources (${uniqueDomains.length} sources available)`}
            >
@@ -208,7 +208,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
             return (
               <div 
                 key={index} 
-                 className={`group flex items-start gap-3 pb-3 min-h-[44px] hover-safe:bg-muted/30 rounded-lg p-2 -m-2 transition-all duration-200 ${
+                 className={`group flex items-start gap-3 pb-3 min-h-[44px] hover-safe:bg-primary/10 rounded-lg p-2 -m-2 transition-all duration-200 ${
                    index < prioritizedSources.length - 1 ? 'border-b border-border/50 mb-3' : ''
                  }`}
                 style={{
