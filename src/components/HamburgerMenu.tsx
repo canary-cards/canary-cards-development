@@ -189,7 +189,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
         themeMetaRef.current = meta
         createdRef.current = true
       }
-      themeMetaRef.current!.setAttribute('content', '#000000')
+      themeMetaRef.current!.setAttribute('content', '#333333')
     } else {
       if (themeMetaRef.current) {
         if (createdRef.current && !prevThemeColorRef.current) {
