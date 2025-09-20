@@ -216,7 +216,12 @@ ${userInfo?.fullName}`;
               )}
 
               <div className="space-y-3 pt-4">
-                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || isUpdating} className="w-full h-12 text-base">
+                <Button 
+                  onClick={handleContinue} 
+                  disabled={!editedMessage.trim() || charCount > maxChars}
+                  className={`w-full h-12 text-base ${isUpdating ? 'bg-primary-pressed hover-safe:bg-primary-pressed active:bg-primary-pressed' : ''}`}
+                  style={isUpdating ? { pointerEvents: 'none' } : undefined}
+                >
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
