@@ -325,6 +325,25 @@ All colors MUST be HSL.
     min-height: 44px;
   }
 
+  /* Mobile viewport safe area handling for sheet overlays */
+  [data-radix-dialog-overlay] {
+    /* Ensure overlay covers full mobile viewport including safe areas */
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  /* Ensure sheet content also respects mobile viewport */
+  [data-radix-dialog-content] {
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+  }
+
   /* Voice recording animations */
   .recording-pulse {
     animation: pulseSubtle 1.5s ease-in-out infinite !important;
