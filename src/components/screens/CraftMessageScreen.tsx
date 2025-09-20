@@ -457,7 +457,7 @@ export function CraftMessageScreen() {
                   type="button"
                   variant="secondary"
                   onClick={goBack}
-                  className="flex-1 button-warm h-10 hover-safe:bg-primary/10"
+                  className="flex-1 button-warm h-10"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -467,7 +467,7 @@ export function CraftMessageScreen() {
                   variant="secondary"
                   onClick={handleSkipAI}
                   disabled={isSkipping}
-                  className="flex-1 button-warm h-10 hover-safe:bg-primary/10"
+                  className="flex-1 button-warm h-10"
                 >
                   <span>{isSkipping ? 'Saving...' : 'Write it myself'}</span>
                 </Button>

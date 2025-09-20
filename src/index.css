@@ -203,6 +203,7 @@ All colors MUST be HSL.
   @media (hover: hover) {
     .button-warm:hover {
       @apply shadow-lg;
+      background-color: hsl(var(--primary) / 0.1) !important;
     }
   }
 
