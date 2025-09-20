@@ -13,7 +13,7 @@ const buttonVariants = cva(
         primary: "bg-primary text-primary-foreground hover:bg-[hsl(var(--primary-hover))] hover-safe:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-pressed))] disabled:bg-disabled disabled:text-disabled-foreground shadow-primary/20",
         secondary: "bg-transparent text-primary border-2 border-primary hover-safe:bg-primary/10 active:bg-primary/20 disabled:bg-transparent disabled:text-primary/50 disabled:border-primary/50 shadow-none",
         destructive: "bg-destructive text-destructive-foreground hover-safe:bg-[hsl(3_58%_46%)] active:bg-[hsl(3_60%_42%)] disabled:bg-[hsl(0_0%_95%)] disabled:text-[hsl(3_30%_60%)] shadow-destructive/20",
-        spotlight: "bg-accent text-accent-foreground hover-safe:bg-[hsl(46_100%_61%)] active:bg-[hsl(47_90%_56%)] disabled:bg-[hsl(50_100%_85%)] disabled:text-[hsl(210_16%_66%)] disabled:border-[hsl(210_16%_66%)] border-2 border-primary shadow-accent/20",
+        spotlight: "bg-accent text-accent-foreground hover:bg-[hsl(var(--accent-hover))] hover-safe:bg-[hsl(var(--accent-hover))] active:bg-[hsl(var(--accent-pressed))] disabled:bg-[hsl(50_100%_85%)] disabled:text-[hsl(210_16%_66%)] disabled:border-[hsl(210_16%_66%)] border-2 border-primary shadow-accent/20",
         outline: "border-2 border-primary/20 bg-background text-primary hover-safe:bg-primary hover-safe:text-primary-foreground hover-safe:border-primary",
         ghost: "hover-safe:bg-accent hover-safe:text-accent-foreground shadow-none hover-safe:shadow-sm",
         link: "text-primary underline-offset-4 hover-safe:underline shadow-none",

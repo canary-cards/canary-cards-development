@@ -34,6 +34,8 @@ All colors MUST be HSL.
 
     --accent: 46 100% 65%;
     --accent-foreground: 212 29% 26%;
+    --accent-hover: 46 100% 61%;
+    --accent-pressed: 46 100% 57%;
 
     --destructive: 3 50% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -90,6 +92,8 @@ All colors MUST be HSL.
 
     --accent: 46 100% 65%; /* Keep Canary Yellow, ensure proper framing */
     --accent-foreground: 212 29% 26%; /* Ink Blue text on yellow */
+    --accent-hover: 46 100% 61%;
+    --accent-pressed: 46 100% 57%;
 
     --destructive: 3 60% 55%; /* Slightly brighter red for dark mode */
     --destructive-foreground: 0 0% 100%;
@@ -546,6 +550,10 @@ All colors MUST be HSL.
     
     .hover-safe\:bg-\[hsl\(var\(--primary-hover\)\)\]:hover {
       background-color: hsl(var(--primary-hover));
+    }
+    
+    .hover-safe\:bg-\[hsl\(var\(--accent-hover\)\)\]:hover {
+      background-color: hsl(var(--accent-hover));
     }
   }
 }
