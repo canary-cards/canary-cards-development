@@ -543,5 +543,9 @@ All colors MUST be HSL.
     .hover-safe\:bg-\[hsl\(3_58\%_46\%\)\]:hover {
       background-color: hsl(3 58% 46%);
     }
+    
+    .hover-safe\:bg-\[hsl\(var\(--primary-hover\)\)\]:hover {
+      background-color: hsl(var(--primary-hover));
+    }
   }
 }
