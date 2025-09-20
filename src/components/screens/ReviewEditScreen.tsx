@@ -219,7 +219,7 @@ ${userInfo?.fullName}`;
                 <Button 
                   onClick={handleContinue} 
                   disabled={!editedMessage.trim() || charCount > maxChars}
-                  className={`w-full h-12 text-base ${isUpdating ? 'bg-primary-pressed hover-safe:bg-primary-pressed active:bg-primary-pressed' : ''}`}
+                  className={`w-full h-12 text-base ${isUpdating ? 'bg-[hsl(var(--primary-pressed))] hover-safe:bg-[hsl(var(--primary-pressed))] active:bg-[hsl(var(--primary-pressed))]' : ''}`}
                   style={isUpdating ? { pointerEvents: 'none' } : undefined}
                 >
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
