@@ -286,6 +286,7 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
   } catch (error) {
     console.error('Error discovering sources:', error);
     return []; // Return empty array on error
+  }
 }
 
 async function generatePostcardWithSources({ concerns, personalImpact, zipCode, representative }: {
