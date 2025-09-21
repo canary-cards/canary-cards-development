@@ -9,8 +9,17 @@ const corsHeaders = {
 interface Source {
   url: string;
   outlet: string;
-  title: string;
   summary: string;
+  headline: string;
+}
+
+interface ThemeAnalysis {
+  primaryTheme: string;
+  urgencyKeywords: string[];
+  localAngle: string;
+  searchTerms: string[];
+  confidence: number;
+  reasoning: string;
 }
 
 // API key management for Deno environment
@@ -95,7 +104,327 @@ async function getLocationFromZip(zipCode: string): Promise<{ state: string; cit
   }
 }
 
-async function generatePostcard({ concerns, personalImpact, zipCode, representative }: {
+async function analyzeTheme({ concerns, personalImpact, zipCode }: {
+  concerns: string,
+  personalImpact: string,
+  zipCode: string
+}): Promise<ThemeAnalysis> {
+  const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
+  const location = await getLocationFromZip(zipCode);
+  
+  const THEME_ANALYZER_PROMPT = `
+You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
+
+Your job:
+1. Identify ONE primary theme (not multiple themes)
+2. Extract 2-3 urgency keywords that convey emotion
+3. Suggest local angle for their zip code area
+4. Generate 3-4 search terms for finding relevant sources
+5. Rate confidence 1-10
+
+Return ONLY valid JSON in this exact format:
+{
+  "primaryTheme": "specific theme like 'prescription drug costs' or 'housing affordability'",
+  "urgencyKeywords": ["keyword1", "keyword2", "keyword3"],
+  "localAngle": "how this affects their local area specifically",
+  "searchTerms": ["term1", "term2", "term3", "term4"],
+  "confidence": 8,
+  "reasoning": "why this is the most important theme"
+}
+`;
+
+  const userMessage = `
+CONCERNS: ${concerns}
+PERSONAL IMPACT: ${personalImpact || 'Not specified'}
+LOCATION: ${location.city}, ${location.state} (${location.region})
+
+Find the ONE most important theme and how it affects ${location.city}, ${location.state} specifically.
+`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      temperature: 0.1,
+      system: THEME_ANALYZER_PROMPT,
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  });
+
+  const result = await response.json();
+  const analysisText = result.content[0]?.text?.trim() || '';
+  
+  const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('No valid JSON found in analysis response');
+  }
+
+  return JSON.parse(jsonMatch[0]);
+}
+
+async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
+  try {
+    const apiKey = getApiKey('perplexitykey');
+    const location = await getLocationFromZip(zipCode);
+    
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
+          },
+          {
+            role: 'user',
+            content: `Find recent news articles and policy developments about "${themeAnalysis.primaryTheme}" specifically affecting ${location.city}, ${location.state} or the broader ${location.state} area.
+
+For each article you reference, please provide:
+- TITLE: [exact article headline]
+- OUTLET: [full publication name] 
+- DATE: [publication date if available]
+- SUMMARY: [2-3 sentence summary of key points relevant to ${themeAnalysis.primaryTheme}]
+
+Focus on 2024-2025 developments. Prioritize local ${location.state} sources when possible.`
+          }
+        ],
+        max_tokens: 800,
+        temperature: 0.1,
+        return_citations: true
+      })
+    });
+
+    const result = await response.json();
+    const searchContent = result.choices[0]?.message?.content || '';
+    const citations = result.citations || [];
+    
+    const sources: Source[] = [];
+    
+    for (const [index, citationUrl] of citations.entries()) {
+      const url = citationUrl as string;
+      // Try to extract headline from Perplexity content using TITLE: marker
+      let headline = '';
+      const titleRegex = new RegExp(`TITLE:([^\n\r]+)[\n\r]+OUTLET:.*?${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+      const titleMatch = searchContent.match(titleRegex);
+      if (titleMatch && titleMatch[1]) {
+        headline = titleMatch[1].trim();
+      } else {
+        // Fallback: look for TITLE: line near the URL
+        const urlIndex = searchContent.indexOf(url);
+        if (urlIndex !== -1) {
+          const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
+          const titleLine = before.split(/\n/).reverse().find(line => line.trim().startsWith('TITLE:'));
+          if (titleLine) headline = titleLine.replace('TITLE:', '').trim();
+        }
+      }
+      // Fallback to last part of URL if no headline found
+      if (!headline) {
+        const urlParts = url.split('/');
+        const lastPart = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
+        headline = lastPart ? lastPart.replace(/[-_]/g, ' ').replace(/\.(html|htm|php)$/i, '').replace(/\b\w/g, l => l.toUpperCase()) : url;
+      }
+      // Extract outlet from URL
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace('www.', '');
+      const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+      // Extract actual article summary from Perplexity content
+      let summary = '';
+      const urlIndex = searchContent.indexOf(url);
+      if (urlIndex !== -1) {
+        const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
+        const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 400));
+        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
+        let meaningfulSentences = contextSentences.filter(s =>
+          s.length > 30 && s.length < 300 &&
+          !s.includes('Here are recent') &&
+          !s.includes('TITLE:') &&
+          !s.includes('OUTLET:') &&
+          !s.includes('Find recent') &&
+          !s.toLowerCase().includes('specifically affecting')
+        );
+        let best = meaningfulSentences.find(s =>
+          s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
+        );
+        if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
+        if (best) summary = best.trim();
+      }
+      if (!summary) {
+        const allSentences = searchContent.split(/[.!?]+/);
+        const goodSentences = allSentences.filter(s =>
+          s.length > 40 && s.length < 300 &&
+          !s.includes('Here are recent') &&
+          !s.includes('TITLE:') &&
+          !s.includes('OUTLET:') &&
+          !s.includes('Find recent') &&
+          !s.includes('Focus on 2024-2025')
+        );
+        if (goodSentences.length > 0) summary = goodSentences[0].trim();
+      }
+      if (!summary) summary = 'Recent developments in this policy area.';
+      sources.push({
+        url: url,
+        outlet: outlet,
+        summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
+        headline: headline
+      });
+    }
+    
+    return sources.slice(0, 4); // Return top 4 sources
+    
+  } catch (error) {
+    console.error('Error discovering sources:', error);
+    return []; // Return empty array on error
+}
+
+async function generatePostcardWithSources({ concerns, personalImpact, zipCode, representative }: {
+  concerns: string,
+  personalImpact: string,
+  zipCode: string,
+  representative: { name: string; type?: string }
+}): Promise<{ postcard: string, sources: Source[] }> {
+  try {
+    console.log(`🧠 Generating enhanced postcard for: "${concerns}" in ${zipCode}`);
+    
+    // Step 1: Analyze theme
+    const themeAnalysis = await analyzeTheme({ concerns, personalImpact, zipCode });
+    console.log(`Theme identified: ${themeAnalysis.primaryTheme}`);
+    
+    // Step 2: Discover sources (Perplexity API search)
+    const sources = await discoverSources(themeAnalysis, zipCode);
+    console.log(`Found ${sources.length} sources`);
+    
+    // Step 3: Draft postcard with enhanced context
+    let postcard = await draftEnhancedPostcard({ 
+      concerns, 
+      personalImpact, 
+      zipCode, 
+      representative, 
+      themeAnalysis, 
+      sources 
+    });
+    console.log(`Generated postcard: ${postcard.length} characters`);
+    
+    // Step 4: Shorten if needed
+    if (postcard.length > 290) {
+      console.log(`Postcard too long (${postcard.length} chars), shortening...`);
+      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
+      console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+      
+      // Use shortened version if it's actually shorter and under limit
+      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 290) {
+        postcard = shortenedPostcard;
+      } else {
+        // If shortening failed, try basic truncation as last resort
+        console.log('Shortening API failed, using truncation fallback');
+        const location = await getLocationFromZip(zipCode);
+        const repLastName = (representative?.name || '').trim().split(' ').slice(-1)[0] || 'Representative';
+        const senderSignature = `A constituent in ${location.city}, ${location.state}`;
+        postcard = `Rep. ${repLastName},\n\n${concerns} affects families in ${location.city}. Please help us.\n\nSincerely, ${senderSignature}`;
+      }
+    }
+    
+    return { postcard, sources };
+    
+  } catch (error) {
+    console.error("Error generating enhanced postcard:", error);
+    
+    // Fallback to simple postcard generation
+    return await generateSimplePostcard({ concerns, personalImpact, zipCode, representative });
+  }
+}
+
+async function draftEnhancedPostcard({ concerns, personalImpact, zipCode, representative, themeAnalysis, sources }: {
+  concerns: string,
+  personalImpact: string,
+  zipCode: string,
+  representative: { name: string; type?: string },
+  themeAnalysis: ThemeAnalysis,
+  sources: Source[]
+}): Promise<string> {
+  const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
+  const location = await getLocationFromZip(zipCode);
+  const repLastName = (representative?.name || '').trim().split(' ').slice(-1)[0] || 'Representative';
+  
+  const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
+
+EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
+Rep. [LastName],
+[content - do NOT repeat "Rep." or "Dear Rep." here]
+Sincerely, [name]
+
+CRITICAL NAME PLACEHOLDER RULE:
+- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
+- DO NOT write "A constituent" or location-specific signatures
+- The [name] placeholder will be replaced later - keep it exactly as [name]
+
+🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
+- HARD MAXIMUM: 290 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 290 CHARACTERS UNDER ANY CIRCUMSTANCES.
+- TARGET: 275-280 characters (optimal space utilization)
+- Character counting includes newlines
+
+TONE & STYLE (CRITICAL FOR AUTHENTICITY):
+- Use everyday conversational language with contractions ("can't", "won't", "we're")
+- Express genuine emotion but stay factual - think "concerned neighbor"
+- Avoid formal political terms
+
+SOURCE INTEGRATION:
+- Reference relevant bills as "H.R. [NUMBER]" when appropriate
+- Use recent developments to add urgency
+- Connect national news to local impact
+- Only use sources that genuinely relate to the concern
+
+Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 290 characters.`;
+
+  const today = new Date().toISOString().split('T')[0];
+  const context = `
+Today's date: ${today}
+User concern: ${concerns}
+Personal impact: ${personalImpact || ''}
+Location: ${location.city}, ${location.state}
+Representative: ${repLastName}
+Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
+Selected sources:
+${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
+     Outlet: ${s.outlet}
+     Summary: ${s.summary}
+     URL: ${s.url}`).join('\n')}`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 400,
+      temperature: 0.1,
+      system: POSTCARD_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: context }]
+    })
+  });
+
+  const result = await response.json();
+  const text = result.content[0]?.text?.trim() || '';
+  
+  return text;
+}
+
+async function generateSimplePostcard({ concerns, personalImpact, zipCode, representative }: {
   concerns: string,
   personalImpact: string,
   zipCode: string,
@@ -264,8 +593,8 @@ serve(async (req) => {
     const supabaseServiceKey = getApiKey('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate postcard
-    const { postcard, sources } = await generatePostcard({
+    // Generate postcard with enhanced features (theme analysis + sources)
+    const { postcard, sources } = await generatePostcardWithSources({
       zipCode,
       concerns,
       personalImpact,
