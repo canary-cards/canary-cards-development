@@ -209,7 +209,8 @@ Return exactly 3-4 sources using the format I specified.`
         ],
         max_tokens: 1000,
         temperature: 0.1,
-        return_citations: true
+        search_recency_filter: 'year',
+        web_search_options: { "search_context_size": "high" }
       })
     });
 
@@ -265,11 +266,12 @@ Return exactly 3-4 sources using the format I specified.`
   // Parse the structured format
     const sourceBlocks = searchContent.split(/(?=TITLE:)/i).filter(block => block.trim().length > 0);
     
-    console.log(`📝 Found ${sourceBlocks.length} source blocks`);
+    const urlsFromContent = Array.from(new Set((searchContent.match(/https?:\/\/[^\s)\]]+/g) || [])));
+    const urls = urlsFromContent;
     
-    for (let i = 0; i < Math.min(sourceBlocks.length, citations.length, 4); i++) {
+    for (let i = 0; i < Math.min(sourceBlocks.length, urls.length, 4); i++) {
       const block = sourceBlocks[i];
-      const url = citations[i] as string;
+      const url = urls[i] as string;
       
       console.log(`🔍 Processing block ${i + 1}:`, block.substring(0, 200) + '...');
       
