@@ -143,19 +143,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
     })
   });
 
-  if (!response.ok) {
-    console.error(`Anthropic API error: ${response.status} ${response.statusText}`);
-    throw new Error(`Anthropic API failed: ${response.status}`);
-  }
-
   const result = await response.json();
-  console.log('Anthropic API response:', JSON.stringify(result, null, 2));
-  
-  if (!result.content || !Array.isArray(result.content) || result.content.length === 0) {
-    console.error('Invalid Anthropic API response format:', result);
-    throw new Error('Invalid response format from Anthropic API');
-  }
-  
   const analysisText = result.content[0]?.text?.trim() || '';
   
   const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
@@ -167,28 +155,25 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
 }
 
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
-  try {
-    const apiKey = getApiKey('perplexitykey');
-    const location = await getLocationFromZip(zipCode);
-    
-    console.log(`🔍 Discovering sources for: ${themeAnalysis.primaryTheme}`);
-    
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
-          },
-          {
-            role: 'user',
-            content: `Find recent news articles and policy developments about "${themeAnalysis.primaryTheme}" specifically affecting ${location.city}, ${location.state} or the broader ${location.state} area.
+  const apiKey = getApiKey('perplexitykey');
+  const location = await getLocationFromZip(zipCode);
+  
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'sonar',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
+        },
+        {
+          role: 'user',
+          content: `Find recent news articles and policy developments about "${themeAnalysis.primaryTheme}" specifically affecting ${location.city}, ${location.state} or the broader ${location.state} area.
 
 For each article you reference, please provide:
 - TITLE: [exact article headline]
@@ -197,106 +182,91 @@ For each article you reference, please provide:
 - SUMMARY: [2-3 sentence summary of key points relevant to ${themeAnalysis.primaryTheme}]
 
 Focus on 2024-2025 developments. Prioritize local ${location.state} sources when possible.`
-          }
-        ],
-        max_tokens: 800,
-        temperature: 0.1,
-        return_citations: true
-      })
-    });
-
-    if (!response.ok) {
-      console.error(`Perplexity API error: ${response.status} ${response.statusText}`);
-      return [];
-    }
-
-    const result = await response.json();
-    console.log(`📡 Perplexity API response status: ${response.status}`);
-    
-    const searchContent = result.choices[0]?.message?.content || '';
-    const citations = result.citations || [];
-    
-    console.log(`📰 Found ${citations.length} citations from Perplexity`);
-    
-    const sources: Source[] = [];
-    
-    for (const [index, citationUrl] of citations.entries()) {
-      const url = citationUrl as string;
-      // Try to extract headline from Perplexity content using TITLE: marker
-      let headline = '';
-      const titleRegex = new RegExp(`TITLE:([^\n\r]+)[\n\r]+OUTLET:.*?${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
-      const titleMatch = searchContent.match(titleRegex);
-      if (titleMatch && titleMatch[1]) {
-        headline = titleMatch[1].trim();
-      } else {
-        // Fallback: look for TITLE: line near the URL
-        const urlIndex = searchContent.indexOf(url);
-        if (urlIndex !== -1) {
-          const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-          const titleLine = before.split(/\n/).reverse().find(line => line.trim().startsWith('TITLE:'));
-          if (titleLine) headline = titleLine.replace('TITLE:', '').trim();
         }
-      }
-      // Fallback to last part of URL if no headline found
-      if (!headline) {
-        const urlParts = url.split('/');
-        const lastPart = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
-        headline = lastPart ? lastPart.replace(/[-_]/g, ' ').replace(/\.(html|htm|php)$/i, '').replace(/\b\w/g, l => l.toUpperCase()) : url;
-      }
-      // Extract outlet from URL
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname.replace('www.', '');
-      const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
-      // Extract actual article summary from Perplexity content
-      let summary = '';
+      ],
+      max_tokens: 800,
+      temperature: 0.1,
+      return_citations: true
+    })
+  });
+
+  const result = await response.json();
+  const searchContent = result.choices[0]?.message?.content || '';
+  const citations = result.citations || [];
+  
+  const sources: Source[] = [];
+  
+  for (const [index, citationUrl] of citations.entries()) {
+    const url = citationUrl as string;
+    // Try to extract headline from Perplexity content using TITLE: marker
+    let headline = '';
+    const titleRegex = new RegExp(`TITLE:([^\n\r]+)[\n\r]+OUTLET:.*?${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    const titleMatch = searchContent.match(titleRegex);
+    if (titleMatch && titleMatch[1]) {
+      headline = titleMatch[1].trim();
+    } else {
+      // Fallback: look for TITLE: line near the URL
       const urlIndex = searchContent.indexOf(url);
       if (urlIndex !== -1) {
-        const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 400));
-        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningfulSentences = contextSentences.filter(s =>
-          s.length > 30 && s.length < 300 &&
-          !s.includes('Here are recent') &&
-          !s.includes('TITLE:') &&
-          !s.includes('OUTLET:') &&
-          !s.includes('Find recent') &&
-          !s.toLowerCase().includes('specifically affecting')
-        );
-        let best = meaningfulSentences.find(s =>
-          s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
-        );
-        if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
-        if (best) summary = best.trim();
+        const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
+        const titleLine = before.split(/\n/).reverse().find(line => line.trim().startsWith('TITLE:'));
+        if (titleLine) headline = titleLine.replace('TITLE:', '').trim();
       }
-      if (!summary) {
-        const allSentences = searchContent.split(/[.!?]+/);
-        const goodSentences = allSentences.filter(s =>
-          s.length > 40 && s.length < 300 &&
-          !s.includes('Here are recent') &&
-          !s.includes('TITLE:') &&
-          !s.includes('OUTLET:') &&
-          !s.includes('Find recent') &&
-          !s.includes('Focus on 2024-2025')
-        );
-        if (goodSentences.length > 0) summary = goodSentences[0].trim();
-      }
-      if (!summary) summary = 'Recent developments in this policy area.';
-      sources.push({
-        url: url,
-        outlet: outlet,
-        summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
-        headline: headline
-      });
     }
-    
-    console.log(`✅ Processed ${sources.length} sources successfully`);
-    return sources.slice(0, 4); // Return top 4 sources
-    
-  } catch (error) {
-    console.error('🚨 Error discovering sources:', error);
-    return [];
+    // Fallback to last part of URL if no headline found
+    if (!headline) {
+      const urlParts = url.split('/');
+      const lastPart = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
+      headline = lastPart ? lastPart.replace(/[-_]/g, ' ').replace(/\.(html|htm|php)$/i, '').replace(/\b\w/g, l => l.toUpperCase()) : url;
+    }
+    // Extract outlet from URL
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace('www.', '');
+    const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+    // Extract actual article summary from Perplexity content (same as before)
+    let summary = '';
+    const urlIndex = searchContent.indexOf(url);
+    if (urlIndex !== -1) {
+      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
+      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 400));
+      const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
+      let meaningfulSentences = contextSentences.filter(s =>
+        s.length > 30 && s.length < 300 &&
+        !s.includes('Here are recent') &&
+        !s.includes('TITLE:') &&
+        !s.includes('OUTLET:') &&
+        !s.includes('Find recent') &&
+        !s.toLowerCase().includes('specifically affecting')
+      );
+      let best = meaningfulSentences.find(s =>
+        s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+        themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
+      );
+      if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
+      if (best) summary = best.trim();
+    }
+    if (!summary) {
+      const allSentences = searchContent.split(/[.!?]+/);
+      const goodSentences = allSentences.filter(s =>
+        s.length > 40 && s.length < 300 &&
+        !s.includes('Here are recent') &&
+        !s.includes('TITLE:') &&
+        !s.includes('OUTLET:') &&
+        !s.includes('Find recent') &&
+        !s.includes('Focus on 2024-2025')
+      );
+      if (goodSentences.length > 0) summary = goodSentences[0].trim();
+    }
+    if (!summary) summary = 'Recent developments in this policy area.';
+    sources.push({
+      url: url,
+      outlet: outlet,
+      summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
+      headline: headline
+    });
   }
+  
+  return sources.slice(0, 4); // Return top 4 sources
 }
 
 async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources }: {
@@ -348,7 +318,7 @@ Personal impact: ${personalImpact || ''}
 Location: ${location.city}, ${location.state}
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
-${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
+${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
      Outlet: ${s.outlet}
      Summary: ${s.summary}
      URL: ${s.url}`).join('\n')}`;
@@ -527,98 +497,162 @@ Sincerely, [name]`;
 }
 
 serve(async (req) => {
-  console.log("Edge function called - draft-postcard-message (Enhanced System)");
+  console.log('Edge function called - draft-postcard-message (Hybrid System)');
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Parse request body
-    const body = await req.json();
-    const { concerns, personalImpact, zipCode, representative } = body;
+    const requestBody = await req.json();
+    const { concerns, personalImpact, representative, zipCode, inviteCode } = requestBody;
     
-    console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
-
-    // Validate required fields
-    if (!concerns || !zipCode || !representative) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required fields: concerns, zipCode, and representative are required' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (!concerns || !representative || !zipCode) {
+      return new Response(JSON.stringify({
+        error: 'Missing required fields: concerns, representative, or zipCode'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-
-    // Initialize Supabase client
-    const supabaseUrl = getApiKey('SUPABASE_URL');
-    const supabaseServiceKey = getApiKey('SUPABASE_SERVICE_ROLE_KEY');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Generate postcard with enhanced features (theme analysis + sources)
-    const { postcard, sources } = await generatePostcardAndSources({
-      zipCode,
-      concerns,
-      personalImpact
-    });
     
-    console.log(`✅ Generated postcard (${postcard.length} chars) with ${sources.length} sources`);
+    // Create Supabase client with service role key
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
-    // Save draft to database
-    const postcardData = {
-      concerns,
-      personal_impact: personalImpact,
-      zip_code: zipCode,
-      representative_name: representative.name,
-      representative_type: representative.type || 'representative',
-      message: postcard,
-      sources: sources || [],
-      created_at: new Date().toISOString()
-    };
-
-    const { data: draftData, error: draftError } = await supabase
+    // First, always insert the postcard draft with pending status and user inputs
+    const { data: postcardDraft, error: draftError } = await supabaseClient
       .from('postcard_drafts')
-      .insert(postcardData)
-      .select('id')
+      .insert({
+        invite_code: inviteCode,
+        zip_code: zipCode,
+        concerns: concerns,
+        personal_impact: personalImpact,
+        generation_status: 'pending',
+        recipient_type: representative.type === 'representative' ? 'representative' : 'senator',
+        recipient_snapshot: representative
+      })
+      .select()
       .single();
 
     if (draftError) {
-      console.error('Error saving draft:', draftError);
-      // Continue anyway - don't fail the generation
+      console.error("Error inserting postcard draft:", draftError);
+      return new Response(JSON.stringify({
+        error: 'Failed to save draft record'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    const draftId = draftData?.id || null;
+    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}> };
+    let apiStatusCode = 200;
+    let apiStatusMessage = 'Success';
+    let generationStatus = 'success';
 
-    // Return the generated postcard
-    return new Response(
-      JSON.stringify({ 
-        postcard, 
-        sources,
-        draftId,
-        success: true 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    try {
+      console.log(`🧠 Generating postcard for: "${concerns}"`);
+      
+      // Use the hybrid postcard generation system
+      const result = await generatePostcardAndSources({
+        zipCode: zipCode,
+        concerns: concerns,
+        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`
+      });
+      
+      // Transform sources to match app's expected format
+      const appSources = result.sources.map((source, index) => ({
+        description: source.summary,
+        url: source.url,
+        dataPointCount: index + 1 // Simple relevance scoring
+      }));
+      
+      finalResult = {
+        postcard: result.postcard,
+        sources: appSources
+      };
+      
+      console.log(`✅ Generated postcard (${result.postcard.length} chars) with ${result.sources.length} sources`);
+      
+    } catch (error) {
+      console.error('AI generation error:', error);
+      generationStatus = 'error';
+      apiStatusCode = 500;
+      apiStatusMessage = error.message || 'AI generation failed';
+      // finalResult remains empty but we continue to save the record
+    }
+
+    // Update the postcard draft with results (success or failure)
+    const { error: updateError } = await supabaseClient
+      .from('postcard_drafts')
+      .update({
+        ai_drafted_message: finalResult.postcard || null,
+        generation_status: generationStatus,
+        api_status_code: apiStatusCode,
+        api_status_message: apiStatusMessage
+      })
+      .eq('id', postcardDraft.id);
+
+    if (updateError) {
+      console.error("Error updating postcard draft:", updateError);
+      // Continue anyway since we already have the draft saved
+    }
+
+    // Insert sources if available and generation was successful
+    if (finalResult.sources && finalResult.sources.length > 0) {
+      const sourcesData = finalResult.sources.map((source, index) => ({
+        postcard_draft_id: postcardDraft.id,
+        ordinal: index + 1,
+        description: source.description,
+        url: source.url,
+        data_point_count: source.dataPointCount || 0
+      }));
+
+      const { error: sourcesError } = await supabaseClient
+        .from('postcard_draft_sources')
+        .insert(sourcesData);
+
+      if (sourcesError) {
+        console.error("Error inserting sources:", sourcesError);
+        // Don't fail the request for sources error, just log it
+      } else {
+        // Update the sources_count in postcard_drafts
+        const { error: countError } = await supabaseClient
+          .from('postcard_drafts')
+          .update({ sources_count: finalResult.sources.length })
+          .eq('id', postcardDraft.id);
+        
+        if (countError) {
+          console.error("Error updating sources count:", countError);
+        }
       }
-    );
-
-  } catch (error) {
-    console.error('Error in draft-postcard-message:', error);
+    }
     
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to generate postcard',
-        details: error.message,
-        success: false 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    // Return in app's expected format with draft ID (even if AI generation failed)
+    return new Response(JSON.stringify({ 
+      postcard: finalResult.postcard,
+      sources: finalResult.sources,
+      draftId: postcardDraft.id
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       }
-    );
+    });
+    
+  } catch (error) {
+    console.error('Error in function:', error);
+    return new Response(JSON.stringify({
+      error: `Generation failed: ${error.message}`
+    }), {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
   }
 });
