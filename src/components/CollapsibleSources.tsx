@@ -200,10 +200,10 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
         
         <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 overflow-hidden">
           {prioritizedSources.map((source, index) => {
-            // Use headline if available, otherwise fall back to description
+            // Use headline as the main title, fallback to cleaned description
             const title = source.headline 
               ? truncateTitle(source.headline.trim())
-              : truncateTitle(source.description.replace(/<[^>]*>/g, '').split('.')[0] || source.description.substring(0, 100));
+              : truncateTitle(source.description.replace(/<[^>]*>/g, '').trim());
             
             return (
               <div 
@@ -231,7 +231,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                     <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors flex-shrink-0" />
                   </a>
                   <div className="text-xs text-muted-foreground/80 font-medium">
-                    {source.outlet || getSourceDisplayName(source.url)}
+                    {new URL(source.url).hostname}
                   </div>
                 </div>
               </div>
