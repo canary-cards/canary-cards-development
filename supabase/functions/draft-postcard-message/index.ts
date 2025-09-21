@@ -215,18 +215,24 @@ Focus on 2024-2025 developments and credible news sources.`
     line.includes(' | ') && line.trim().length > 10
   );
   
+  console.log('Source lines found:', sourceLines);
+  
   for (let i = 0; i < Math.min(sourceLines.length, citations.length, 4); i++) {
     const line = sourceLines[i];
     const url = citations[i] as string;
     
     const parts = line.split(' | ');
+    console.log(`Processing source ${i+1}: parts = ${parts.length}`, parts);
+    
     if (parts.length >= 3) {
+      const title = parts[0].trim().replace(/^\d+\.\s*/, '').replace(/^\[|\]$/g, '');
       sources.push({
         url,
         outlet: parts[1].trim().replace(/^\[|\]$/g, ''),
-        title: parts[0].trim().replace(/^\[|\]$/g, ''),
+        title: title || `Article ${i+1}`,
         summary: parts[2].trim().replace(/^\[|\]$/g, '').substring(0, 200),
       });
+      console.log(`Added structured source: ${title}`);
     } else {
       // Fallback: extract better outlet names
       const urlObj = new URL(url);
@@ -263,7 +269,7 @@ Focus on 2024-2025 developments and credible news sources.`
         title = title.replace(/\b\w/g, l => l.toUpperCase());
       }
       if (!title || title.length < 4) {
-        title = outlet + ' Article';
+        title = `${outlet} Article`;
       }
 
       // Extract a reasonable summary from the content
@@ -279,6 +285,11 @@ Focus on 2024-2025 developments and credible news sources.`
         title,
         summary: summary.substring(0, 200)
       });
+      console.log(`Added fallback source: ${title}`);
+    }
+  }
+  
+  console.log(`Total sources processed: ${sources.length}`);
     }
   }
   
@@ -584,11 +595,14 @@ serve(async (req) => {
       });
       
       // Transform sources to match app's expected format
-      const appSources = result.sources.map((source, index) => ({
-        description: (source as any).title || source.summary,
-        url: source.url,
-        dataPointCount: index + 1 // Simple relevance scoring
-      }));
+      const appSources = result.sources.map((source, index) => {
+        console.log(`Mapping source ${index + 1}: title="${source.title}", summary="${source.summary.substring(0, 50)}..."`);
+        return {
+          description: source.title || source.summary || `Source ${index + 1}`,
+          url: source.url,
+          dataPointCount: index + 1
+        };
+      });
       
       finalResult = {
         postcard: result.postcard,
