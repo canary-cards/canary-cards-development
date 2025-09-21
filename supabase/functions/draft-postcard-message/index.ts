@@ -167,7 +167,7 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       messages: [
         {
           role: 'system',
-          content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
+          content: 'You are a research assistant that finds current news from reputable sources and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts from established news organizations.'
         },
         {
           role: 'user',
@@ -184,7 +184,24 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
       ],
       max_tokens: 800,
       temperature: 0.1,
-      return_citations: true
+      return_citations: true,
+      search_domain_filter: [
+        'reuters.com',
+        'apnews.com', 
+        'nytimes.com',
+        'washingtonpost.com',
+        'wsj.com',
+        'bbc.com',
+        'cnn.com',
+        'npr.org',
+        'politico.com',
+        'axios.com',
+        'propublica.org',
+        'govexec.com',
+        'congress.gov',
+        'house.gov',
+        'senate.gov'
+      ]
     })
   });
 
