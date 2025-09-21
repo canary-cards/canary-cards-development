@@ -9,6 +9,7 @@ const corsHeaders = {
 interface Source {
   url: string;
   outlet: string;
+  title: string;
   summary: string;
 }
 
@@ -221,9 +222,10 @@ Focus on 2024-2025 developments and credible news sources.`
     const parts = line.split(' | ');
     if (parts.length >= 3) {
       sources.push({
-        url: url,
+        url,
         outlet: parts[1].trim().replace(/^\[|\]$/g, ''),
-        summary: parts[2].trim().replace(/^\[|\]$/g, '').substring(0, 200)
+        title: parts[0].trim().replace(/^\[|\]$/g, ''),
+        summary: parts[2].trim().replace(/^\[|\]$/g, '').substring(0, 200),
       });
     } else {
       // Fallback: extract better outlet names
@@ -251,6 +253,19 @@ Focus on 2024-2025 developments and credible news sources.`
           .replace(/\b\w/g, l => l.toUpperCase());
       }
       
+      // Derive a readable title from the URL slug
+      const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+      let title = slug
+        .replace(/[-_]/g, ' ')
+        .replace(/\.(html|htm|php)$/i, '')
+        .trim();
+      if (title) {
+        title = title.replace(/\b\w/g, l => l.toUpperCase());
+      }
+      if (!title || title.length < 4) {
+        title = outlet + ' Article';
+      }
+
       // Extract a reasonable summary from the content
       const sentences = searchContent.split(/[.!?]+/);
       let summary = sentences.find(s => 
@@ -259,8 +274,9 @@ Focus on 2024-2025 developments and credible news sources.`
       )?.trim() || 'Recent developments in this policy area.';
       
       sources.push({
-        url: url,
-        outlet: outlet,
+        url,
+        outlet,
+        title,
         summary: summary.substring(0, 200)
       });
     }
@@ -321,7 +337,7 @@ RepresentativeLastName: ${repLastName}
 SenderSignature: ${senderSignature}
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
-${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
+${sources.map((s, i) => `  ${i+1}. Title: ${s.title || (s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article')}
      Outlet: ${s.outlet}
      Summary: ${s.summary}
      URL: ${s.url}`).join('\n')}`;
@@ -569,7 +585,7 @@ serve(async (req) => {
       
       // Transform sources to match app's expected format
       const appSources = result.sources.map((source, index) => ({
-        description: source.summary,
+        description: (source as any).title || source.summary,
         url: source.url,
         dataPointCount: index + 1 // Simple relevance scoring
       }));
