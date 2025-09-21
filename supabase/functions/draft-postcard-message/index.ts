@@ -182,19 +182,16 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       messages: [
         {
           role: 'system',
-          content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
+          content: 'You are a research assistant finding current news. For each source you cite, format it exactly as: [TITLE] | [OUTLET] | [SUMMARY]. Be precise with outlet names (e.g., "CNN", "The New York Times", "Washington Post", not domain names).'
         },
         {
           role: 'user',
-          content: `Find recent news articles and policy developments about "${themeAnalysis.primaryTheme}" specifically affecting ${location.city}, ${location.state} or the broader ${location.state} area.
+          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} generally.
 
-For each article you reference, please provide:
-- TITLE: [exact article headline]
-- OUTLET: [full publication name] 
-- DATE: [publication date if available]
-- SUMMARY: [2-3 sentence summary of key points relevant to ${themeAnalysis.primaryTheme}]
+Format each source as:
+[Article Title] | [Outlet Name] | [Brief summary of key points]
 
-Focus on 2024-2025 developments. Prioritize local ${location.state} sources when possible.`
+Focus on 2024-2025 developments and credible news sources.`
         }
       ],
       max_tokens: 800,
@@ -207,77 +204,69 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
   
+  console.log('Perplexity search content:', searchContent);
+  console.log('Citations:', citations);
+  
   const sources: Source[] = [];
   
-  for (const [index, citationUrl] of citations.entries()) {
-    const url = citationUrl as string;
+  // Try to parse structured sources from content first
+  const sourceLines = searchContent.split('\n').filter(line => 
+    line.includes(' | ') && line.trim().length > 10
+  );
+  
+  for (let i = 0; i < Math.min(sourceLines.length, citations.length, 4); i++) {
+    const line = sourceLines[i];
+    const url = citations[i] as string;
     
-    // Extract title from URL
-    const urlParts = url.split('/');
-    const lastPart = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
-    let title = url;
-    if (lastPart && lastPart !== '') {
-      title = lastPart
-        .replace(/-/g, ' ')
-        .replace(/_/g, ' ')
-        .replace(/\.(html|htm|php)$/i, '')
-        .replace(/\b\w/g, l => l.toUpperCase());
-    }
-    
-    // Extract outlet from URL
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname.replace('www.', '');
-    const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
-    
-    // Extract actual article summary from Perplexity content
-    let summary = '';
-    const urlIndex = searchContent.indexOf(url);
-    if (urlIndex !== -1) {
-      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 400));
-      const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
+    const parts = line.split(' | ');
+    if (parts.length >= 3) {
+      sources.push({
+        url: url,
+        outlet: parts[1].trim().replace(/^\[|\]$/g, ''),
+        summary: parts[2].trim().replace(/^\[|\]$/g, '').substring(0, 200)
+      });
+    } else {
+      // Fallback: extract better outlet names
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace('www.', '');
       
-      let meaningfulSentences = contextSentences.filter(s =>
-        s.length > 30 && s.length < 300 &&
-        !s.includes('Here are recent') &&
-        !s.includes('TITLE:') &&
-        !s.includes('OUTLET:') &&
-        !s.includes('Find recent') &&
-        !s.toLowerCase().includes('specifically affecting')
-      );
+      let outlet = 'News Source';
+      if (domain.includes('cnn.com')) outlet = 'CNN';
+      else if (domain.includes('nytimes.com')) outlet = 'The New York Times';
+      else if (domain.includes('washingtonpost.com')) outlet = 'Washington Post';
+      else if (domain.includes('reuters.com')) outlet = 'Reuters';
+      else if (domain.includes('ap.org') || domain.includes('apnews.com')) outlet = 'Associated Press';
+      else if (domain.includes('npr.org')) outlet = 'NPR';
+      else if (domain.includes('politico.com')) outlet = 'Politico';
+      else if (domain.includes('axios.com')) outlet = 'Axios';
+      else if (domain.includes('bloomberg.com')) outlet = 'Bloomberg';
+      else if (domain.includes('hhs.gov')) outlet = 'Dept. of Health & Human Services';
+      else if (domain.includes('cdc.gov')) outlet = 'CDC';
+      else if (domain.includes('fda.gov')) outlet = 'FDA';
+      else if (domain.includes('.gov')) outlet = 'Government Source';
+      else {
+        // Clean up domain name as last resort
+        outlet = domain.split('.')[0]
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase());
+      }
       
-      let best = meaningfulSentences.find(s =>
-        s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-        themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
-      );
+      // Extract a reasonable summary from the content
+      const sentences = searchContent.split(/[.!?]+/);
+      let summary = sentences.find(s => 
+        s.length > 30 && s.length < 200 && 
+        s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase())
+      )?.trim() || 'Recent developments in this policy area.';
       
-      if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
-      if (best) summary = best.trim();
+      sources.push({
+        url: url,
+        outlet: outlet,
+        summary: summary.substring(0, 200)
+      });
     }
-    
-    if (!summary) {
-      const allSentences = searchContent.split(/[.!?]+/);
-      const goodSentences = allSentences.filter(s =>
-        s.length > 40 && s.length < 300 &&
-        !s.includes('Here are recent') &&
-        !s.includes('TITLE:') &&
-        !s.includes('OUTLET:') &&
-        !s.includes('Find recent') &&
-        !s.includes('Focus on 2024-2025')
-      );
-      if (goodSentences.length > 0) summary = goodSentences[0].trim();
-    }
-    
-    if (!summary) summary = 'Recent developments in this policy area.';
-    
-    sources.push({
-      url: url,
-      outlet: outlet,
-      summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : '')
-    });
   }
   
-  return sources.slice(0, 4); // Return top 4 sources
+  return sources.slice(0, 4);
 }
 
 async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources }: {
