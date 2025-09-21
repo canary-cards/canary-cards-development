@@ -179,23 +179,32 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'sonar',
+      model: 'llama-3.1-sonar-small-128k-online',
       messages: [
         {
           role: 'system',
-          content: 'You are a research assistant finding current news. For each source you cite, format it exactly as: [TITLE] | [OUTLET] | [SUMMARY]. Be precise with outlet names (e.g., "CNN", "The New York Times", "Washington Post", not domain names).'
+          content: `You are a research assistant finding current news articles. You must return exactly 3-4 sources in this exact format:
+
+TITLE: [Full article headline]
+OUTLET: [Publication name like "CNN", "New York Times", "Reuters"]  
+SUMMARY: [2-3 sentence summary of key points]
+URL_REF: [1]
+
+TITLE: [Second article headline]
+OUTLET: [Publication name]
+SUMMARY: [2-3 sentence summary]
+URL_REF: [2]
+
+Follow this format exactly for each source you find.`
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} generally.
+          content: `Find recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} generally. Focus on 2024-2025 developments from credible news sources.
 
-Format each source as:
-[Article Title] | [Outlet Name] | [Brief summary of key points]
-
-Focus on 2024-2025 developments and credible news sources.`
+Return exactly 3-4 sources using the format I specified.`
         }
       ],
-      max_tokens: 800,
+      max_tokens: 1000,
       temperature: 0.1,
       return_citations: true
     })
@@ -210,31 +219,43 @@ Focus on 2024-2025 developments and credible news sources.`
   
   const sources: Source[] = [];
   
-  // Try to parse structured sources from content first
-  const sourceLines = searchContent.split('\n').filter(line => 
-    line.includes(' | ') && line.trim().length > 10
-  );
+  // Parse the structured format
+  const sourceBlocks = searchContent.split(/(?=TITLE:)/i).filter(block => block.trim().length > 0);
   
-  console.log('Source lines found:', sourceLines);
+  console.log(`Found ${sourceBlocks.length} source blocks`);
   
-  for (let i = 0; i < Math.min(sourceLines.length, citations.length, 4); i++) {
-    const line = sourceLines[i];
+  for (let i = 0; i < Math.min(sourceBlocks.length, citations.length, 4); i++) {
+    const block = sourceBlocks[i];
     const url = citations[i] as string;
     
-    const parts = line.split(' | ');
-    console.log(`Processing source ${i+1}: parts = ${parts.length}`, parts);
+    // Extract title
+    const titleMatch = block.match(/TITLE:\s*(.+?)(?=OUTLET:|$)/is);
+    const title = titleMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || `Article ${i + 1}`;
     
-    if (parts.length >= 3) {
-      const title = parts[0].trim().replace(/^\d+\.\s*/, '').replace(/^\[|\]$/g, '');
-      sources.push({
-        url,
-        outlet: parts[1].trim().replace(/^\[|\]$/g, ''),
-        title: title || `Article ${i+1}`,
-        summary: parts[2].trim().replace(/^\[|\]$/g, '').substring(0, 200),
-      });
-      console.log(`Added structured source: ${title}`);
-    } else {
-      // Fallback: extract better outlet names
+    // Extract outlet
+    const outletMatch = block.match(/OUTLET:\s*(.+?)(?=SUMMARY:|$)/is);
+    const outlet = outletMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'News Source';
+    
+    // Extract summary
+    const summaryMatch = block.match(/SUMMARY:\s*(.+?)(?=URL_REF:|$)/is);
+    const summary = summaryMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'Recent developments in this policy area.';
+    
+    sources.push({
+      url,
+      outlet,
+      title: title.substring(0, 100), // Reasonable title length
+      summary: summary.substring(0, 200)
+    });
+    
+    console.log(`Added source ${i + 1}: "${title}" from ${outlet}`);
+  }
+  
+  // Fallback: if no structured sources found, try old method
+  if (sources.length === 0) {
+    console.log('No structured sources found, using fallback method');
+    
+    for (let i = 0; i < Math.min(citations.length, 4); i++) {
+      const url = citations[i] as string;
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace('www.', '');
       
@@ -253,13 +274,12 @@ Focus on 2024-2025 developments and credible news sources.`
       else if (domain.includes('fda.gov')) outlet = 'FDA';
       else if (domain.includes('.gov')) outlet = 'Government Source';
       else {
-        // Clean up domain name as last resort
         outlet = domain.split('.')[0]
           .replace(/[-_]/g, ' ')
           .replace(/\b\w/g, l => l.toUpperCase());
       }
       
-      // Derive a readable title from the URL slug
+      // Derive title from URL
       const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
       let title = slug
         .replace(/[-_]/g, ' ')
@@ -272,7 +292,7 @@ Focus on 2024-2025 developments and credible news sources.`
         title = `${outlet} Article`;
       }
 
-      // Extract a reasonable summary from the content
+      // Extract summary from content
       const sentences = searchContent.split(/[.!?]+/);
       let summary = sentences.find(s => 
         s.length > 30 && s.length < 200 && 
@@ -285,14 +305,12 @@ Focus on 2024-2025 developments and credible news sources.`
         title,
         summary: summary.substring(0, 200)
       });
-      console.log(`Added fallback source: ${title}`);
+      
+      console.log(`Added fallback source: "${title}" from ${outlet}`);
     }
   }
   
   console.log(`Total sources processed: ${sources.length}`);
-    }
-  }
-  
   return sources.slice(0, 4);
 }
 
