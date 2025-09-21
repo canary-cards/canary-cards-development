@@ -1,4 +1,5 @@
 import React from 'react';
+import { Header } from './Header';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -26,24 +27,7 @@ export class AppErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-background flex flex-col">
-          {/* Simple header without routing dependencies */}
-          <header className="h-14 md:h-16 bg-background">
-            <div className="flex items-center justify-between px-4 h-full">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-background font-bold text-lg">C</span>
-                </div>
-                <div className="hidden md:flex flex-col text-left">
-                  <span className="font-semibold text-left text-primary" style={{ fontFamily: 'Spectral', fontWeight: 600 }}>
-                    Canary Cards
-                  </span>
-                  <span className="text-sm hidden sm:block text-left text-muted-foreground">
-                    Real postcards. Real impact.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </header>
+          <Header />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto p-6">
               <h1 className="text-4xl display-title mb-4">Oops!</h1>

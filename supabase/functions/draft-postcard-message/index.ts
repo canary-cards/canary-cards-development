@@ -173,8 +173,6 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
     const apiKey = getApiKey('perplexitykey');
     const location = await getLocationFromZip(zipCode);
     
-    console.log('🔍 Calling Perplexity API for source discovery...');
-    
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -182,7 +180,7 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: [
           {
             role: 'system',
@@ -207,21 +205,9 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
       })
     });
 
-    console.log(`🔍 Perplexity API response status: ${response.status}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🚨 Perplexity API error:', response.status, errorText);
-      throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
-    }
-
     const result = await response.json();
-    console.log('🔍 Perplexity API result:', JSON.stringify(result, null, 2));
-    
     const searchContent = result.choices[0]?.message?.content || '';
     const citations = result.citations || [];
-    
-    console.log(`🔍 Found ${citations.length} citations from Perplexity`);
     
     const sources: Source[] = [];
     
