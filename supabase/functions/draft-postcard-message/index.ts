@@ -231,9 +231,38 @@ Return exactly 3-4 sources using the format I specified.`
     console.log('📄 Perplexity search content:', searchContent);
     console.log('🔗 Citations:', citations);
     
-    const sources: Source[] = [];
-    
-    // Parse the structured format
+  const sources: Source[] = [];
+  
+  // Prefer official search_results if provided by API
+  const searchResults = Array.isArray(data.search_results) ? data.search_results : [];
+  if (searchResults.length > 0) {
+    console.log(`🧾 Using search_results (${searchResults.length}) from Perplexity`);
+    const mapped = searchResults.slice(0, 4).map((res: any) => {
+      const url: string = res.url || '';
+      let outlet = 'News Source';
+      try {
+        const domain = new URL(url).hostname.replace('www.', '');
+        if (domain.includes('cnn.com')) outlet = 'CNN';
+        else if (domain.includes('nytimes.com')) outlet = 'The New York Times';
+        else if (domain.includes('washingtonpost.com')) outlet = 'Washington Post';
+        else if (domain.includes('reuters.com')) outlet = 'Reuters';
+        else if (domain.includes('ap.org') || domain.includes('apnews.com')) outlet = 'Associated Press';
+        else if (domain.includes('npr.org')) outlet = 'NPR';
+        else if (domain.includes('politico.com')) outlet = 'Politico';
+        else if (domain.includes('axios.com')) outlet = 'Axios';
+        else if (domain.includes('bloomberg.com')) outlet = 'Bloomberg';
+        else if (domain.includes('.gov')) outlet = 'Government Source';
+        else outlet = domain.split('.')[0].replace(/[-_]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+      } catch {}
+      const title = (res.title || '').toString().trim() || (url.split('/').pop() || 'Article').replace(/[-_]/g, ' ');
+      const summary = (res.snippet || res.description || '').toString().trim() || 'Recent developments in this policy area.';
+      return { url, outlet, title: title.substring(0, 100), summary: summary.substring(0, 200) } as Source;
+    });
+    console.log('✅ Mapped sources from search_results:', mapped.map(m => m.title));
+    return mapped;
+  }
+  
+  // Parse the structured format
     const sourceBlocks = searchContent.split(/(?=TITLE:)/i).filter(block => block.trim().length > 0);
     
     console.log(`📝 Found ${sourceBlocks.length} source blocks`);
