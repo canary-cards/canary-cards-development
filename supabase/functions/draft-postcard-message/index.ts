@@ -269,21 +269,24 @@ Focus on 2024-2025 developments and credible news sources.`
   return sources.slice(0, 4);
 }
 
-async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources }: {
+async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative }: {
   concerns: string,
   personalImpact: string,
   zipCode: string,
   themeAnalysis: ThemeAnalysis,
-  sources: Source[]
+  sources: Source[],
+  representative: { name: string; type?: string }
 }): Promise<string> {
   const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
   const location = await getLocationFromZip(zipCode);
+  const repLastName = (representative?.name || '').trim().split(' ').slice(-1)[0] || 'Representative';
+  const senderSignature = `A constituent in ${location.city}, ${location.state}`;
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
 Rep. [LastName],
-[content - do NOT repeat "Rep." or "Dear Rep." here]
+[content - 1–2 sentences. Do NOT repeat "Rep." or "Dear Rep." here. Must not be empty.]
 Sincerely, [SenderName]
 
 LENGTH REQUIREMENTS:
@@ -295,6 +298,10 @@ TONE & STYLE (CRITICAL FOR AUTHENTICITY):
 - Use everyday conversational language with contractions ("can't", "won't", "we're")
 - Express genuine emotion but stay factual - think "concerned neighbor"
 - Avoid formal political terms
+
+STRICT NAME RULES:
+- Use the provided RepresentativeLastName EXACTLY. Do not guess another name.
+- Use the provided SenderSignature EXACTLY. Do not invent a different name.
 
 SOURCE INTEGRATION:
 - Reference relevant bills as "H.R. [NUMBER]" when appropriate
@@ -310,6 +317,8 @@ Today's date: ${today}
 User concern: ${concerns}
 Personal impact: ${personalImpact || ''}
 Location: ${location.city}, ${location.state}
+RepresentativeLastName: ${repLastName}
+SenderSignature: ${senderSignature}
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
 ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
@@ -334,7 +343,13 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
   });
 
   const result = await response.json();
-  const text = result.content[0]?.text?.trim() || '';
+  let text = result.content?.[0]?.text?.trim() || '';
+
+  // Minimal guard: ensure we used the correct last name and have non-empty body
+  if (!text.includes(`Rep. ${repLastName}`) || !text.includes('Sincerely,')) {
+    console.warn('Postcard missing required salutation/signature; regenerating minimal fallback body');
+    text = `Rep. ${repLastName},\n\nI'm writing from ${location.city}. ${concerns} hits home here — please act so families can afford care.\n\nSincerely, ${senderSignature}`;
+  }
   
   return text;
 }
@@ -392,10 +407,11 @@ Write the shortened version that focuses on the most compelling point:`;
   return shortenedText;
 }
 
-async function generatePostcardAndSources({ zipCode, concerns, personalImpact }: {
+async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
   zipCode: string,
   concerns: string,
-  personalImpact: string
+  personalImpact: string,
+  representative: { name: string; type?: string }
 }): Promise<{ postcard: string, sources: Source[] }> {
   try {
     console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
@@ -409,7 +425,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.log(`Found ${sources.length} sources`);
     
     // Step 3: Draft postcard
-    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources });
+    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
     // Step 4: Shorten if needed
@@ -547,7 +563,8 @@ serve(async (req) => {
       const result = await generatePostcardAndSources({
         zipCode: zipCode,
         concerns: concerns,
-        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`
+        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
+        representative: representative
       });
       
       // Transform sources to match app's expected format
