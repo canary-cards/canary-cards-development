@@ -562,10 +562,12 @@ serve(async (req) => {
       });
       
       // Transform sources to match app's expected format
-      const appSources = result.sources.map((source, index) => ({
-        description: source.summary,
+      const appSources = result.sources.map((source) => ({
+        description: source.headline || source.summary,
         url: source.url,
-        dataPointCount: index + 1 // Simple relevance scoring
+        outlet: source.outlet,
+        headline: source.headline,
+        summary: source.summary
       }));
       
       finalResult = {

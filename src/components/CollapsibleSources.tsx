@@ -200,10 +200,10 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
         
         <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 overflow-hidden">
           {prioritizedSources.map((source, index) => {
-            // Extract and clean article title
-            const cleanDescription = source.description.replace(/<[^>]*>/g, '');
-            const rawTitle = cleanDescription.split('.')[0] || cleanDescription.substring(0, 100);
-            const title = truncateTitle(rawTitle.trim());
+            // Use headline if available, otherwise fall back to description
+            const title = source.headline 
+              ? truncateTitle(source.headline.trim())
+              : truncateTitle(source.description.replace(/<[^>]*>/g, '').split('.')[0] || source.description.substring(0, 100));
             
             return (
               <div 
@@ -231,7 +231,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                     <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors flex-shrink-0" />
                   </a>
                   <div className="text-xs text-muted-foreground/80 font-medium">
-                    {getSourceDisplayName(source.url)}
+                    {source.outlet || getSourceDisplayName(source.url)}
                   </div>
                 </div>
               </div>
