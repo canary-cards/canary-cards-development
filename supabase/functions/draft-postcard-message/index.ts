@@ -172,18 +172,21 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
   const apiKey = getApiKey('perplexitykey');
   const location = await getLocationFromZip(zipCode);
   
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-sonar-small-128k-online',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a research assistant finding current news articles. You must return exactly 3-4 sources in this exact format:
+  console.log(`🔍 Starting source discovery for theme: "${themeAnalysis.primaryTheme}" in ${location.city}, ${location.state}`);
+  
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a research assistant finding current news articles. You must return exactly 3-4 sources in this exact format:
 
 TITLE: [Full article headline]
 OUTLET: [Publication name like "CNN", "New York Times", "Reuters"]  
@@ -196,125 +199,144 @@ SUMMARY: [2-3 sentence summary]
 URL_REF: [2]
 
 Follow this format exactly for each source you find.`
-        },
-        {
-          role: 'user',
-          content: `Find recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} generally. Focus on 2024-2025 developments from credible news sources.
+          },
+          {
+            role: 'user',
+            content: `Find recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} generally. Focus on 2024-2025 developments from credible news sources.
 
 Return exactly 3-4 sources using the format I specified.`
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.1,
-      return_citations: true
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    console.error('Perplexity API error response:', data);
-  }
-  const searchContent = data.choices?.[0]?.message?.content || '';
-  const citations = Array.isArray(data.citations) ? data.citations : [];
-  
-  console.log('Perplexity search content:', searchContent);
-  console.log('Citations:', citations);
-  
-  const sources: Source[] = [];
-  
-  // Parse the structured format
-  const sourceBlocks = searchContent.split(/(?=TITLE:)/i).filter(block => block.trim().length > 0);
-  
-  console.log(`Found ${sourceBlocks.length} source blocks`);
-  
-  for (let i = 0; i < Math.min(sourceBlocks.length, citations.length, 4); i++) {
-    const block = sourceBlocks[i];
-    const url = citations[i] as string;
-    
-    // Extract title
-    const titleMatch = block.match(/TITLE:\s*(.+?)(?=OUTLET:|$)/is);
-    const title = titleMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || `Article ${i + 1}`;
-    
-    // Extract outlet
-    const outletMatch = block.match(/OUTLET:\s*(.+?)(?=SUMMARY:|$)/is);
-    const outlet = outletMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'News Source';
-    
-    // Extract summary
-    const summaryMatch = block.match(/SUMMARY:\s*(.+?)(?=URL_REF:|$)/is);
-    const summary = summaryMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'Recent developments in this policy area.';
-    
-    sources.push({
-      url,
-      outlet,
-      title: title.substring(0, 100), // Reasonable title length
-      summary: summary.substring(0, 200)
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.1,
+        return_citations: true
+      })
     });
-    
-    console.log(`Added source ${i + 1}: "${title}" from ${outlet}`);
-  }
-  
-  // Fallback: if no structured sources found, try old method
-  if (sources.length === 0) {
-    console.log('No structured sources found, using fallback method');
-    
-    for (let i = 0; i < Math.min(citations.length, 4); i++) {
-      const url = citations[i] as string;
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname.replace('www.', '');
-      
-      let outlet = 'News Source';
-      if (domain.includes('cnn.com')) outlet = 'CNN';
-      else if (domain.includes('nytimes.com')) outlet = 'The New York Times';
-      else if (domain.includes('washingtonpost.com')) outlet = 'Washington Post';
-      else if (domain.includes('reuters.com')) outlet = 'Reuters';
-      else if (domain.includes('ap.org') || domain.includes('apnews.com')) outlet = 'Associated Press';
-      else if (domain.includes('npr.org')) outlet = 'NPR';
-      else if (domain.includes('politico.com')) outlet = 'Politico';
-      else if (domain.includes('axios.com')) outlet = 'Axios';
-      else if (domain.includes('bloomberg.com')) outlet = 'Bloomberg';
-      else if (domain.includes('hhs.gov')) outlet = 'Dept. of Health & Human Services';
-      else if (domain.includes('cdc.gov')) outlet = 'CDC';
-      else if (domain.includes('fda.gov')) outlet = 'FDA';
-      else if (domain.includes('.gov')) outlet = 'Government Source';
-      else {
-        outlet = domain.split('.')[0]
-          .replace(/[-_]/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase());
-      }
-      
-      // Derive title from URL
-      const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
-      let title = slug
-        .replace(/[-_]/g, ' ')
-        .replace(/\.(html|htm|php)$/i, '')
-        .trim();
-      if (title) {
-        title = title.replace(/\b\w/g, l => l.toUpperCase());
-      }
-      if (!title || title.length < 4) {
-        title = `${outlet} Article`;
-      }
 
-      // Extract summary from content
-      const sentences = searchContent.split(/[.!?]+/);
-      let summary = sentences.find(s => 
-        s.length > 30 && s.length < 200 && 
-        s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase())
-      )?.trim() || 'Recent developments in this policy area.';
+    console.log(`📡 Perplexity API response status: ${response.status}`);
+    
+    if (!response.ok) {
+      console.error(`❌ Perplexity API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ Error details:', errorText);
+      return [];
+    }
+
+    const data = await response.json();
+    console.log('📊 Full Perplexity response:', JSON.stringify(data, null, 2));
+    
+    const searchContent = data.choices?.[0]?.message?.content || '';
+    const citations = Array.isArray(data.citations) ? data.citations : [];
+    
+    console.log('📄 Perplexity search content:', searchContent);
+    console.log('🔗 Citations:', citations);
+    
+    const sources: Source[] = [];
+    
+    // Parse the structured format
+    const sourceBlocks = searchContent.split(/(?=TITLE:)/i).filter(block => block.trim().length > 0);
+    
+    console.log(`📝 Found ${sourceBlocks.length} source blocks`);
+    
+    for (let i = 0; i < Math.min(sourceBlocks.length, citations.length, 4); i++) {
+      const block = sourceBlocks[i];
+      const url = citations[i] as string;
+      
+      console.log(`🔍 Processing block ${i + 1}:`, block.substring(0, 200) + '...');
+      
+      // Extract title
+      const titleMatch = block.match(/TITLE:\s*(.+?)(?=OUTLET:|$)/is);
+      const title = titleMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || `Article ${i + 1}`;
+      
+      // Extract outlet
+      const outletMatch = block.match(/OUTLET:\s*(.+?)(?=SUMMARY:|$)/is);
+      const outlet = outletMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'News Source';
+      
+      // Extract summary
+      const summaryMatch = block.match(/SUMMARY:\s*(.+?)(?=URL_REF:|$)/is);
+      const summary = summaryMatch?.[1]?.trim().replace(/^\[|\]$/g, '') || 'Recent developments in this policy area.';
       
       sources.push({
         url,
         outlet,
-        title,
+        title: title.substring(0, 100), // Reasonable title length
         summary: summary.substring(0, 200)
       });
       
-      console.log(`Added fallback source: "${title}" from ${outlet}`);
+      console.log(`✅ Added source ${i + 1}: "${title}" from ${outlet}`);
     }
+    
+    // Fallback: if no structured sources found, try old method
+    if (sources.length === 0) {
+      console.log('⚠️ No structured sources found, using fallback method');
+      
+      for (let i = 0; i < Math.min(citations.length, 4); i++) {
+        const url = citations[i] as string;
+        try {
+          const urlObj = new URL(url);
+          const domain = urlObj.hostname.replace('www.', '');
+          
+          let outlet = 'News Source';
+          if (domain.includes('cnn.com')) outlet = 'CNN';
+          else if (domain.includes('nytimes.com')) outlet = 'The New York Times';
+          else if (domain.includes('washingtonpost.com')) outlet = 'Washington Post';
+          else if (domain.includes('reuters.com')) outlet = 'Reuters';
+          else if (domain.includes('ap.org') || domain.includes('apnews.com')) outlet = 'Associated Press';
+          else if (domain.includes('npr.org')) outlet = 'NPR';
+          else if (domain.includes('politico.com')) outlet = 'Politico';
+          else if (domain.includes('axios.com')) outlet = 'Axios';
+          else if (domain.includes('bloomberg.com')) outlet = 'Bloomberg';
+          else if (domain.includes('hhs.gov')) outlet = 'Dept. of Health & Human Services';
+          else if (domain.includes('cdc.gov')) outlet = 'CDC';
+          else if (domain.includes('fda.gov')) outlet = 'FDA';
+          else if (domain.includes('.gov')) outlet = 'Government Source';
+          else {
+            outlet = domain.split('.')[0]
+              .replace(/[-_]/g, ' ')
+              .replace(/\b\w/g, l => l.toUpperCase());
+          }
+          
+          // Derive title from URL
+          const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+          let title = slug
+            .replace(/[-_]/g, ' ')
+            .replace(/\.(html|htm|php)$/i, '')
+            .trim();
+          if (title) {
+            title = title.replace(/\b\w/g, l => l.toUpperCase());
+          }
+          if (!title || title.length < 4) {
+            title = `${outlet} Article`;
+          }
+
+          // Extract summary from content
+          const sentences = searchContent.split(/[.!?]+/);
+          let summary = sentences.find(s => 
+            s.length > 30 && s.length < 200 && 
+            s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase())
+          )?.trim() || 'Recent developments in this policy area.';
+          
+          sources.push({
+            url,
+            outlet,
+            title,
+            summary: summary.substring(0, 200)
+          });
+          
+          console.log(`🔄 Added fallback source: "${title}" from ${outlet}`);
+        } catch (urlError) {
+          console.error(`❌ Error processing URL ${url}:`, urlError);
+        }
+      }
+    }
+    
+    console.log(`📊 Total sources processed: ${sources.length}`);
+    return sources.slice(0, 4);
+    
+  } catch (error) {
+    console.error('❌ Error in discoverSources:', error);
+    return [];
   }
-  
-  console.log(`Total sources processed: ${sources.length}`);
-  return sources.slice(0, 4);
 }
 
 async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative }: {
