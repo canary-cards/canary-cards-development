@@ -143,7 +143,19 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
     })
   });
 
+  if (!response.ok) {
+    console.error(`Anthropic API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Anthropic API failed: ${response.status}`);
+  }
+
   const result = await response.json();
+  console.log('Anthropic API response:', JSON.stringify(result, null, 2));
+  
+  if (!result.content || !Array.isArray(result.content) || result.content.length === 0) {
+    console.error('Invalid Anthropic API response format:', result);
+    throw new Error('Invalid response format from Anthropic API');
+  }
+  
   const analysisText = result.content[0]?.text?.trim() || '';
   
   const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
