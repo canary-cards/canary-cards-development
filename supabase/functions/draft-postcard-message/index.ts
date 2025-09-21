@@ -267,12 +267,13 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
   return sources.slice(0, 4); // Return top 4 sources
 }
 
-async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources }: {
+async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative }: {
   concerns: string,
   personalImpact: string,
   zipCode: string,
   themeAnalysis: ThemeAnalysis,
-  sources: Source[]
+  sources: Source[],
+  representative: any
 }): Promise<string> {
   const apiKey = getApiKey('anthropickey');
   const location = await getLocationFromZip(zipCode);
@@ -280,7 +281,7 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
-Rep. [LastName],
+Rep. ${representative.name.split(' ').pop()},
 [content - do NOT repeat "Rep." or "Dear Rep." here]
 Sincerely, [name]
 
@@ -314,6 +315,7 @@ Today's date: ${today}
 User concern: ${concerns}
 Personal impact: ${personalImpact || ''}
 Location: ${location.city}, ${location.state}
+Representative: ${representative.name} (${representative.party}, ${representative.type})
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
 ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
@@ -419,7 +421,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.log(`Found ${sources.length} sources`);
     
     // Step 3: Draft postcard
-    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources });
+    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
     // Step 4: Shorten if needed
