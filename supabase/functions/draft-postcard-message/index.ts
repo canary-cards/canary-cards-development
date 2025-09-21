@@ -632,7 +632,7 @@ serve(async (req) => {
     // Return the generated postcard
     return new Response(
       JSON.stringify({ 
-        postcard, 
+        draftMessage: postcard, 
         sources,
         draftId,
         success: true 
