@@ -33,9 +33,8 @@ function getApiKey(envVar: string, fallback?: string): string {
   throw new Error(`Missing required API key: ${envVar}`);
 }
 
-async function getLocationFromZip(zipCode: string): Promise<{ state: string; city: string; region: string }> {
-  // Fallback for common zip codes to avoid API calls
-  const commonZipMap: { [key: string]: { state: string; city: string; region: string } } = {
+function getLocationFromZip(zipCode: string): { state: string; city: string; region: string } {
+  const zipMap: { [key: string]: { state: string; city: string; region: string } } = {
     '90210': { state: 'California', city: 'Beverly Hills', region: 'Los Angeles County' },
     '10001': { state: 'New York', city: 'New York', region: 'Manhattan' },
     '78701': { state: 'Texas', city: 'Austin', region: 'Central Texas' },
@@ -48,42 +47,7 @@ async function getLocationFromZip(zipCode: string): Promise<{ state: string; cit
     '80202': { state: 'Colorado', city: 'Denver', region: 'Denver Metro' }
   };
   
-  // Check common zip codes first
-  if (commonZipMap[zipCode]) {
-    return commonZipMap[zipCode];
-  }
-  
-  // Use Geocodio API for other zip codes
-  try {
-    const geocodioApiKey = getApiKey('GEOCODIO_KEY');
-    const response = await fetch(
-      `https://api.geocod.io/v1.9/geocode?q=${zipCode}&fields=cd&api_key=${geocodioApiKey}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Geocodio API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-      throw new Error('No results found for zip code');
-    }
-    
-    const result = data.results[0];
-    const addressComponents = result.address_components;
-    
-    return {
-      state: addressComponents.state || 'Unknown',
-      city: addressComponents.city || 'Unknown',
-      region: `${addressComponents.city}, ${addressComponents.state}` || 'Unknown'
-    };
-    
-  } catch (error) {
-    console.error(`Geocodio lookup failed for ${zipCode}:`, error);
-    // Fallback to unknown values if API fails
-    return { state: 'Unknown', city: 'Unknown', region: 'Unknown' };
-  }
+  return zipMap[zipCode] || { state: 'Unknown', city: 'Unknown', region: 'Unknown' };
 }
 
 async function analyzeTheme({ concerns, personalImpact, zipCode }: {
@@ -92,7 +56,7 @@ async function analyzeTheme({ concerns, personalImpact, zipCode }: {
   zipCode: string
 }): Promise<ThemeAnalysis> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -152,7 +116,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
 
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -271,14 +235,14 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   sources: Source[]
 }): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
 Rep. [LastName],
 [content - do NOT repeat "Rep." or "Dear Rep." here]
-Sincerely, [Name]
+Sincerely, [SenderName]
 
 LENGTH REQUIREMENTS:
 - TARGET: 275-280 characters (optimal space utilization)
@@ -333,59 +297,6 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
   return text;
 }
 
-async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
-  
-  const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
-
-TASK: Shorten this postcard to under 290 characters while keeping it excellent.
-
-STRATEGY:
-- If the postcard makes multiple points, choose the STRONGEST one and focus on it
-- Remove secondary arguments - don't try to cram everything in
-- Keep the personal connection and emotional impact
-- Maintain the authentic voice and conversational tone
-- Preserve the exact format: Rep. [LastName], [content] Sincerely, [Name]
-
-QUALITY STANDARDS:
-- The shortened version should be a complete, compelling postcard on its own
-- Better to make one point well than multiple points poorly
-- Keep contractions and natural language
-- Don't sacrifice authenticity for brevity
-
-ABSOLUTE REQUIREMENTS:
-- Must be under 290 characters (including newlines)
-- Must maintain Rep./Sincerely format
-- Must sound like a real person, not a form letter
-
-Original postcard to shorten:
-${originalPostcard}
-
-Write the shortened version that focuses on the most compelling point:`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      temperature: 0.1,
-      system: SHORTENING_PROMPT,
-      messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
-    })
-  });
-
-  const result = await response.json();
-  const shortenedText = result.content[0]?.text?.trim() || '';
-  
-  return shortenedText;
-}
-
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact }: {
   zipCode: string,
   concerns: string,
@@ -403,28 +314,8 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.log(`Found ${sources.length} sources`);
     
     // Step 3: Draft postcard
-    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources });
+    const postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources });
     console.log(`Generated postcard: ${postcard.length} characters`);
-    
-    // Step 4: Shorten if needed
-    if (postcard.length > 290) {
-      console.log(`Postcard too long (${postcard.length} chars), shortening...`);
-      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
-      console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
-      
-      // Use shortened version if it's actually shorter and under limit
-      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 290) {
-        postcard = shortenedPostcard;
-      } else {
-        // If shortening failed, try basic truncation as last resort
-        console.log('Shortening API failed, using truncation fallback');
-        const lines = postcard.split('\n');
-        if (lines.length >= 3) {
-          // Keep Rep. line, first content line, and Sincerely line
-          postcard = [lines[0], lines[1].substring(0, 200), lines[lines.length - 1]].join('\n');
-        }
-      }
-    }
     
     return { postcard, sources };
     
@@ -432,39 +323,12 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.error("Error generating postcard:", error);
     
     // Fallback simple postcard
-    const { state } = await getLocationFromZip(zipCode);
-    let fallbackPostcard = `Rep. Smith,
+    const { state } = getLocationFromZip(zipCode);
+    const fallbackPostcard = `Rep. Smith,
 
 ${personalImpact} Please address ${concerns} affecting ${state} families.
 
-Sincerely, [name]`;
-
-    // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 290) {
-      console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
-      try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 290) {
-          fallbackPostcard = shortenedFallback;
-          console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
-        } else {
-          // Basic truncation as last resort
-          const lines = fallbackPostcard.split('\n');
-          if (lines.length >= 3) {
-            fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-            console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-          }
-        }
-      } catch (shorteningError) {
-        console.error("Fallback shortening failed:", shorteningError);
-        // Basic truncation as last resort
-        const lines = fallbackPostcard.split('\n');
-        if (lines.length >= 3) {
-          fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-          console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-        }
-      }
-    }
+Sincerely, Concerned Citizen`;
 
     return { 
       postcard: fallbackPostcard, 

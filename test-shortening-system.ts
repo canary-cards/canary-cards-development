@@ -1,10 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
-};
+// Test the new postcard generation system with shortening capability
+// This tests the actual Supabase function logic
 
 interface Source {
   url: string;
@@ -21,7 +16,7 @@ interface ThemeAnalysis {
   reasoning: string;
 }
 
-// API key management for Deno environment
+// Copy the actual functions from the Supabase function for testing
 function getApiKey(envVar: string, fallback?: string): string {
   if (typeof globalThis.Deno !== 'undefined' && globalThis.Deno.env) {
     try {
@@ -33,9 +28,8 @@ function getApiKey(envVar: string, fallback?: string): string {
   throw new Error(`Missing required API key: ${envVar}`);
 }
 
-async function getLocationFromZip(zipCode: string): Promise<{ state: string; city: string; region: string }> {
-  // Fallback for common zip codes to avoid API calls
-  const commonZipMap: { [key: string]: { state: string; city: string; region: string } } = {
+function getLocationFromZip(zipCode: string): { state: string; city: string; region: string } {
+  const zipMap: { [key: string]: { state: string; city: string; region: string } } = {
     '90210': { state: 'California', city: 'Beverly Hills', region: 'Los Angeles County' },
     '10001': { state: 'New York', city: 'New York', region: 'Manhattan' },
     '78701': { state: 'Texas', city: 'Austin', region: 'Central Texas' },
@@ -48,42 +42,7 @@ async function getLocationFromZip(zipCode: string): Promise<{ state: string; cit
     '80202': { state: 'Colorado', city: 'Denver', region: 'Denver Metro' }
   };
   
-  // Check common zip codes first
-  if (commonZipMap[zipCode]) {
-    return commonZipMap[zipCode];
-  }
-  
-  // Use Geocodio API for other zip codes
-  try {
-    const geocodioApiKey = getApiKey('GEOCODIO_KEY');
-    const response = await fetch(
-      `https://api.geocod.io/v1.9/geocode?q=${zipCode}&fields=cd&api_key=${geocodioApiKey}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Geocodio API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-      throw new Error('No results found for zip code');
-    }
-    
-    const result = data.results[0];
-    const addressComponents = result.address_components;
-    
-    return {
-      state: addressComponents.state || 'Unknown',
-      city: addressComponents.city || 'Unknown',
-      region: `${addressComponents.city}, ${addressComponents.state}` || 'Unknown'
-    };
-    
-  } catch (error) {
-    console.error(`Geocodio lookup failed for ${zipCode}:`, error);
-    // Fallback to unknown values if API fails
-    return { state: 'Unknown', city: 'Unknown', region: 'Unknown' };
-  }
+  return zipMap[zipCode] || { state: 'Unknown', city: 'Unknown', region: 'Unknown' };
 }
 
 async function analyzeTheme({ concerns, personalImpact, zipCode }: {
@@ -92,7 +51,7 @@ async function analyzeTheme({ concerns, personalImpact, zipCode }: {
   zipCode: string
 }): Promise<ThemeAnalysis> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -152,7 +111,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
 
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -271,14 +230,14 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   sources: Source[]
 }): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
 Rep. [LastName],
 [content - do NOT repeat "Rep." or "Dear Rep." here]
-Sincerely, [Name]
+Sincerely, [SenderName]
 
 LENGTH REQUIREMENTS:
 - TARGET: 275-280 characters (optimal space utilization)
@@ -335,7 +294,7 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
 
 async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const location = getLocationFromZip(zipCode);
   
   const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
@@ -408,16 +367,17 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     
     // Step 4: Shorten if needed
     if (postcard.length > 290) {
-      console.log(`Postcard too long (${postcard.length} chars), shortening...`);
+      console.log(`🔥 Postcard too long (${postcard.length} chars), shortening...`);
       const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
-      console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+      console.log(`✂️ Shortened postcard: ${shortenedPostcard.length} characters`);
       
       // Use shortened version if it's actually shorter and under limit
       if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 290) {
+        console.log(`✅ Using shortened version`);
         postcard = shortenedPostcard;
       } else {
         // If shortening failed, try basic truncation as last resort
-        console.log('Shortening API failed, using truncation fallback');
+        console.log('⚠️ Shortening API failed, using truncation fallback');
         const lines = postcard.split('\n');
         if (lines.length >= 3) {
           // Keep Rep. line, first content line, and Sincerely line
@@ -432,39 +392,12 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.error("Error generating postcard:", error);
     
     // Fallback simple postcard
-    const { state } = await getLocationFromZip(zipCode);
-    let fallbackPostcard = `Rep. Smith,
+    const { state } = getLocationFromZip(zipCode);
+    const fallbackPostcard = `Rep. Smith,
 
 ${personalImpact} Please address ${concerns} affecting ${state} families.
 
-Sincerely, [name]`;
-
-    // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 290) {
-      console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
-      try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 290) {
-          fallbackPostcard = shortenedFallback;
-          console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
-        } else {
-          // Basic truncation as last resort
-          const lines = fallbackPostcard.split('\n');
-          if (lines.length >= 3) {
-            fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-            console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-          }
-        }
-      } catch (shorteningError) {
-        console.error("Fallback shortening failed:", shorteningError);
-        // Basic truncation as last resort
-        const lines = fallbackPostcard.split('\n');
-        if (lines.length >= 3) {
-          fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-          console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-        }
-      }
-    }
+Sincerely, Concerned Citizen`;
 
     return { 
       postcard: fallbackPostcard, 
@@ -477,163 +410,67 @@ Sincerely, [name]`;
   }
 }
 
-serve(async (req) => {
-  console.log('Edge function called - draft-postcard-message (Hybrid System)');
-  
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+// Test cases - some designed to generate long postcards
+const testCases = [
+  {
+    concerns: "housing speculation driving up rent prices while local families are being displaced and corporate landlords are buying up affordable housing units",
+    personalImpact: "My rent increased 40% this year and I might have to move out of state, leaving my job and my elderly parents behind",
+    zipCode: "90210",
+    description: "Complex housing issue (should be long)"
+  },
+  {
+    concerns: "gun violence in schools",
+    personalImpact: "My daughter is afraid to go to class",
+    zipCode: "78701", 
+    description: "Simple concern (should be short)"
+  },
+  {
+    concerns: "healthcare costs including prescription drugs, insurance premiums, and hospital bills are bankrupting middle-class families across the country",
+    personalImpact: "I pay $800/month for insulin and my insurance won't cover my specialist visits, so I'm choosing between medication and groceries",
+    zipCode: "10001",
+    description: "Multiple healthcare issues (should be long)"
   }
+];
+
+async function testShorteningSystem() {
+  console.log('🧪 Testing Postcard Generation with Shortening System');
+  console.log('=' * 60);
   
-  try {
-    const requestBody = await req.json();
-    const { concerns, personalImpact, representative, zipCode, inviteCode } = requestBody;
+  for (const [index, testCase] of testCases.entries()) {
+    console.log(`\n📝 TEST ${index + 1}: ${testCase.description}`);
+    console.log(`🎯 Concern: ${testCase.concerns.substring(0, 50)}...`);
+    console.log(`💔 Impact: ${testCase.personalImpact.substring(0, 50)}...`);
+    console.log(`📍 Location: ${testCase.zipCode}`);
+    console.log('-'.repeat(50));
     
-    if (!concerns || !representative || !zipCode) {
-      return new Response(JSON.stringify({
-        error: 'Missing required fields: concerns, representative, or zipCode'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Create Supabase client with service role key
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // First, always insert the postcard draft with pending status and user inputs
-    const { data: postcardDraft, error: draftError } = await supabaseClient
-      .from('postcard_drafts')
-      .insert({
-        invite_code: inviteCode,
-        zip_code: zipCode,
-        concerns: concerns,
-        personal_impact: personalImpact,
-        generation_status: 'pending',
-        recipient_type: representative.type === 'representative' ? 'representative' : 'senator',
-        recipient_snapshot: representative
-      })
-      .select()
-      .single();
-
-    if (draftError) {
-      console.error("Error inserting postcard draft:", draftError);
-      return new Response(JSON.stringify({
-        error: 'Failed to save draft record'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}> };
-    let apiStatusCode = 200;
-    let apiStatusMessage = 'Success';
-    let generationStatus = 'success';
-
     try {
-      console.log(`🧠 Generating postcard for: "${concerns}"`);
-      
-      // Use the hybrid postcard generation system
       const result = await generatePostcardAndSources({
-        zipCode: zipCode,
-        concerns: concerns,
-        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`
+        zipCode: testCase.zipCode,
+        concerns: testCase.concerns,
+        personalImpact: testCase.personalImpact
       });
       
-      // Transform sources to match app's expected format
-      const appSources = result.sources.map((source, index) => ({
-        description: source.summary,
-        url: source.url,
-        dataPointCount: index + 1 // Simple relevance scoring
-      }));
+      console.log('\n✉️ FINAL POSTCARD:');
+      console.log(result.postcard);
+      console.log(`\n📏 Final length: ${result.postcard.length} characters`);
+      console.log(`✅ Under 290 chars: ${result.postcard.length <= 290 ? 'YES' : 'NO'}`);
+      console.log(`📚 Sources found: ${result.sources.length}`);
       
-      finalResult = {
-        postcard: result.postcard,
-        sources: appSources
-      };
-      
-      console.log(`✅ Generated postcard (${result.postcard.length} chars) with ${result.sources.length} sources`);
+      if (result.sources.length > 0) {
+        console.log('\n🔍 Sources:');
+        result.sources.forEach((source, i) => {
+          console.log(`  ${i+1}. ${source.outlet}: ${source.summary.substring(0, 60)}...`);
+        });
+      }
       
     } catch (error) {
-      console.error('AI generation error:', error);
-      generationStatus = 'error';
-      apiStatusCode = 500;
-      apiStatusMessage = error.message || 'AI generation failed';
-      // finalResult remains empty but we continue to save the record
-    }
-
-    // Update the postcard draft with results (success or failure)
-    const { error: updateError } = await supabaseClient
-      .from('postcard_drafts')
-      .update({
-        ai_drafted_message: finalResult.postcard || null,
-        generation_status: generationStatus,
-        api_status_code: apiStatusCode,
-        api_status_message: apiStatusMessage
-      })
-      .eq('id', postcardDraft.id);
-
-    if (updateError) {
-      console.error("Error updating postcard draft:", updateError);
-      // Continue anyway since we already have the draft saved
-    }
-
-    // Insert sources if available and generation was successful
-    if (finalResult.sources && finalResult.sources.length > 0) {
-      const sourcesData = finalResult.sources.map((source, index) => ({
-        postcard_draft_id: postcardDraft.id,
-        ordinal: index + 1,
-        description: source.description,
-        url: source.url,
-        data_point_count: source.dataPointCount || 0
-      }));
-
-      const { error: sourcesError } = await supabaseClient
-        .from('postcard_draft_sources')
-        .insert(sourcesData);
-
-      if (sourcesError) {
-        console.error("Error inserting sources:", sourcesError);
-        // Don't fail the request for sources error, just log it
-      } else {
-        // Update the sources_count in postcard_drafts
-        const { error: countError } = await supabaseClient
-          .from('postcard_drafts')
-          .update({ sources_count: finalResult.sources.length })
-          .eq('id', postcardDraft.id);
-        
-        if (countError) {
-          console.error("Error updating sources count:", countError);
-        }
-      }
+      console.error(`❌ Test ${index + 1} failed:`, error.message);
     }
     
-    // Return in app's expected format with draft ID (even if AI generation failed)
-    return new Response(JSON.stringify({ 
-      draftMessage: finalResult.postcard,
-      sources: finalResult.sources,
-      draftId: postcardDraft.id
-    }), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error in function:', error);
-    return new Response(JSON.stringify({
-      error: `Generation failed: ${error.message}`
-    }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    });
+    console.log('\n' + '='.repeat(60));
   }
-});
+}
+
+if (import.meta.main) {
+  await testShorteningSystem();
+}
