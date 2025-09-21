@@ -158,7 +158,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
   });
 
   const result = await response.json();
-  const analysisText = result.content[0]?.text?.trim() || '';
+  const analysisText = result.content?.[0]?.text?.trim() || '';
   
   const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -210,9 +210,12 @@ Return exactly 3-4 sources using the format I specified.`
     })
   });
 
-  const result = await response.json();
-  const searchContent = result.choices[0]?.message?.content || '';
-  const citations = result.citations || [];
+  const data = await response.json();
+  if (!response.ok) {
+    console.error('Perplexity API error response:', data);
+  }
+  const searchContent = data.choices?.[0]?.message?.content || '';
+  const citations = Array.isArray(data.citations) ? data.citations : [];
   
   console.log('Perplexity search content:', searchContent);
   console.log('Citations:', citations);
@@ -447,7 +450,7 @@ Write the shortened version that focuses on the most compelling point:`;
   });
 
   const result = await response.json();
-  const shortenedText = result.content[0]?.text?.trim() || '';
+  const shortenedText = result.content?.[0]?.text?.trim() || '';
   
   return shortenedText;
 }
