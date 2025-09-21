@@ -108,7 +108,7 @@ async function analyzeTheme({ concerns, personalImpact, zipCode }: {
   personalImpact: string,
   zipCode: string
 }): Promise<ThemeAnalysis> {
-  const apiKey = getApiKey('anthropickey');
+  const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
   const location = await getLocationFromZip(zipCode);
   
   const THEME_ANALYZER_PROMPT = `
@@ -276,7 +276,7 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   themeAnalysis: ThemeAnalysis,
   sources: Source[]
 }): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
+  const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
   const location = await getLocationFromZip(zipCode);
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
@@ -340,7 +340,7 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
 }
 
 async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
+  const apiKey = getApiKey('ANTHROPIC_API_KEY_3', getApiKey('anthropickey'));
   const location = await getLocationFromZip(zipCode);
   
   const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
@@ -444,33 +444,6 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
 ${personalImpact} Please address ${concerns} affecting ${state} families.
 
 Sincerely, Concerned Citizen`;
-
-    // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 290) {
-      console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
-      try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 290) {
-          fallbackPostcard = shortenedFallback;
-          console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
-        } else {
-          // Basic truncation as last resort
-          const lines = fallbackPostcard.split('\n');
-          if (lines.length >= 3) {
-            fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-            console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-          }
-        }
-      } catch (shorteningError) {
-        console.error("Fallback shortening failed:", shorteningError);
-        // Basic truncation as last resort
-        const lines = fallbackPostcard.split('\n');
-        if (lines.length >= 3) {
-          fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-          console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-        }
-      }
-    }
 
     // Apply shortening to fallback postcard if needed
     if (fallbackPostcard.length > 290) {
