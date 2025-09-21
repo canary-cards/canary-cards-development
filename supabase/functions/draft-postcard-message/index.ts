@@ -33,21 +33,74 @@ function getApiKey(envVar: string, fallback?: string): string {
   throw new Error(`Missing required API key: ${envVar}`);
 }
 
-function getLocationFromZip(zipCode: string): { state: string; city: string; region: string } {
-  const zipMap: { [key: string]: { state: string; city: string; region: string } } = {
-    '90210': { state: 'California', city: 'Beverly Hills', region: 'Los Angeles County' },
-    '10001': { state: 'New York', city: 'New York', region: 'Manhattan' },
-    '78701': { state: 'Texas', city: 'Austin', region: 'Central Texas' },
-    '60601': { state: 'Illinois', city: 'Chicago', region: 'Cook County' },
-    '98101': { state: 'Washington', city: 'Seattle', region: 'King County' },
-    '33101': { state: 'Florida', city: 'Miami', region: 'Miami-Dade County' },
-    '85001': { state: 'Arizona', city: 'Phoenix', region: 'Phoenix Metro' },
-    '97201': { state: 'Oregon', city: 'Portland', region: 'Portland Metro' },
-    '30309': { state: 'Georgia', city: 'Atlanta', region: 'Metro Atlanta' },
-    '80202': { state: 'Colorado', city: 'Denver', region: 'Denver Metro' }
-  };
+// Cache for location lookups to avoid repeated API calls
+const locationCache = new Map<string, { state: string; city: string; region: string }>();
+
+interface GeocodioResponse {
+  results: Array<{
+    address_components: {
+      city: string;
+      state: string;
+      zip: string;
+      county?: string;
+    };
+  }>;
+}
+
+async function getLocationFromZip(zipCode: string): Promise<{ state: string; city: string; region: string }> {
+  // Check cache first
+  if (locationCache.has(zipCode)) {
+    return locationCache.get(zipCode)!;
+  }
+
+  const geocodioApiKey = getApiKey('GEOCODIO_KEY');
   
-  return zipMap[zipCode] || { state: 'Unknown', city: 'Unknown', region: 'Unknown' };
+  try {
+    console.log(`Looking up location for ZIP code: ${zipCode}`);
+    
+    const response = await fetch(
+      `https://api.geocod.io/v1.9/geocode?q=${zipCode}&api_key=${geocodioApiKey}`
+    );
+    
+    if (!response.ok) {
+      console.error(`Geocodio API error: ${response.status} ${response.statusText}`);
+      throw new Error('Geocodio API failed');
+    }
+    
+    const data: GeocodioResponse = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      console.error(`No results found for zip code: ${zipCode}`);
+      throw new Error('No location data found');
+    }
+    
+    const result = data.results[0];
+    const location = {
+      state: result.address_components.state,
+      city: result.address_components.city,
+      region: result.address_components.county || `${result.address_components.city} area`
+    };
+    
+    // Cache the result
+    locationCache.set(zipCode, location);
+    console.log(`Location found: ${location.city}, ${location.state}`);
+    
+    return location;
+    
+  } catch (error) {
+    console.error('Error looking up zip code:', error);
+    
+    // Fallback to a generic location if API fails
+    const fallbackLocation = {
+      state: 'Unknown',
+      city: 'Unknown', 
+      region: 'Unknown'
+    };
+    
+    // Cache the fallback to avoid repeated failures
+    locationCache.set(zipCode, fallbackLocation);
+    return fallbackLocation;
+  }
 }
 
 async function analyzeTheme({ concerns, personalImpact, zipCode }: {
@@ -56,7 +109,7 @@ async function analyzeTheme({ concerns, personalImpact, zipCode }: {
   zipCode: string
 }): Promise<ThemeAnalysis> {
   const apiKey = getApiKey('anthropickey');
-  const location = getLocationFromZip(zipCode);
+  const location = await getLocationFromZip(zipCode);
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -116,7 +169,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
 
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
-  const location = getLocationFromZip(zipCode);
+  const location = await getLocationFromZip(zipCode);
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -235,7 +288,7 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   sources: Source[]
 }): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = getLocationFromZip(zipCode);
+  const location = await getLocationFromZip(zipCode);
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
@@ -323,7 +376,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact }:
     console.error("Error generating postcard:", error);
     
     // Fallback simple postcard
-    const { state } = getLocationFromZip(zipCode);
+    const { state } = await getLocationFromZip(zipCode);
     const fallbackPostcard = `Rep. Smith,
 
 ${personalImpact} Please address ${concerns} affecting ${state} families.
