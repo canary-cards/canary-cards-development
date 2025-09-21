@@ -24,9 +24,7 @@ interface ThemeAnalysis {
 
 // API key management for Deno environment
 function getApiKey(envVar: string, fallback?: string): string {
-  // Hardcoded for local testing
-  if (envVar === 'anthropickey') return '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';
-  if (envVar === 'perplexitykey') return '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';
+  // Prefer environment secrets; do NOT use hardcoded keys
   if (typeof globalThis.Deno !== 'undefined' && globalThis.Deno.env) {
     try {
       const val = globalThis.Deno.env.get(envVar);
@@ -632,7 +630,8 @@ serve(async (req) => {
     }
     
     // Return in app's expected format with draft ID (even if AI generation failed)
-    return new Response(JSON.stringify({ 
+return new Response(JSON.stringify({ 
+      draftMessage: finalResult.postcard,
       postcard: finalResult.postcard,
       sources: finalResult.sources,
       draftId: postcardDraft.id
