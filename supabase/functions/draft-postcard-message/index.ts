@@ -404,10 +404,11 @@ Write the shortened version that focuses on the most compelling point:`;
   return shortenedText;
 }
 
-async function generatePostcardAndSources({ zipCode, concerns, personalImpact }: {
+async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
   zipCode: string,
   concerns: string,
-  personalImpact: string
+  personalImpact: string,
+  representative: any
 }): Promise<{ postcard: string, sources: Source[] }> {
   try {
     console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
@@ -560,7 +561,8 @@ serve(async (req) => {
       const result = await generatePostcardAndSources({
         zipCode: zipCode,
         concerns: concerns,
-        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`
+        personalImpact: personalImpact || `This issue matters deeply to me as a constituent in ZIP ${zipCode}`,
+        representative: representative
       });
       
       // Transform sources to match app's expected format
