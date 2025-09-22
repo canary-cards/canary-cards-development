@@ -196,120 +196,121 @@ Focus on 2024-2025 news. I need the actual article headlines, not generic descri
   const result = await response.json();
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
-  
+
+  // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
+  const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(targetUrl, {
+        signal: controller.signal,
+        redirect: 'follow',
+        headers: { 'user-agent': 'Mozilla/5.0 (LovableBot)' }
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const snippet = html.slice(0, 100000);
+      const og = snippet.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+        || snippet.match(/<meta[^>]+name=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i);
+      const tt = snippet.match(/<title[^>]*>([^<]+)<\/title>/i);
+      let title = og?.[1] || tw?.[1] || tt?.[1];
+      if (title) {
+        title = title
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&mdash;/g, '—')
+          .replace(/&ndash;/g, '–')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return title.substring(0, 200);
+      }
+    } catch (err) {
+      console.log('fetchPageTitle error:', targetUrl, err?.message || err);
+    }
+    return null;
+  };
+
   const sources: Source[] = [];
-  
-  for (const [index, citationUrl] of citations.entries()) {
+
+  for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
-    // Extract headline by locating the nearest title marker BEFORE the URL
-    let headline = '';
     const urlIndex = searchContent.indexOf(url);
-    if (urlIndex !== -1) {
-      // Prefer "**ARTICLE TITLE:**" just above the citation
+
+    // 1) Try to fetch the real page title directly (most reliable)
+    let headline = (await fetchPageTitle(url)) || '';
+
+    // 2) If unavailable, try to parse from Perplexity text near the URL
+    if (!headline && urlIndex !== -1) {
       const marker = '**ARTICLE TITLE:**';
       const lastTitleIdx = searchContent.lastIndexOf(marker, urlIndex);
-      if (lastTitleIdx !== -1) {
+      if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
         const afterTitle = searchContent.substring(lastTitleIdx + marker.length, urlIndex);
         const firstLine = afterTitle.split(/\r?\n/)[0].trim();
         if (firstLine) headline = firstLine.replace(/^[*-]\s*/, '').trim();
       }
-      // Fallbacks: look for TITLE: or **TITLE:** lines near the URL
       if (!headline) {
-        const before = searchContent.substring(Math.max(0, urlIndex - 800), urlIndex);
-        const titleLine = before
-          .split(/\n/)
-          .reverse()
-          .find(line => line.trim().match(/(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|TITLE:)/i));
+        const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
+        const lines = before.split(/\n/).map(l => l.trim()).filter(Boolean);
+        const titleLine = [...lines].reverse().find(l => /(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|^TITLE:|^Title:)/i.test(l));
         if (titleLine) {
           const cleaned = titleLine.replace(/\*\*/g, '');
           const m = cleaned.match(/(?:ARTICLE TITLE:|TITLE:)\s*(.+)/i);
           if (m) headline = m[1].trim();
         }
+        // Ultra-fallback: previous non-empty line as title
+        if (!headline && lines.length) {
+          headline = lines[lines.length - 1].replace(/^[\-*\d.]+\s*/, '').trim();
+        }
       }
     }
-    
-    // Better fallback headline generation
+
+    // 3) Domain-based fallback if still missing
     if (!headline) {
       const domain = new URL(url).hostname.replace('www.', '');
-      
-      // For known domains, create better descriptive headlines
-      if (domain.includes('congress.gov')) {
-        headline = 'Congressional Information';
-      } else if (domain.includes('census.gov')) {
-        headline = 'Census Data and Statistics';
-      } else if (domain.includes('bls.gov')) {
-        headline = 'Bureau of Labor Statistics Report';
-      } else if (domain.includes('youtube.com')) {
-        headline = 'Video Content';
-      } else if (domain.includes('rentcafe.com')) {
-        headline = 'Cost of Living Analysis';
-      } else if (domain.includes('oysterlink.com')) {
-        headline = 'Local Economic Data';
-      } else if (domain.includes('.gov')) {
-        headline = 'Government Report';
-      } else if (domain.includes('news') || domain.includes('times') || domain.includes('post')) {
-        headline = 'News Article';
-      } else {
-        // Generate descriptive headline based on theme and location
-        const location = await getLocationFromZip(zipCode);
-        const primaryTheme = themeAnalysis.primaryTheme;
-        headline = `${primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information for ${location.city}, ${location.state}`;
-      }
+      if (domain.includes('congress.gov')) headline = 'Congressional Information';
+      else if (domain.includes('census.gov')) headline = 'Census Data and Statistics';
+      else if (domain.includes('bls.gov')) headline = 'Bureau of Labor Statistics Report';
+      else if (domain.includes('youtube.com')) headline = 'Video Content';
+      else if (domain.includes('rentcafe.com')) headline = 'Cost of Living Analysis';
+      else if (domain.includes('oysterlink.com')) headline = 'Local Economic Data';
+      else if (domain.includes('.gov')) headline = 'Government Report';
+      else if (/(news|times|post)/i.test(domain)) headline = 'News Article';
+      else headline = `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
     }
-    // Extract outlet from URL
+
+    // Outlet from URL
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace('www.', '');
     const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
-    
-    // Extract actual article summary from Perplexity content - look for **SUMMARY:** format
+
+    // Summary extraction near URL
     let summary = '';
-    const urlIndex = searchContent.indexOf(url);
     if (urlIndex !== -1) {
       const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
       const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 500));
-      
-      // Look for **SUMMARY:** pattern
       const summaryMatch = (beforeUrl + afterUrl).match(/\*\*SUMMARY:\*\*\s*([^*\n]+)/i);
       if (summaryMatch) {
         summary = summaryMatch[1].trim();
       } else {
-        // Fallback to contextual sentence extraction
         const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningfulSentences = contextSentences.filter(s =>
-          s.length > 30 && s.length < 300 &&
-          !s.includes('Here are recent') &&
-          !s.includes('**ARTICLE TITLE:**') &&
-          !s.includes('**OUTLET:**') &&
-          !s.includes('Find recent') &&
-          !s.toLowerCase().includes('specifically affecting')
-        );
-        let best = meaningfulSentences.find(s =>
-          s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
-        );
-        if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
+        let meaningful = contextSentences.filter(s => s.length > 30 && s.length < 300 &&
+          !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
+        let best = meaningful.find(s => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
+        if (!best && meaningful.length) best = meaningful[0];
         if (best) summary = best.trim();
       }
     }
-    
-    if (!summary) {
-      const allSentences = searchContent.split(/[.!?]+/);
-      const goodSentences = allSentences.filter(s =>
-        s.length > 40 && s.length < 300 &&
-        !s.includes('Here are recent') &&
-        !s.includes('**ARTICLE TITLE:**') &&
-        !s.includes('**OUTLET:**') &&
-        !s.includes('Find recent') &&
-        !s.includes('Focus on 2024-2025')
-      );
-      if (goodSentences.length > 0) summary = goodSentences[0].trim();
-    }
     if (!summary) summary = 'Recent developments in this policy area.';
+
     sources.push({
-      url: url,
-      outlet: outlet,
+      url,
+      outlet,
       summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
-      headline: headline
+      headline
     });
   }
   
