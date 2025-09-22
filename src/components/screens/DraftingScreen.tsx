@@ -159,7 +159,7 @@ export function DraftingScreen() {
   }, [state.postcardData, dispatch, startTime]);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60">
