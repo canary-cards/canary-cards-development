@@ -449,7 +449,7 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
     
     const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard to under 300 characters while keeping it excellent.
+TASK: Shorten this postcard to under 290 characters while keeping it excellent.
 
 STRATEGY:
 - If the postcard makes multiple points, choose the STRONGEST one and focus on it
@@ -472,7 +472,8 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 300 characters (including newlines)
+- Must be under 290 characters (including newlines) - this is critical
+- Target 280-290 characters for optimal results
 - No salutation, no signature - just direct message content
 - Must sound like a real person, not a form letter
 
