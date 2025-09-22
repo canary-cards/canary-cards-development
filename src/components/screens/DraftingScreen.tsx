@@ -170,7 +170,7 @@ export function DraftingScreen() {
                 </div>
               }>
                 <DotLottiePlayer
-                  src="/assets/drafting-animation.lottie"
+                  src="/assets/writing-animation.json"
                   autoplay
                   loop
                   className="w-full h-full"
