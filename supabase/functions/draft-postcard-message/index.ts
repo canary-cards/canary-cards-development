@@ -167,19 +167,24 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       messages: [
         {
           role: 'system',
-          content: 'You are a research assistant that finds current news and provides structured information. For each article you cite, provide the exact title, publication date, outlet name, and a useful summary. Focus on recent developments and local impacts.'
+          content: `You are a news research assistant. When you cite sources, you MUST format each citation exactly like this:
+
+**ARTICLE TITLE:** [The exact headline from the original article]
+**OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
+**SUMMARY:** [Key points in 1-2 sentences]
+
+Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
         },
         {
           role: 'user',
-          content: `Find recent news articles and policy developments about "${themeAnalysis.primaryTheme}" specifically affecting ${location.city}, ${location.state} or the broader ${location.state} area.
+          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state. 
 
-For each article you reference, please provide:
-- TITLE: [exact article headline]
-- OUTLET: [full publication name] 
-- DATE: [publication date if available]
-- SUMMARY: [2-3 sentence summary of key points relevant to ${themeAnalysis.primaryTheme}]
+For each source you cite, provide:
+**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
+**OUTLET:** [Full publication name]
+**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
 
-Focus on 2024-2025 developments. Prioritize local ${location.state} sources when possible.`
+Focus on 2024-2025 news. I need the actual article headlines, not generic descriptions.`
         }
       ],
       max_tokens: 800,
@@ -196,19 +201,22 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
   
   for (const [index, citationUrl] of citations.entries()) {
     const url = citationUrl as string;
-    // Try to extract headline from Perplexity content using TITLE: marker
+    // Try to extract headline from Perplexity content using **ARTICLE TITLE:** marker
     let headline = '';
-    const titleRegex = new RegExp(`TITLE:([^\n\r]+)[\n\r]+OUTLET:.*?${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    const titleRegex = new RegExp(`\\*\\*ARTICLE TITLE:\\*\\*([^\\n\\r]+)`, 'i');
     const titleMatch = searchContent.match(titleRegex);
     if (titleMatch && titleMatch[1]) {
       headline = titleMatch[1].trim();
     } else {
-      // Fallback: look for TITLE: line near the URL
+      // Fallback: look for **ARTICLE TITLE:** line near the URL
       const urlIndex = searchContent.indexOf(url);
       if (urlIndex !== -1) {
-        const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const titleLine = before.split(/\n/).reverse().find(line => line.trim().startsWith('TITLE:'));
-        if (titleLine) headline = titleLine.replace('TITLE:', '').trim();
+        const before = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
+        const titleLine = before.split(/\n/).reverse().find(line => line.trim().match(/\*\*ARTICLE TITLE:\*\*/i));
+        if (titleLine) {
+          const match = titleLine.match(/\*\*ARTICLE TITLE:\*\*\s*(.+)/i);
+          if (match) headline = match[1].trim();
+        }
       }
     }
     
@@ -244,35 +252,45 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace('www.', '');
     const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
-    // Extract actual article summary from Perplexity content (same as before)
+    
+    // Extract actual article summary from Perplexity content - look for **SUMMARY:** format
     let summary = '';
     const urlIndex = searchContent.indexOf(url);
     if (urlIndex !== -1) {
-      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 400));
-      const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-      let meaningfulSentences = contextSentences.filter(s =>
-        s.length > 30 && s.length < 300 &&
-        !s.includes('Here are recent') &&
-        !s.includes('TITLE:') &&
-        !s.includes('OUTLET:') &&
-        !s.includes('Find recent') &&
-        !s.toLowerCase().includes('specifically affecting')
-      );
-      let best = meaningfulSentences.find(s =>
-        s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-        themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
-      );
-      if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
-      if (best) summary = best.trim();
+      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
+      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 500));
+      
+      // Look for **SUMMARY:** pattern
+      const summaryMatch = (beforeUrl + afterUrl).match(/\*\*SUMMARY:\*\*\s*([^*\n]+)/i);
+      if (summaryMatch) {
+        summary = summaryMatch[1].trim();
+      } else {
+        // Fallback to contextual sentence extraction
+        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
+        let meaningfulSentences = contextSentences.filter(s =>
+          s.length > 30 && s.length < 300 &&
+          !s.includes('Here are recent') &&
+          !s.includes('**ARTICLE TITLE:**') &&
+          !s.includes('**OUTLET:**') &&
+          !s.includes('Find recent') &&
+          !s.toLowerCase().includes('specifically affecting')
+        );
+        let best = meaningfulSentences.find(s =>
+          s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase()))
+        );
+        if (!best && meaningfulSentences.length > 0) best = meaningfulSentences[0];
+        if (best) summary = best.trim();
+      }
     }
+    
     if (!summary) {
       const allSentences = searchContent.split(/[.!?]+/);
       const goodSentences = allSentences.filter(s =>
         s.length > 40 && s.length < 300 &&
         !s.includes('Here are recent') &&
-        !s.includes('TITLE:') &&
-        !s.includes('OUTLET:') &&
+        !s.includes('**ARTICLE TITLE:**') &&
+        !s.includes('**OUTLET:**') &&
         !s.includes('Find recent') &&
         !s.includes('Focus on 2024-2025')
       );
