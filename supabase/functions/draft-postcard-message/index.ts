@@ -211,11 +211,34 @@ Focus on 2024-2025 developments. Prioritize local ${location.state} sources when
         if (titleLine) headline = titleLine.replace('TITLE:', '').trim();
       }
     }
-    // Fallback to last part of URL if no headline found
+    
+    // Better fallback headline generation
     if (!headline) {
-      const urlParts = url.split('/');
-      const lastPart = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
-      headline = lastPart ? lastPart.replace(/[-_]/g, ' ').replace(/\.(html|htm|php)$/i, '').replace(/\b\w/g, l => l.toUpperCase()) : url;
+      const domain = new URL(url).hostname.replace('www.', '');
+      
+      // For known domains, create better descriptive headlines
+      if (domain.includes('congress.gov')) {
+        headline = 'Congressional Information';
+      } else if (domain.includes('census.gov')) {
+        headline = 'Census Data and Statistics';
+      } else if (domain.includes('bls.gov')) {
+        headline = 'Bureau of Labor Statistics Report';
+      } else if (domain.includes('youtube.com')) {
+        headline = 'Video Content';
+      } else if (domain.includes('rentcafe.com')) {
+        headline = 'Cost of Living Analysis';
+      } else if (domain.includes('oysterlink.com')) {
+        headline = 'Local Economic Data';
+      } else if (domain.includes('.gov')) {
+        headline = 'Government Report';
+      } else if (domain.includes('news') || domain.includes('times') || domain.includes('post')) {
+        headline = 'News Article';
+      } else {
+        // Generate descriptive headline based on theme and location
+        const location = await getLocationFromZip(zipCode);
+        const primaryTheme = themeAnalysis.primaryTheme;
+        headline = `${primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information for ${location.city}, ${location.state}`;
+      }
     }
     // Extract outlet from URL
     const urlObj = new URL(url);
