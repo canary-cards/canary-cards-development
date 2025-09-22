@@ -187,13 +187,16 @@ Be extremely precise with article titles - use the actual headline, not a descri
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
 - Select from DIFFERENT publications to ensure varied perspectives
+- MUST include at least 1 high-quality national newspaper when available
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (search in this order):
+PRIORITIZATION ORDER (search for a balanced mix):
 1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
 2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. REGIONAL: Regional publications covering ${location.state}
-4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+3. NATIONAL QUALITY SOURCES: Include at least 1 from trusted "kitchen table" political newspapers:
+   - The New York Times, The Guardian, Washington Post, Wall Street Journal, Associated Press, Reuters
+   - These provide important national context and credibility - include even if no direct local angle
+4. REGIONAL: Regional publications covering ${location.state} if needed to fill remaining slots
 
 REQUIRED CONTENT TYPES:
 - News articles from established publications
