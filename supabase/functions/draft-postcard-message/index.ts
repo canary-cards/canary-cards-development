@@ -108,7 +108,7 @@ Your job:
 
 Return ONLY valid JSON in this exact format:
 {
-  "primaryTheme": "specific theme like 'prescription drug costs' or 'housing affordability'",
+  "primaryTheme": "broad theme like 'healthcare' or 'housing' or 'immigration'",
   "urgencyKeywords": ["keyword1", "keyword2", "keyword3"],
   "localAngle": "how this affects their local area specifically",
   "searchTerms": ["term1", "term2", "term3", "term4"],
