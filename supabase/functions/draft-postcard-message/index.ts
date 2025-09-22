@@ -255,6 +255,28 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
 
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
+    
+    // Filter out aggregation/listing pages
+    const urlLower = url.toLowerCase();
+    if (
+      urlLower.includes('/tag/') || 
+      urlLower.includes('/tags/') ||
+      urlLower.includes('/category/') ||
+      urlLower.includes('/categories/') ||
+      urlLower.includes('/archive/') ||
+      urlLower.includes('/search/') ||
+      urlLower.includes('/latest-') ||
+      urlLower.includes('-news/') ||
+      urlLower.includes('today-latest-updates') ||
+      /\/\d+\/?$/.test(url) || // URLs ending with numbers (pagination)
+      urlLower.includes('/topics/') ||
+      urlLower.includes('/feeds/') ||
+      urlLower.includes('/rss/')
+    ) {
+      console.log('Filtered out aggregation page:', url);
+      continue;
+    }
+    
     const urlIndex = searchContent.indexOf(url);
 
     // 1) Try to fetch the real page title directly (most reliable)
