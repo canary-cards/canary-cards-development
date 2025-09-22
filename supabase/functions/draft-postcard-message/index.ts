@@ -226,11 +226,10 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (search in this order):
-1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
-2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. REGIONAL: Regional publications covering ${location.state}
-4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+PRIORITIZATION ORDER (using TIER system adapted for local focus):
+TIER 1 (HIGHEST PRIORITY for local angle): Local newspapers in ${location.city}, ${location.state} state newspapers, Local government sources and official announcements, Wire service articles with ${location.state} focus
+TIER 2 (HIGH PRIORITY): NPR stories covering ${location.state} or regional issues, Major newspapers (NYT, WaPo, WSJ, Guardian) with ${location.state} angle, Regional publications covering ${location.state}
+TIER 3 (SECONDARY): National sources only if they have specific ${location.city} or ${location.state} relevance, Local TV news websites
 
 Focus on LOCAL RELEVANCE and direct impact on ${location.city}, ${location.state}.`;
     
@@ -243,11 +242,10 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (search for MOST RELEVANT sources):
-1. SPECIALIZED: Industry publications, policy think tanks, government agencies directly related to ${themeAnalysis.primaryTheme}
-2. AUTHORITATIVE NATIONAL: Major newspapers with expertise in this area (WSJ, NYT, WaPo, Reuters, AP)
-3. GOVERNMENT SOURCES: Official reports, congressional announcements, federal agency statements
-4. REGIONAL PERSPECTIVES: How ${themeAnalysis.primaryTheme} affects different regions including ${location.state}
+PRIORITIZATION ORDER (search using this TIER system):
+TIER 1 (HIGHEST PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Major Reputable Newspapers (NYT, Washington Post, WSJ, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
+TIER 2 (HIGH PRIORITY): Specialized industry publications and policy think tanks related to ${themeAnalysis.primaryTheme}, Quality regional newspapers with national relevance, Established news magazines
+TIER 3 (SECONDARY): Local newspapers, Other established news organizations, Cable news websites with strong written reporting
 
 Focus on EXPERTISE and RELEVANCE over geographic proximity. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
     
@@ -260,11 +258,10 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (balanced approach):
-1. NATIONAL POLICY: How ${themeAnalysis.primaryTheme} is being addressed at the federal level
-2. STATE IMPACT: How ${themeAnalysis.primaryTheme} specifically affects ${location.state}
-3. LOCAL IMPLEMENTATION: How ${location.city} or ${location.state} is implementing related policies
-4. SPECIALIZED SOURCES: Industry publications or government reports with relevant analysis
+PRIORITIZATION ORDER (using TIER system for balanced coverage):
+TIER 1 (HIGHEST PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Major Reputable Newspapers (NYT, Washington Post, WSJ, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
+TIER 2 (HIGH PRIORITY): Specialized industry publications and policy think tanks, Quality regional newspapers from ${location.state} with national relevance, Established news magazines
+TIER 3 (SECONDARY): Local ${location.state} newspapers, Other established news organizations, Cable news websites with strong written reporting
 
 Balance national significance with local relevance for ${location.state}.`;
   }
