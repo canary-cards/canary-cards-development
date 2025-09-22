@@ -435,9 +435,9 @@ CRITICAL FORMATTING RULE:
 - The postcard should end with the content, no formal closing needed
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
-- HARD MAXIMUM: 290 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
-- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 290 CHARACTERS UNDER ANY CIRCUMSTANCES.
-- TARGET: 275-280 characters (optimal space utilization)
+- HARD MAXIMUM: 300 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 300 CHARACTERS UNDER ANY CIRCUMSTANCES.
+- TARGET: 285-290 characters (optimal space utilization)
 - Character counting includes newlines
 
 TONE & STYLE (CRITICAL FOR AUTHENTICITY):
@@ -451,7 +451,7 @@ SOURCE INTEGRATION:
 - Connect national news to local impact
 - Only use sources that genuinely relate to the concern
 
-Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 290 characters.`;
+Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 300 characters.`;
 
   const today = new Date().toISOString().split('T')[0];
   const context = `
@@ -495,7 +495,7 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard to under 290 characters while keeping it excellent.
+TASK: Shorten this postcard to under 300 characters while keeping it excellent.
 
 STRATEGY:
 - If the postcard makes multiple points, choose the STRONGEST one and focus on it
@@ -516,7 +516,7 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 290 characters (including newlines)
+- Must be under 300 characters (including newlines)
 - Must maintain Rep. format with no closing salutation
 - Must sound like a real person, not a form letter
 
@@ -569,13 +569,13 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     console.log(`Generated postcard: ${postcard.length} characters`);
     
     // Step 4: Shorten if needed
-    if (postcard.length > 290) {
+    if (postcard.length > 300) {
       console.log(`Postcard too long (${postcard.length} chars), shortening...`);
       const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
       console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
       
       // Use shortened version if it's actually shorter and under limit
-      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 290) {
+      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
         postcard = shortenedPostcard;
       } else {
         // If shortening failed, try basic truncation as last resort
@@ -602,11 +602,11 @@ ${personalImpact} Please address ${concerns} affecting ${state} families.
 Sincerely, [name]`;
 
     // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 290) {
+    if (fallbackPostcard.length > 300) {
       console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
       try {
         const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 290) {
+        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 300) {
           fallbackPostcard = shortenedFallback;
           console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
         } else {
