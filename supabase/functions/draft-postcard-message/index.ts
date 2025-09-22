@@ -226,10 +226,7 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (using TIER system adapted for local focus):
-TIER 1 (HIGHEST PRIORITY): Major reputable newspapers with ${location.state} focus (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government sources (official reports, congressional announcements, federal/state agency statements, local government announcements)
-TIER 2 (HIGH PRIORITY): Wire Services with ${location.state} angle (Reuters, AP, Bloomberg), NPR stories covering ${location.state} or regional issues, Quality regional publications covering ${location.state}
-TIER 3 (SECONDARY): Local newspapers, Other established news organizations, Local TV news websites
+PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal/state agency statements, local government announcements). Focus on sources that are widely recognized and trusted for political coverage.
 
 Focus on LOCAL RELEVANCE and direct impact on ${location.city}, ${location.state}.`;
     
@@ -242,10 +239,7 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (search using this TIER system):
-TIER 1 (HIGHEST PRIORITY): Major Reputable Newspapers (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements, GAO reports)
-TIER 2 (HIGH PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Specialized industry publications and policy think tanks related to ${themeAnalysis.primaryTheme}, Quality regional newspapers with national relevance
-TIER 3 (SECONDARY): Established news magazines, Local newspapers, Other established news organizations, Cable news websites with strong written reporting
+PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal agency statements, GAO reports). Focus on sources that are widely recognized and trusted for political coverage with expertise in ${themeAnalysis.primaryTheme}.
 
 Focus on EXPERTISE and RELEVANCE over geographic proximity. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
     
@@ -258,10 +252,7 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (using TIER system for balanced coverage):
-TIER 1 (HIGHEST PRIORITY): Major Reputable Newspapers (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
-TIER 2 (HIGH PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Specialized industry publications and policy think tanks, Quality regional newspapers from ${location.state} with national relevance
-TIER 3 (SECONDARY): Established news magazines, Local ${location.state} newspapers, Other established news organizations, Cable news websites with strong written reporting
+PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal agency statements). Balance national significance with local relevance for ${location.state}, focusing on widely recognized and trusted sources.
 
 Balance national significance with local relevance for ${location.state}.`;
   }
