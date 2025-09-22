@@ -210,8 +210,8 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
 **SUMMARY:** [Key points in 1-2 sentences]
 
 CONTENT TYPE REQUIREMENTS:
-- ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
-- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
+- ONLY return: news articles, government reports, policy analysis pieces, official government announcements, and relevant academic papers
+- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, podcasts, and multimedia content
 
 Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`;
 
@@ -223,17 +223,20 @@ SOURCE DIVERSITY REQUIREMENT:
 - Select from DIFFERENT publications to ensure varied perspectives
 - Avoid multiple articles from the same news organization
 
-PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal agency statements, GAO reports). Focus on sources that are widely recognized and trusted for political coverage with expertise in ${themeAnalysis.primaryTheme}.
+CRITICAL PRIORITY: You MUST strongly favor major household name publications. HEAVILY PRIORITIZE these top-tier sources above all others: New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR, CNN, BBC. These should be your FIRST CHOICE for citations.
 
-Focus on EXPERTISE and RELEVANCE. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
+SECONDARY PRIORITY: Government publications (official reports, congressional announcements, federal agency statements, GAO reports) and relevant academic research from reputable institutions.
+
+Do NOT cite lower-tier or regional publications unless absolutely necessary. Focus exclusively on nationally recognized, authoritative sources that carry maximum credibility and influence.`;
 
   userPrompt += `
 
 REQUIRED CONTENT TYPES:
-- News articles from established publications
+- News articles from major established publications (prioritize household names)
 - Government reports and official announcements
 - Policy analysis pieces
 - Legislative updates
+- Relevant academic research from reputable institutions
 
 For each source you cite, provide:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
