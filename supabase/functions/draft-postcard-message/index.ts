@@ -201,21 +201,29 @@ Focus on 2024-2025 news. I need the actual article headlines, not generic descri
   
   for (const [index, citationUrl] of citations.entries()) {
     const url = citationUrl as string;
-    // Try to extract headline from Perplexity content using **ARTICLE TITLE:** marker
+    // Extract headline by locating the nearest title marker BEFORE the URL
     let headline = '';
-    const titleRegex = new RegExp(`\\*\\*ARTICLE TITLE:\\*\\*([^\\n\\r]+)`, 'i');
-    const titleMatch = searchContent.match(titleRegex);
-    if (titleMatch && titleMatch[1]) {
-      headline = titleMatch[1].trim();
-    } else {
-      // Fallback: look for **ARTICLE TITLE:** line near the URL
-      const urlIndex = searchContent.indexOf(url);
-      if (urlIndex !== -1) {
-        const before = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
-        const titleLine = before.split(/\n/).reverse().find(line => line.trim().match(/\*\*ARTICLE TITLE:\*\*/i));
+    const urlIndex = searchContent.indexOf(url);
+    if (urlIndex !== -1) {
+      // Prefer "**ARTICLE TITLE:**" just above the citation
+      const marker = '**ARTICLE TITLE:**';
+      const lastTitleIdx = searchContent.lastIndexOf(marker, urlIndex);
+      if (lastTitleIdx !== -1) {
+        const afterTitle = searchContent.substring(lastTitleIdx + marker.length, urlIndex);
+        const firstLine = afterTitle.split(/\r?\n/)[0].trim();
+        if (firstLine) headline = firstLine.replace(/^[*-]\s*/, '').trim();
+      }
+      // Fallbacks: look for TITLE: or **TITLE:** lines near the URL
+      if (!headline) {
+        const before = searchContent.substring(Math.max(0, urlIndex - 800), urlIndex);
+        const titleLine = before
+          .split(/\n/)
+          .reverse()
+          .find(line => line.trim().match(/(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|TITLE:)/i));
         if (titleLine) {
-          const match = titleLine.match(/\*\*ARTICLE TITLE:\*\*\s*(.+)/i);
-          if (match) headline = match[1].trim();
+          const cleaned = titleLine.replace(/\*\*/g, '');
+          const m = cleaned.match(/(?:ARTICLE TITLE:|TITLE:)\s*(.+)/i);
+          if (m) headline = m[1].trim();
         }
       }
     }
