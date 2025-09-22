@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
 import { DynamicSvg } from '../DynamicSvg';
+import { DotLottiePlayer } from '@dotlottie/react-player';
 
 const draftingMessages = [
   "Polishing your message…",
@@ -19,6 +20,7 @@ export function DraftingScreen() {
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [animationError, setAnimationError] = useState(false);
 
   useEffect(() => {
     // Initial 1.5s delay before showing first message
@@ -160,11 +162,29 @@ export function DraftingScreen() {
     <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-primary px-4">
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
-          <DynamicSvg 
-            assetName="onboarding_icon_2.svg"
-            alt="Canary research process"
-            className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
-          />
+          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60">
+            {!animationError ? (
+              <Suspense fallback={
+                <div className="w-full h-full bg-background/10 rounded-full animate-pulse flex items-center justify-center">
+                  <div className="w-3/4 h-3/4 bg-background/20 rounded-full" />
+                </div>
+              }>
+                <DotLottiePlayer
+                  src="/assets/drafting-animation.lottie"
+                  autoplay
+                  loop
+                  className="w-full h-full"
+                  onError={() => setAnimationError(true)}
+                />
+              </Suspense>
+            ) : (
+              <DynamicSvg 
+                assetName="onboarding_icon_2.svg"
+                alt="Canary research process"
+                className="w-full h-full"
+              />
+            )}
+          </div>
           <div className="flex items-center justify-center">
             <h1 
               className={`text-2xl font-semibold text-background text-fill-yellow-progress ${
