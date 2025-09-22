@@ -191,8 +191,8 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (search for a balanced mix):
-1. NATIONAL QUALITY SOURCES (prioritize 2 sources): Include trusted "kitchen table" political newspapers:
-   - The New York Times, The Guardian, Washington Post, Wall Street Journal, Associated Press, Reuters, NPR, BBC
+1. NATIONAL QUALITY SOURCES (prioritize 2 sources): MUST include at least 1 article from these preferred outlets:
+   - The New York Times, The Washington Post, The Wall Street Journal, NPR, The Guardian, The Associated Press (AP), Politico, Los Angeles Times, The Boston Globe, Chicago Tribune
    - These provide important national context and credibility - include even if no direct local angle
 2. STATE: ${location.state} state newspapers, state government announcements, state agency reports  
 3. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
