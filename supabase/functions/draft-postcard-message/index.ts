@@ -167,29 +167,47 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       messages: [
         {
           role: 'system',
-          content: `You are a news research assistant. When you cite sources, you MUST format each citation exactly like this:
+          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
 
 **ARTICLE TITLE:** [The exact headline from the original article]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
 **SUMMARY:** [Key points in 1-2 sentences]
 
+CONTENT TYPE REQUIREMENTS:
+- ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
+- EXCLUDE: YouTube videos, PDFs, social media posts, academic papers, and video content
+- PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
+
 Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state. 
+          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+
+PRIORITIZATION ORDER (search in this order):
+1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
+2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
+3. REGIONAL: Regional publications covering ${location.state}
+4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+
+REQUIRED CONTENT TYPES:
+- News articles from established publications
+- Government reports and official announcements
+- Policy analysis pieces
+- Legislative updates
 
 For each source you cite, provide:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
 **OUTLET:** [Full publication name]
 **SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
 
-Focus on 2024-2025 news. I need the actual article headlines, not generic descriptions.`
+Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
         }
       ],
       max_tokens: 800,
       temperature: 0.1,
-      return_citations: true
+      return_citations: true,
+      search_recency_filter: 'month'
     })
   });
 
