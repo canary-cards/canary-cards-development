@@ -184,6 +184,11 @@ Be extremely precise with article titles - use the actual headline, not a descri
           role: 'user',
           content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
 
+SOURCE DIVERSITY REQUIREMENT:
+- MAXIMUM 1 article per publication/outlet
+- Select from DIFFERENT publications to ensure varied perspectives
+- Avoid multiple articles from the same news organization
+
 PRIORITIZATION ORDER (search in this order):
 1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
 2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
