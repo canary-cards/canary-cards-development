@@ -222,6 +222,8 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const result = await response.json();
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
+  
+  console.log(`Total citations received from Perplexity: ${citations.length}`);
 
   // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
@@ -266,22 +268,42 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     
     // Filter out aggregation/listing pages
     const urlLower = url.toLowerCase();
-    if (
-      urlLower.includes('/tag/') || 
-      urlLower.includes('/tags/') ||
-      urlLower.includes('/category/') ||
-      urlLower.includes('/categories/') ||
-      urlLower.includes('/archive/') ||
-      urlLower.includes('/search/') ||
-      urlLower.includes('/latest-') ||
-      urlLower.includes('-news/') ||
-      urlLower.includes('today-latest-updates') ||
-      /\/\d+\/?$/.test(url) || // URLs ending with numbers (pagination)
-      urlLower.includes('/topics/') ||
-      urlLower.includes('/feeds/') ||
-      urlLower.includes('/rss/')
-    ) {
-      console.log('Filtered out aggregation page:', url);
+    
+    // Check each filter condition and log the reason
+    if (urlLower.includes('/tag/') || urlLower.includes('/tags/')) {
+      console.log('Filtered out tag page:', url);
+      continue;
+    }
+    if (urlLower.includes('/category/') || urlLower.includes('/categories/')) {
+      console.log('Filtered out category page:', url);
+      continue;
+    }
+    if (urlLower.includes('/archive/')) {
+      console.log('Filtered out archive page:', url);
+      continue;
+    }
+    if (urlLower.includes('/search/')) {
+      console.log('Filtered out search page:', url);
+      continue;
+    }
+    if (urlLower.includes('/latest-')) {
+      console.log('Filtered out latest page:', url);
+      continue;
+    }
+    if (urlLower.includes('-news/')) {
+      console.log('Filtered out news listing page:', url);
+      continue;
+    }
+    if (urlLower.includes('today-latest-updates')) {
+      console.log('Filtered out today updates page:', url);
+      continue;
+    }
+    if (urlLower.includes('/topics/')) {
+      console.log('Filtered out topics page:', url);
+      continue;
+    }
+    if (urlLower.includes('/feeds/') || urlLower.includes('/rss/')) {
+      console.log('Filtered out feed/RSS page:', url);
       continue;
     }
     
@@ -362,6 +384,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     });
   }
   
+  console.log(`Sources remaining after filtering: ${sources.length}`);
   return sources.slice(0, 4); // Return top 4 sources
 }
 
