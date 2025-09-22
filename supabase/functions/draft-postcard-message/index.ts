@@ -555,9 +555,15 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
       if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
         postcard = shortenedPostcard;
       } else {
-        // If shortening failed, try basic truncation as last resort
-        console.log('Shortening API failed, using truncation fallback');
-        postcard = postcard.substring(0, 250);
+        // If shortening failed, find the last complete sentence under 300 chars
+        console.log('Shortening API failed, using smart sentence truncation fallback');
+        const lastPeriodIndex = postcard.lastIndexOf('.', 299);
+        if (lastPeriodIndex > 100) { // Only use if we have a reasonable amount of content
+          postcard = postcard.substring(0, lastPeriodIndex + 1);
+        } else {
+          // Fall back to basic truncation if no suitable period found
+          postcard = postcard.substring(0, 250);
+        }
       }
     }
     
@@ -579,15 +585,27 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
           fallbackPostcard = shortenedFallback;
           console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
         } else {
-          // Basic truncation as last resort
-          fallbackPostcard = fallbackPostcard.substring(0, 250);
-          console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
+          // Smart sentence truncation as last resort
+          const lastPeriodIndex = fallbackPostcard.lastIndexOf('.', 299);
+          if (lastPeriodIndex > 50) { // Only use if we have reasonable content
+            fallbackPostcard = fallbackPostcard.substring(0, lastPeriodIndex + 1);
+          } else {
+            // Basic truncation if no suitable period found
+            fallbackPostcard = fallbackPostcard.substring(0, 250);
+          }
+          console.log(`Used smart truncated fallback: ${fallbackPostcard.length} characters`);
         }
       } catch (shorteningError) {
         console.error("Fallback shortening failed:", shorteningError);
-        // Basic truncation as last resort
-        fallbackPostcard = fallbackPostcard.substring(0, 250);
-        console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
+        // Smart sentence truncation as last resort
+        const lastPeriodIndex = fallbackPostcard.lastIndexOf('.', 299);
+        if (lastPeriodIndex > 50) { // Only use if we have reasonable content
+          fallbackPostcard = fallbackPostcard.substring(0, lastPeriodIndex + 1);
+        } else {
+          // Basic truncation if no suitable period found
+          fallbackPostcard = fallbackPostcard.substring(0, 250);
+        }
+        console.log(`Used smart truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
       }
     }
 
