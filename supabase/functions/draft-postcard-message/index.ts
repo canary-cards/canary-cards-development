@@ -108,7 +108,7 @@ Your job:
 
 Return ONLY valid JSON in this exact format:
 {
-  "primaryTheme": "broad theme like 'healthcare' or 'housing' or 'immigration'",
+  "primaryTheme": "specific theme like 'prescription drug costs' or 'housing affordability'",
   "urgencyKeywords": ["keyword1", "keyword2", "keyword3"],
   "localAngle": "how this affects their local area specifically",
   "searchTerms": ["term1", "term2", "term3", "term4"],
@@ -152,99 +152,10 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
   return JSON.parse(jsonMatch[0]);
 }
 
-// Classify if a topic is primarily local, national/global, or mixed
-function classifyTopicScope(primaryTheme: string): 'local' | 'national' | 'mixed' {
-  const theme = primaryTheme.toLowerCase();
-  
-  // Local-focused topics
-  const localKeywords = [
-    'school district', 'city planning', 'local elections', 'zoning', 'property tax', 
-    'local crime', 'municipal', 'city council', 'local business', 'neighborhood',
-    'public transit', 'local infrastructure', 'water quality', 'waste management'
-  ];
-  
-  // National/Global-focused topics  
-  const nationalKeywords = [
-    'foreign policy', 'national defense', 'international', 'federal reserve', 
-    'monetary policy', 'immigration', 'social security', 'medicare', 'medicaid',
-    'federal tax', 'trade war', 'russia', 'ukraine', 'china', 'nato', 'military',
-    'supreme court', 'constitutional', 'federal budget', 'national debt'
-  ];
-  
-  // Check for local indicators first
-  if (localKeywords.some(keyword => theme.includes(keyword))) {
-    return 'local';
-  }
-  
-  // Check for national indicators
-  if (nationalKeywords.some(keyword => theme.includes(keyword))) {
-    return 'national';
-  }
-  
-  // Mixed topics that can have both local and national angles
-  const mixedKeywords = [
-    'healthcare', 'education', 'housing', 'environment', 'climate', 'energy',
-    'economy', 'jobs', 'unemployment', 'inflation', 'gun', 'abortion'
-  ];
-  
-  if (mixedKeywords.some(keyword => theme.includes(keyword))) {
-    return 'mixed';
-  }
-  
-  // Default to mixed for unknown topics
-  return 'mixed';
-}
-
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
   const location = await getLocationFromZip(zipCode);
-  const topicScope = classifyTopicScope(themeAnalysis.primaryTheme);
   
-  console.log(`Topic "${themeAnalysis.primaryTheme}" classified as: ${topicScope}`);
-  
-  // Create topic-adaptive search strategy
-  let systemPrompt = `You are a news research assistant specializing in political news. When you cite sources, you MUST format each citation exactly like this:
-
-**ARTICLE TITLE:** [The exact headline from the original article]
-**OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
-**SUMMARY:** [Key points in 1-2 sentences]
-
-CONTENT TYPE REQUIREMENTS:
-- ONLY return: news articles, government reports, policy analysis pieces, official government announcements, and relevant academic papers
-- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, podcasts, and multimedia content
-
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`;
-
-  // Use national-level source prioritization for all postcard types
-  let userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
-
-SOURCE DIVERSITY REQUIREMENT:
-- MAXIMUM 1 article per publication/outlet
-- Select from DIFFERENT publications to ensure varied perspectives
-- Avoid multiple articles from the same news organization
-
-CRITICAL PRIORITY: You MUST strongly favor major household name publications. HEAVILY PRIORITIZE these top-tier sources above all others: New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR, CNN, BBC. These should be your FIRST CHOICE for citations.
-
-SECONDARY PRIORITY: Government publications (official reports, congressional announcements, federal agency statements, GAO reports) and relevant academic research from reputable institutions.
-
-Do NOT cite lower-tier or regional publications unless absolutely necessary. Focus exclusively on nationally recognized, authoritative sources that carry maximum credibility and influence.`;
-
-  userPrompt += `
-
-REQUIRED CONTENT TYPES:
-- News articles from major established publications (prioritize household names)
-- Government reports and official announcements
-- Policy analysis pieces
-- Legislative updates
-- Relevant academic research from reputable institutions
-
-For each source you cite, provide:
-**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
-**OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme}]
-
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`;
-
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
@@ -256,11 +167,46 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
       messages: [
         {
           role: 'system',
-          content: systemPrompt
+          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
+
+**ARTICLE TITLE:** [The exact headline from the original article]
+**OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
+**SUMMARY:** [Key points in 1-2 sentences]
+
+CONTENT TYPE REQUIREMENTS:
+- ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
+- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
+- PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
+
+Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
         },
         {
           role: 'user',
-          content: userPrompt
+          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+
+SOURCE DIVERSITY REQUIREMENT:
+- MAXIMUM 1 article per publication/outlet
+- Select from DIFFERENT publications to ensure varied perspectives
+- Avoid multiple articles from the same news organization
+
+PRIORITIZATION ORDER (search in this order):
+1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
+2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
+3. REGIONAL: Regional publications covering ${location.state}
+4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+
+REQUIRED CONTENT TYPES:
+- News articles from established publications
+- Government reports and official announcements
+- Policy analysis pieces
+- Legislative updates
+
+For each source you cite, provide:
+**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
+**OUTLET:** [Full publication name]
+**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
+
+Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
         }
       ],
       max_tokens: 800,
@@ -432,13 +378,15 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
 Rep. ${representative.name.split(' ').pop()},
 [content - do NOT repeat "Rep." or "Dear Rep." here]
+Sincerely, [name]
 
-CRITICAL FORMATTING RULE:
-- DO NOT include any closing salutation like "Sincerely" or signature
-- The postcard should end with the content, no formal closing needed
+CRITICAL NAME PLACEHOLDER RULE:
+- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
+- DO NOT write "A constituent" or location-specific signatures
+- The [name] placeholder will be replaced later - keep it exactly as [name]
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
-- HARD MAXIMUM: 300 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- HARD MAXIMUM: 290 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
 - If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 290 CHARACTERS UNDER ANY CIRCUMSTANCES.
 - TARGET: 275-280 characters (optimal space utilization)
 - Character counting includes newlines
@@ -506,11 +454,12 @@ STRATEGY:
 - Keep the personal connection and emotional impact
 - Maintain the authentic voice and conversational tone
 - Include a call to action 
-- Preserve the exact format: Rep. [LastName], [content]
+- Preserve the exact format: Rep. [LastName], [content] Sincerely, [name]
 
-CRITICAL FORMATTING RULE:
-- DO NOT include any closing salutation like "Sincerely" or signature
-- The postcard should end with the content, no formal closing needed
+CRITICAL NAME PLACEHOLDER RULE:
+- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
+- DO NOT write "A constituent" or location-specific signatures
+- The [name] placeholder will be replaced later - keep it exactly as [name]
 
 QUALITY STANDARDS:
 - The shortened version should be a complete, compelling postcard on its own
@@ -519,8 +468,8 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 300 characters (including newlines)
-- Must maintain Rep. format with no closing salutation
+- Must be under 290 characters (including newlines)
+- Must maintain Rep./Sincerely format with [name] placeholder
 - Must sound like a real person, not a form letter
 
 Original postcard to shorten:
@@ -584,9 +533,9 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
         // If shortening failed, try basic truncation as last resort
         console.log('Shortening API failed, using truncation fallback');
         const lines = postcard.split('\n');
-        if (lines.length >= 2) {
-          // Keep Rep. line and truncated content
-          postcard = [lines[0], lines.slice(1).join(' ').substring(0, 250)].join('\n');
+        if (lines.length >= 3) {
+          // Keep Rep. line, first content line, and Sincerely line
+          postcard = [lines[0], lines[1].substring(0, 200), lines[lines.length - 1]].join('\n');
         }
       }
     }
@@ -605,7 +554,7 @@ ${personalImpact} Please address ${concerns} affecting ${state} families.
 Sincerely, [name]`;
 
     // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 300) {
+    if (fallbackPostcard.length > 290) {
       console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
       try {
         const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
