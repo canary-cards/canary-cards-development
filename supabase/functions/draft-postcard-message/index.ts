@@ -182,40 +182,46 @@ Be extremely precise with article titles - use the actual headline, not a descri
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" with both national coverage and local relevance to ${location.state}.
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
 - Select from DIFFERENT publications to ensure varied perspectives
-- MUST include at least 1 high-quality national newspaper when available
+- MUST include at least 2 high-quality national sources for broader context
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (search for a balanced mix):
-1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
-2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. NATIONAL QUALITY SOURCES: Include at least 1 from trusted "kitchen table" political newspapers:
-   - The New York Times, The Guardian, Washington Post, Wall Street Journal, Associated Press, Reuters
+1. NATIONAL QUALITY SOURCES (prioritize 2 sources): Include trusted "kitchen table" political newspapers:
+   - The New York Times, The Guardian, Washington Post, Wall Street Journal, Associated Press, Reuters, NPR, BBC
    - These provide important national context and credibility - include even if no direct local angle
-4. REGIONAL: Regional publications covering ${location.state} if needed to fill remaining slots
+2. STATE: ${location.state} state newspapers, state government announcements, state agency reports  
+3. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
+4. REGIONAL: Regional publications covering ${location.state} or surrounding areas
+
+SEARCH APPROACH:
+- Search for "${themeAnalysis.primaryTheme}" broadly, not just location-specific stories
+- Include national policy stories that would affect ${location.state} residents
+- Include state-level stories from ${location.state}
+- Include local stories from ${location.city} when available
 
 REQUIRED CONTENT TYPES:
 - News articles from established publications
-- Government reports and official announcements
+- Government reports and official announcements  
 - Policy analysis pieces
 - Legislative updates
 
 For each source you cite, provide:
-**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
+**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]
 **OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
+**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} and its relevance]
 
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
+Focus on news from the last 60 days. I need the actual article headlines, not generic descriptions.`
         }
       ],
       max_tokens: 800,
       temperature: 0.1,
       return_citations: true,
-      search_recency_filter: 'month'
+      search_recency_filter: 'year'
     })
   });
 
