@@ -443,10 +443,11 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
 }
 
 async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
-  
-  const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
+  try {
+    const apiKey = getApiKey('anthropickey');
+    const location = await getLocationFromZip(zipCode);
+    
+    const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
 TASK: Shorten this postcard to under 300 characters while keeping it excellent.
 
@@ -480,26 +481,46 @@ ${originalPostcard}
 
 Write the shortened version that focuses on the most compelling point:`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      temperature: 0.1,
-      system: SHORTENING_PROMPT,
-      messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
-    })
-  });
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        temperature: 0.1,
+        system: SHORTENING_PROMPT,
+        messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
+      })
+    });
 
-  const result = await response.json();
-  const shortenedText = result.content[0]?.text?.trim() || '';
-  
-  return shortenedText;
+    if (!response.ok) {
+      console.error(`Shortening API error: ${response.status} ${response.statusText}`);
+      return '';
+    }
+
+    const result = await response.json();
+    
+    if (result.error) {
+      console.error('Shortening API returned error:', result.error);
+      return '';
+    }
+    
+    const shortenedText = result.content?.[0]?.text?.trim() || '';
+    
+    if (!shortenedText) {
+      console.error('Shortening API returned empty result');
+      return '';
+    }
+    
+    return shortenedText;
+  } catch (error) {
+    console.error('Shortening function failed:', error);
+    return '';
+  }
 }
 
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
