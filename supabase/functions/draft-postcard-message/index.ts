@@ -187,16 +187,13 @@ Be extremely precise with article titles - use the actual headline, not a descri
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
 - Select from DIFFERENT publications to ensure varied perspectives
-- MUST include at least 1 high-quality national newspaper when available
 - Avoid multiple articles from the same news organization
 
-PRIORITIZATION ORDER (search for a balanced mix):
+PRIORITIZATION ORDER (search in this order):
 1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
 2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. NATIONAL QUALITY SOURCES: Include at least 1 from trusted "kitchen table" political newspapers:
-   - The New York Times, The Guardian, Washington Post, Wall Street Journal, Associated Press, Reuters
-   - These provide important national context and credibility - include even if no direct local angle
-4. REGIONAL: Regional publications covering ${location.state} if needed to fill remaining slots
+3. REGIONAL: Regional publications covering ${location.state}
+4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
 
 REQUIRED CONTENT TYPES:
 - News articles from established publications
@@ -222,8 +219,6 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const result = await response.json();
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
-  
-  console.log(`Total citations received from Perplexity: ${citations.length}`);
 
   // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
@@ -268,42 +263,22 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     
     // Filter out aggregation/listing pages
     const urlLower = url.toLowerCase();
-    
-    // Check each filter condition and log the reason
-    if (urlLower.includes('/tag/') || urlLower.includes('/tags/')) {
-      console.log('Filtered out tag page:', url);
-      continue;
-    }
-    if (urlLower.includes('/category/') || urlLower.includes('/categories/')) {
-      console.log('Filtered out category page:', url);
-      continue;
-    }
-    if (urlLower.includes('/archive/')) {
-      console.log('Filtered out archive page:', url);
-      continue;
-    }
-    if (urlLower.includes('/search/')) {
-      console.log('Filtered out search page:', url);
-      continue;
-    }
-    if (urlLower.includes('/latest-')) {
-      console.log('Filtered out latest page:', url);
-      continue;
-    }
-    if (urlLower.includes('-news/')) {
-      console.log('Filtered out news listing page:', url);
-      continue;
-    }
-    if (urlLower.includes('today-latest-updates')) {
-      console.log('Filtered out today updates page:', url);
-      continue;
-    }
-    if (urlLower.includes('/topics/')) {
-      console.log('Filtered out topics page:', url);
-      continue;
-    }
-    if (urlLower.includes('/feeds/') || urlLower.includes('/rss/')) {
-      console.log('Filtered out feed/RSS page:', url);
+    if (
+      urlLower.includes('/tag/') || 
+      urlLower.includes('/tags/') ||
+      urlLower.includes('/category/') ||
+      urlLower.includes('/categories/') ||
+      urlLower.includes('/archive/') ||
+      urlLower.includes('/search/') ||
+      urlLower.includes('/latest-') ||
+      urlLower.includes('-news/') ||
+      urlLower.includes('today-latest-updates') ||
+      /\/\d+\/?$/.test(url) || // URLs ending with numbers (pagination)
+      urlLower.includes('/topics/') ||
+      urlLower.includes('/feeds/') ||
+      urlLower.includes('/rss/')
+    ) {
+      console.log('Filtered out aggregation page:', url);
       continue;
     }
     
@@ -384,7 +359,6 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     });
   }
   
-  console.log(`Sources remaining after filtering: ${sources.length}`);
   return sources.slice(0, 4); // Return top 4 sources
 }
 
@@ -466,13 +440,12 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
 }
 
 async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
-  try {
-    const apiKey = getApiKey('anthropickey');
-    const location = await getLocationFromZip(zipCode);
-    
-    const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
+  const apiKey = getApiKey('anthropickey');
+  const location = await getLocationFromZip(zipCode);
+  
+  const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard to under 290 characters while keeping it excellent.
+TASK: Shorten this postcard to under 300 characters while keeping it excellent.
 
 STRATEGY:
 - If the postcard makes multiple points, choose the STRONGEST one and focus on it
@@ -495,8 +468,7 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 290 characters (including newlines) - this is critical
-- Target 280-290 characters for optimal results
+- Must be under 300 characters (including newlines)
 - No salutation, no signature - just direct message content
 - Must sound like a real person, not a form letter
 
@@ -505,46 +477,26 @@ ${originalPostcard}
 
 Write the shortened version that focuses on the most compelling point:`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        temperature: 0.1,
-        system: SHORTENING_PROMPT,
-        messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
-      })
-    });
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      temperature: 0.1,
+      system: SHORTENING_PROMPT,
+      messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
+    })
+  });
 
-    if (!response.ok) {
-      console.error(`Shortening API error: ${response.status} ${response.statusText}`);
-      return '';
-    }
-
-    const result = await response.json();
-    
-    if (result.error) {
-      console.error('Shortening API returned error:', result.error);
-      return '';
-    }
-    
-    const shortenedText = result.content?.[0]?.text?.trim() || '';
-    
-    if (!shortenedText) {
-      console.error('Shortening API returned empty result');
-      return '';
-    }
-    
-    return shortenedText;
-  } catch (error) {
-    console.error('Shortening function failed:', error);
-    return '';
-  }
+  const result = await response.json();
+  const shortenedText = result.content[0]?.text?.trim() || '';
+  
+  return shortenedText;
 }
 
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
@@ -578,15 +530,9 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
       if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
         postcard = shortenedPostcard;
       } else {
-        // If shortening failed, find the last complete sentence under 300 chars
-        console.log('Shortening API failed, using smart sentence truncation fallback');
-        const lastPeriodIndex = postcard.lastIndexOf('.', 299);
-        if (lastPeriodIndex > 100) { // Only use if we have a reasonable amount of content
-          postcard = postcard.substring(0, lastPeriodIndex + 1);
-        } else {
-          // Fall back to basic truncation if no suitable period found
-          postcard = postcard.substring(0, 250);
-        }
+        // If shortening failed, try basic truncation as last resort
+        console.log('Shortening API failed, using truncation fallback');
+        postcard = postcard.substring(0, 250);
       }
     }
     
@@ -608,27 +554,15 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
           fallbackPostcard = shortenedFallback;
           console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
         } else {
-          // Smart sentence truncation as last resort
-          const lastPeriodIndex = fallbackPostcard.lastIndexOf('.', 299);
-          if (lastPeriodIndex > 50) { // Only use if we have reasonable content
-            fallbackPostcard = fallbackPostcard.substring(0, lastPeriodIndex + 1);
-          } else {
-            // Basic truncation if no suitable period found
-            fallbackPostcard = fallbackPostcard.substring(0, 250);
-          }
-          console.log(`Used smart truncated fallback: ${fallbackPostcard.length} characters`);
+          // Basic truncation as last resort
+          fallbackPostcard = fallbackPostcard.substring(0, 250);
+          console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
         }
       } catch (shorteningError) {
         console.error("Fallback shortening failed:", shorteningError);
-        // Smart sentence truncation as last resort
-        const lastPeriodIndex = fallbackPostcard.lastIndexOf('.', 299);
-        if (lastPeriodIndex > 50) { // Only use if we have reasonable content
-          fallbackPostcard = fallbackPostcard.substring(0, lastPeriodIndex + 1);
-        } else {
-          // Basic truncation if no suitable period found
-          fallbackPostcard = fallbackPostcard.substring(0, 250);
-        }
-        console.log(`Used smart truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
+        // Basic truncation as last resort
+        fallbackPostcard = fallbackPostcard.substring(0, 250);
+        console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
       }
     }
 
