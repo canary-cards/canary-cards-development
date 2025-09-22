@@ -376,18 +376,17 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
-Rep. ${representative.name.split(' ').pop()},
-[content - do NOT repeat "Rep." or "Dear Rep." here]
-Sincerely, [name]
+[content - start directly with the message, no salutation or "Dear Rep." or "Rep. Name,"]
 
-CRITICAL NAME PLACEHOLDER RULE:
-- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
-- DO NOT write "A constituent" or location-specific signatures
-- The [name] placeholder will be replaced later - keep it exactly as [name]
+NO SALUTATION RULE:
+- DO NOT start with "Rep. Name," or "Dear Rep." or any greeting
+- Start directly with your message content
+- DO NOT end with "Sincerely, [name]" or any signature line
+- Keep the message focused and direct
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
-- HARD MAXIMUM: 290 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
-- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 290 CHARACTERS UNDER ANY CIRCUMSTANCES.
+- HARD MAXIMUM: 300 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 300 CHARACTERS UNDER ANY CIRCUMSTANCES.
 - TARGET: 275-280 characters (optimal space utilization)
 - Character counting includes newlines
 
@@ -402,7 +401,7 @@ SOURCE INTEGRATION:
 - Connect national news to local impact
 - Only use sources that genuinely relate to the concern
 
-Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 290 characters.`;
+Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 300 characters.`;
 
   const today = new Date().toISOString().split('T')[0];
   const context = `
@@ -446,7 +445,7 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard to under 290 characters while keeping it excellent.
+TASK: Shorten this postcard to under 300 characters while keeping it excellent.
 
 STRATEGY:
 - If the postcard makes multiple points, choose the STRONGEST one and focus on it
@@ -454,12 +453,13 @@ STRATEGY:
 - Keep the personal connection and emotional impact
 - Maintain the authentic voice and conversational tone
 - Include a call to action 
-- Preserve the exact format: Rep. [LastName], [content] Sincerely, [name]
+- NO salutation or signature - start directly with the message content
 
-CRITICAL NAME PLACEHOLDER RULE:
-- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
-- DO NOT write "A constituent" or location-specific signatures
-- The [name] placeholder will be replaced later - keep it exactly as [name]
+FORMAT REQUIREMENTS:
+- DO NOT start with "Rep. Name," or "Dear Rep." or any greeting
+- Start directly with your message content  
+- DO NOT end with "Sincerely, [name]" or any signature line
+- Keep the message focused and direct
 
 QUALITY STANDARDS:
 - The shortened version should be a complete, compelling postcard on its own
@@ -468,8 +468,8 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 290 characters (including newlines)
-- Must maintain Rep./Sincerely format with [name] placeholder
+- Must be under 300 characters (including newlines)
+- No salutation, no signature - just direct message content
 - Must sound like a real person, not a form letter
 
 Original postcard to shorten:
@@ -521,22 +521,18 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     console.log(`Generated postcard: ${postcard.length} characters`);
     
     // Step 4: Shorten if needed
-    if (postcard.length > 290) {
+    if (postcard.length > 300) {
       console.log(`Postcard too long (${postcard.length} chars), shortening...`);
       const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
       console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
       
       // Use shortened version if it's actually shorter and under limit
-      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 290) {
+      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
         postcard = shortenedPostcard;
       } else {
         // If shortening failed, try basic truncation as last resort
         console.log('Shortening API failed, using truncation fallback');
-        const lines = postcard.split('\n');
-        if (lines.length >= 3) {
-          // Keep Rep. line, first content line, and Sincerely line
-          postcard = [lines[0], lines[1].substring(0, 200), lines[lines.length - 1]].join('\n');
-        }
+        postcard = postcard.substring(0, 250);
       }
     }
     
@@ -547,36 +543,26 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     
     // Fallback simple postcard
     const { state } = await getLocationFromZip(zipCode);
-    let fallbackPostcard = `Rep. Smith,
-
-${personalImpact} Please address ${concerns} affecting ${state} families.
-
-Sincerely, [name]`;
+    let fallbackPostcard = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
 
     // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 290) {
+    if (fallbackPostcard.length > 300) {
       console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
       try {
         const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 290) {
+        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 300) {
           fallbackPostcard = shortenedFallback;
           console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
         } else {
           // Basic truncation as last resort
-          const lines = fallbackPostcard.split('\n');
-          if (lines.length >= 3) {
-            fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-            console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-          }
+          fallbackPostcard = fallbackPostcard.substring(0, 250);
+          console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
         }
       } catch (shorteningError) {
         console.error("Fallback shortening failed:", shorteningError);
         // Basic truncation as last resort
-        const lines = fallbackPostcard.split('\n');
-        if (lines.length >= 3) {
-          fallbackPostcard = [lines[0], lines[1].substring(0, 150), lines[lines.length - 1]].join('\n');
-          console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-        }
+        fallbackPostcard = fallbackPostcard.substring(0, 250);
+        console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
       }
     }
 
