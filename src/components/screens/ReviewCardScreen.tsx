@@ -19,6 +19,7 @@ export function ReviewCardScreen() {
     if (!message || !userInfo) return message;
     
     return message
+      .replace(/\[name\]/g, userInfo.fullName || '')
       .replace(/\[Your Name\]/g, userInfo.fullName || '')
       .replace(/\[Your City\]/g, userInfo.city || '')
       .replace(/\[Your State\]/g, userInfo.state || '')

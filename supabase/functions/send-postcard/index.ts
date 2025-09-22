@@ -358,6 +358,7 @@ serve(async (req) => {
       const city = senderAddress.city || userInfo.city || '';
       
       return message
+        .replace(/\[name\]/g, userInfo.fullName)
         .replace(/\[First Name\]/g, firstName)
         .replace(/\[Last Name\]/g, lastName)
         .replace(/\[City\]/g, city);
