@@ -227,9 +227,9 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (using TIER system adapted for local focus):
-TIER 1 (HIGHEST PRIORITY for local angle): Local newspapers in ${location.city}, ${location.state} state newspapers, Local government sources and official announcements, Wire service articles with ${location.state} focus
-TIER 2 (HIGH PRIORITY): NPR stories covering ${location.state} or regional issues, Major newspapers (NYT, WaPo, WSJ, Guardian) with ${location.state} angle, Regional publications covering ${location.state}
-TIER 3 (SECONDARY): National sources only if they have specific ${location.city} or ${location.state} relevance, Local TV news websites
+TIER 1 (HIGHEST PRIORITY): Major reputable newspapers with ${location.state} focus (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government sources (official reports, congressional announcements, federal/state agency statements, local government announcements)
+TIER 2 (HIGH PRIORITY): Wire Services with ${location.state} angle (Reuters, AP, Bloomberg), NPR stories covering ${location.state} or regional issues, Quality regional publications covering ${location.state}
+TIER 3 (SECONDARY): Local newspapers, Other established news organizations, Local TV news websites
 
 Focus on LOCAL RELEVANCE and direct impact on ${location.city}, ${location.state}.`;
     
@@ -243,9 +243,9 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (search using this TIER system):
-TIER 1 (HIGHEST PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Major Reputable Newspapers (NYT, Washington Post, WSJ, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
-TIER 2 (HIGH PRIORITY): Specialized industry publications and policy think tanks related to ${themeAnalysis.primaryTheme}, Quality regional newspapers with national relevance, Established news magazines
-TIER 3 (SECONDARY): Local newspapers, Other established news organizations, Cable news websites with strong written reporting
+TIER 1 (HIGHEST PRIORITY): Major Reputable Newspapers (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements, GAO reports)
+TIER 2 (HIGH PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Specialized industry publications and policy think tanks related to ${themeAnalysis.primaryTheme}, Quality regional newspapers with national relevance
+TIER 3 (SECONDARY): Established news magazines, Local newspapers, Other established news organizations, Cable news websites with strong written reporting
 
 Focus on EXPERTISE and RELEVANCE over geographic proximity. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
     
@@ -259,9 +259,9 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (using TIER system for balanced coverage):
-TIER 1 (HIGHEST PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Major Reputable Newspapers (NYT, Washington Post, WSJ, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
-TIER 2 (HIGH PRIORITY): Specialized industry publications and policy think tanks, Quality regional newspapers from ${location.state} with national relevance, Established news magazines
-TIER 3 (SECONDARY): Local ${location.state} newspapers, Other established news organizations, Cable news websites with strong written reporting
+TIER 1 (HIGHEST PRIORITY): Major Reputable Newspapers (New York Times, Washington Post, Wall Street Journal, The Guardian, USA Today), Government Sources (official reports, congressional announcements, federal agency statements)
+TIER 2 (HIGH PRIORITY): Wire Services (Reuters, AP, Bloomberg), NPR, Specialized industry publications and policy think tanks, Quality regional newspapers from ${location.state} with national relevance
+TIER 3 (SECONDARY): Established news magazines, Local ${location.state} newspapers, Other established news organizations, Cable news websites with strong written reporting
 
 Balance national significance with local relevance for ${location.state}.`;
   }
