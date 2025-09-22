@@ -159,14 +159,14 @@ export function DraftingScreen() {
   }, [state.postcardData, dispatch, startTime]);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-primary px-4">
+    <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-8 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60">
             {!animationError ? (
               <Suspense fallback={
-                <div className="w-full h-full bg-background/10 rounded-full animate-pulse flex items-center justify-center">
-                  <div className="w-3/4 h-3/4 bg-background/20 rounded-full" />
+                <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                  <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                 </div>
               }>
                 <DotLottiePlayer
@@ -187,7 +187,7 @@ export function DraftingScreen() {
           </div>
           <div className="flex items-center justify-center">
             <h1 
-              className={`text-2xl font-semibold text-background text-fill-yellow-progress ${
+              className={`text-2xl font-semibold text-primary text-fill-yellow-progress ${
                 isCompleted ? 'completed' : ''
               }`}
             >
@@ -199,7 +199,7 @@ export function DraftingScreen() {
         {/* Typewriter message with smooth transition */}
         <div className="h-8 flex items-center justify-center">
           {displayedMessageIndex >= 0 && (
-            <p className={`text-lg text-background/80 transition-all duration-300 ease-in-out ${
+            <p className={`text-lg text-primary/80 transition-all duration-300 ease-in-out ${
               showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
             }`}>
               {draftingMessages[displayedMessageIndex]}

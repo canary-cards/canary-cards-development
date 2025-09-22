@@ -375,7 +375,7 @@ All colors MUST be HSL.
 
   /* Text fill animation for drafting screen - overall progress */
   .text-fill-yellow-progress {
-    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--accent)) 50%, hsl(var(--background)) 50%, hsl(var(--background)) 100%);
+    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--accent)) 50%, hsl(var(--primary)) 50%, hsl(var(--primary)) 100%);
     background-size: 200% 100%;
     background-position: 100% 0;
     background-clip: text;
