@@ -437,7 +437,7 @@ CRITICAL FORMATTING RULE:
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
 - HARD MAXIMUM: 300 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
 - If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 300 CHARACTERS UNDER ANY CIRCUMSTANCES.
-- TARGET: 285-290 characters (optimal space utilization)
+- TARGET: 275-280 characters (optimal space utilization)
 - Character counting includes newlines
 
 TONE & STYLE (CRITICAL FOR AUTHENTICITY):
