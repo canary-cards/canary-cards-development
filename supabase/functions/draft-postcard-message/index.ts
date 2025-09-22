@@ -175,7 +175,7 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
 
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
-- EXCLUDE: YouTube videos, PDFs, social media posts, academic papers, and video content
+- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
 - PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
 
 Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
