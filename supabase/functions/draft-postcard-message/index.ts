@@ -216,7 +216,7 @@ CONTENT TYPE REQUIREMENTS:
 Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`;
 
   // Use national-level source prioritization for all postcard types
-  const userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
+  let userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
