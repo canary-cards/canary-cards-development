@@ -152,22 +152,58 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
   return JSON.parse(jsonMatch[0]);
 }
 
+// Classify if a topic is primarily local, national/global, or mixed
+function classifyTopicScope(primaryTheme: string): 'local' | 'national' | 'mixed' {
+  const theme = primaryTheme.toLowerCase();
+  
+  // Local-focused topics
+  const localKeywords = [
+    'school district', 'city planning', 'local elections', 'zoning', 'property tax', 
+    'local crime', 'municipal', 'city council', 'local business', 'neighborhood',
+    'public transit', 'local infrastructure', 'water quality', 'waste management'
+  ];
+  
+  // National/Global-focused topics  
+  const nationalKeywords = [
+    'foreign policy', 'national defense', 'international', 'federal reserve', 
+    'monetary policy', 'immigration', 'social security', 'medicare', 'medicaid',
+    'federal tax', 'trade war', 'russia', 'ukraine', 'china', 'nato', 'military',
+    'supreme court', 'constitutional', 'federal budget', 'national debt'
+  ];
+  
+  // Check for local indicators first
+  if (localKeywords.some(keyword => theme.includes(keyword))) {
+    return 'local';
+  }
+  
+  // Check for national indicators
+  if (nationalKeywords.some(keyword => theme.includes(keyword))) {
+    return 'national';
+  }
+  
+  // Mixed topics that can have both local and national angles
+  const mixedKeywords = [
+    'healthcare', 'education', 'housing', 'environment', 'climate', 'energy',
+    'economy', 'jobs', 'unemployment', 'inflation', 'gun', 'abortion'
+  ];
+  
+  if (mixedKeywords.some(keyword => theme.includes(keyword))) {
+    return 'mixed';
+  }
+  
+  // Default to mixed for unknown topics
+  return 'mixed';
+}
+
 async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
   const location = await getLocationFromZip(zipCode);
+  const topicScope = classifyTopicScope(themeAnalysis.primaryTheme);
   
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'sonar',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
+  console.log(`Topic "${themeAnalysis.primaryTheme}" classified as: ${topicScope}`);
+  
+  // Create topic-adaptive search strategy
+  let systemPrompt = `You are a news research assistant specializing in political news. When you cite sources, you MUST format each citation exactly like this:
 
 **ARTICLE TITLE:** [The exact headline from the original article]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
@@ -176,13 +212,14 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
 - STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
-- PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
 
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
-        },
-        {
-          role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`;
+
+  let userPrompt = '';
+  
+  if (topicScope === 'local') {
+    // Local topics: prioritize local sources
+    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
@@ -195,6 +232,45 @@ PRIORITIZATION ORDER (search in this order):
 3. REGIONAL: Regional publications covering ${location.state}
 4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
 
+Focus on LOCAL RELEVANCE and direct impact on ${location.city}, ${location.state}.`;
+    
+  } else if (topicScope === 'national') {
+    // National/Global topics: prioritize relevant national sources
+    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
+
+SOURCE DIVERSITY REQUIREMENT:
+- MAXIMUM 1 article per publication/outlet
+- Select from DIFFERENT publications to ensure varied perspectives
+- Avoid multiple articles from the same news organization
+
+PRIORITIZATION ORDER (search for MOST RELEVANT sources):
+1. SPECIALIZED: Industry publications, policy think tanks, government agencies directly related to ${themeAnalysis.primaryTheme}
+2. AUTHORITATIVE NATIONAL: Major newspapers with expertise in this area (WSJ, NYT, WaPo, Reuters, AP)
+3. GOVERNMENT SOURCES: Official reports, congressional announcements, federal agency statements
+4. REGIONAL PERSPECTIVES: How ${themeAnalysis.primaryTheme} affects different regions including ${location.state}
+
+Focus on EXPERTISE and RELEVANCE over geographic proximity. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
+    
+  } else {
+    // Mixed topics: balanced approach
+    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" with focus on both national policy and local impact in ${location.state}.
+
+SOURCE DIVERSITY REQUIREMENT:
+- MAXIMUM 1 article per publication/outlet
+- Select from DIFFERENT publications to ensure varied perspectives
+- Avoid multiple articles from the same news organization
+
+PRIORITIZATION ORDER (balanced approach):
+1. NATIONAL POLICY: How ${themeAnalysis.primaryTheme} is being addressed at the federal level
+2. STATE IMPACT: How ${themeAnalysis.primaryTheme} specifically affects ${location.state}
+3. LOCAL IMPLEMENTATION: How ${location.city} or ${location.state} is implementing related policies
+4. SPECIALIZED SOURCES: Industry publications or government reports with relevant analysis
+
+Balance national significance with local relevance for ${location.state}.`;
+  }
+
+  userPrompt += `
+
 REQUIRED CONTENT TYPES:
 - News articles from established publications
 - Government reports and official announcements
@@ -204,9 +280,26 @@ REQUIRED CONTENT TYPES:
 For each source you cite, provide:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
 **OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
+**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme}]
 
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
+Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`;
+
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'sonar',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: userPrompt
         }
       ],
       max_tokens: 800,
