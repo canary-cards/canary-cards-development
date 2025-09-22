@@ -215,24 +215,8 @@ CONTENT TYPE REQUIREMENTS:
 
 Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`;
 
-  let userPrompt = '';
-  
-  if (topicScope === 'local') {
-    // Local topics: prioritize local sources
-    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
-
-SOURCE DIVERSITY REQUIREMENT:
-- MAXIMUM 1 article per publication/outlet
-- Select from DIFFERENT publications to ensure varied perspectives
-- Avoid multiple articles from the same news organization
-
-PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal/state agency statements, local government announcements). Focus on sources that are widely recognized and trusted for political coverage.
-
-Focus on LOCAL RELEVANCE and direct impact on ${location.city}, ${location.state}.`;
-    
-  } else if (topicScope === 'national') {
-    // National/Global topics: prioritize relevant national sources
-    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
+  // Use national-level source prioritization for all postcard types
+  const userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}".
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
@@ -241,21 +225,7 @@ SOURCE DIVERSITY REQUIREMENT:
 
 PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal agency statements, GAO reports). Focus on sources that are widely recognized and trusted for political coverage with expertise in ${themeAnalysis.primaryTheme}.
 
-Focus on EXPERTISE and RELEVANCE over geographic proximity. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
-    
-  } else {
-    // Mixed topics: balanced approach
-    userPrompt = `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" with focus on both national policy and local impact in ${location.state}.
-
-SOURCE DIVERSITY REQUIREMENT:
-- MAXIMUM 1 article per publication/outlet
-- Select from DIFFERENT publications to ensure varied perspectives
-- Avoid multiple articles from the same news organization
-
-PRIORITIZE reputable household names for political news (New York Times, Washington Post, Wall Street Journal, The Guardian, Reuters, Associated Press, NPR) as well as government publications (official reports, congressional announcements, federal agency statements). Balance national significance with local relevance for ${location.state}, focusing on widely recognized and trusted sources.
-
-Balance national significance with local relevance for ${location.state}.`;
-  }
+Focus on EXPERTISE and RELEVANCE. Prioritize sources with deep knowledge of ${themeAnalysis.primaryTheme}.`;
 
   userPrompt += `
 
