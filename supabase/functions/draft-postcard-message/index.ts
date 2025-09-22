@@ -429,12 +429,10 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
 Rep. ${representative.name.split(' ').pop()},
 [content - do NOT repeat "Rep." or "Dear Rep." here]
-Sincerely, [name]
 
-CRITICAL NAME PLACEHOLDER RULE:
-- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
-- DO NOT write "A constituent" or location-specific signatures
-- The [name] placeholder will be replaced later - keep it exactly as [name]
+CRITICAL FORMATTING RULE:
+- DO NOT include any closing salutation like "Sincerely" or signature
+- The postcard should end with the content, no formal closing needed
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
 - HARD MAXIMUM: 290 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
@@ -505,12 +503,11 @@ STRATEGY:
 - Keep the personal connection and emotional impact
 - Maintain the authentic voice and conversational tone
 - Include a call to action 
-- Preserve the exact format: Rep. [LastName], [content] Sincerely, [name]
+- Preserve the exact format: Rep. [LastName], [content]
 
-CRITICAL NAME PLACEHOLDER RULE:
-- ALWAYS end with exactly "Sincerely, [name]" - never substitute this placeholder
-- DO NOT write "A constituent" or location-specific signatures
-- The [name] placeholder will be replaced later - keep it exactly as [name]
+CRITICAL FORMATTING RULE:
+- DO NOT include any closing salutation like "Sincerely" or signature
+- The postcard should end with the content, no formal closing needed
 
 QUALITY STANDARDS:
 - The shortened version should be a complete, compelling postcard on its own
@@ -520,7 +517,7 @@ QUALITY STANDARDS:
 
 ABSOLUTE REQUIREMENTS:
 - Must be under 290 characters (including newlines)
-- Must maintain Rep./Sincerely format with [name] placeholder
+- Must maintain Rep. format with no closing salutation
 - Must sound like a real person, not a form letter
 
 Original postcard to shorten:
@@ -584,9 +581,9 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
         // If shortening failed, try basic truncation as last resort
         console.log('Shortening API failed, using truncation fallback');
         const lines = postcard.split('\n');
-        if (lines.length >= 3) {
-          // Keep Rep. line, first content line, and Sincerely line
-          postcard = [lines[0], lines[1].substring(0, 200), lines[lines.length - 1]].join('\n');
+        if (lines.length >= 2) {
+          // Keep Rep. line and truncated content
+          postcard = [lines[0], lines.slice(1).join(' ').substring(0, 250)].join('\n');
         }
       }
     }
