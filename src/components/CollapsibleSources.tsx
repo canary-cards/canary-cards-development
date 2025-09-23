@@ -140,30 +140,24 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   // Sort all sources by priority (government > news agencies > newspapers)
   const prioritizedSources = sources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
-  
-  // Get the primary source (highest priority) to create summary
-  const primarySource = prioritizedSources[0];
-  
-  // Create summary text from the primary source
-  const summaryText = primarySource.headline 
-    ? primarySource.headline.trim()
-    : primarySource.description.replace(/<[^>]*>/g, '').trim();
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
       <h3 className="field-label">Sources</h3>
       
-      <div className="space-y-3">
-        <p className="body-text text-sm leading-relaxed">
-          {summaryText}
-        </p>
-        
-        <div className="flex flex-wrap gap-2">
-          {prioritizedSources.map((source, index) => {
-            const domain = new URL(source.url).hostname;
-            return (
+      <div className="space-y-4">
+        {prioritizedSources.map((source, index) => {
+          const domain = new URL(source.url).hostname;
+          const summaryText = source.headline 
+            ? source.headline.trim()
+            : source.description.replace(/<[^>]*>/g, '').trim();
+          
+          return (
+            <div key={index} className="space-y-2">
+              <p className="body-text text-sm leading-relaxed">
+                {summaryText}
+              </p>
               <a
-                key={index}
                 href={source.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -172,9 +166,9 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
               >
                 {domain}
               </a>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
