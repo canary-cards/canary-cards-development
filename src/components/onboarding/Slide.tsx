@@ -60,7 +60,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
       <div 
         className="absolute left-0 right-0 px-4 sm:px-6 text-center"
         style={{
-          top: 'clamp(50%, calc(60% - 2rem), 70%)', // Matches icon area
+          top: 'clamp(45%, calc(55% - 2rem), 65%)', // Reduced gap between icon and text
           bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
           overflow: 'hidden', // Prevent text overflow
         }}
