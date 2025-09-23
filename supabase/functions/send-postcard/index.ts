@@ -188,6 +188,15 @@ serve(async (req) => {
       return selectedTemplate;
     };
 
+    // Function to select a random font key
+    const selectRandomFont = () => {
+      const approvedFonts = ['tracy', 'becca', 'dunn', 'kletzien', 'pea', 'sarah'];
+      const randomIndex = Math.floor(Math.random() * approvedFonts.length);
+      const selectedFont = approvedFonts[randomIndex];
+      console.log(`Selected font: ${selectedFont} (from ${approvedFonts.length} approved fonts)`);
+      return selectedFont;
+    };
+
     // Simple helper to derive office address - use exact contact.address with standardized city/state
     const deriveOfficeAddress = (recipient: any, recipientType: 'representative' | 'senator') => {
       console.log(`Deriving address for ${recipientType}:`, recipient);
@@ -221,7 +230,7 @@ serve(async (req) => {
     };
 
     // Function to create a postcard order
-    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string) => {
+    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string, fontKey: string) => {
       const recipientName = recipientType === 'representative' 
         ? `Rep. ${recipient.name.split(' ').pop()}` 
         : `Sen. ${recipient.name.split(' ').pop()}`;
@@ -240,6 +249,7 @@ serve(async (req) => {
         recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
         message_text: message,
         ignitepost_template_id: templateId,
+        handwriting_font_key: fontKey,
         sender_snapshot: {
           fullName: userInfo.fullName,
           streetAddress: senderAddress.streetAddress,
@@ -267,6 +277,7 @@ serve(async (req) => {
       // Now use the postcard ID as the UID for IgnitePost
       const orderData = {
         letter_template_id: templateId,
+        font: fontKey,
         message: message,
         recipient_name: recipientName,
         recipient_address_one: recipientAddress.address_one,
@@ -282,6 +293,7 @@ serve(async (req) => {
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
+        'metadata[font_key]': fontKey,
         'metadata[order_id]': orderId,
         'metadata[postcard_id]': postcardId
       };
@@ -364,8 +376,9 @@ serve(async (req) => {
         .replace(/\[City\]/g, city);
     };
 
-    // Select a random template for all postcards in this batch
+    // Select a random template and font for all postcards in this batch
     const selectedTemplateId = await selectRandomTemplate();
+    const selectedFontKey = selectRandomFont();
 
     // Send to representative
     try {
@@ -377,7 +390,7 @@ serve(async (req) => {
       // Replace user placeholders
       repMessage = replaceUserPlaceholders(repMessage);
       
-      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId);
+      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId, selectedFontKey);
       results.push({
         type: 'representative',
         recipient: representative.name,
@@ -411,7 +424,7 @@ serve(async (req) => {
           // Replace user placeholders
           senMessage = replaceUserPlaceholders(senMessage);
           
-          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId);
+          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId, selectedFontKey);
           results.push({
             type: 'senator',
             recipient: senator.name,
