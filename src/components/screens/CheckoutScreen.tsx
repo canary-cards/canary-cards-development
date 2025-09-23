@@ -544,7 +544,7 @@ export function CheckoutScreen() {
 
           {/* Section 3 - Combined Order Summary & Email */}
           <div className="rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
-            <div className="p-2 space-y-6">
+            <div className="space-y-6">
               {/* Order Summary (Expandable) */}
               <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
                 <CollapsibleTrigger className="w-full text-left">
