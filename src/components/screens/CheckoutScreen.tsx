@@ -553,7 +553,7 @@ export function CheckoutScreen() {
                       <span className="display-title text-lg">Order summary</span>
                       <div className="flex items-center">
                         <span className="display-title text-lg whitespace-nowrap">
-                          {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
+                          - {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
                         </span>
                         <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ml-2 ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
                       </div>
