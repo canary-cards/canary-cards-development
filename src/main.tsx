@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import '@fontsource/bubblegum-sans/400.css'
+import '@fontsource/patrick-hand/400.css'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
 import { getPostHogKey, getPostHogHost, isProduction } from './lib/environment'
