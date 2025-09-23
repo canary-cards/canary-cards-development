@@ -549,9 +549,9 @@ export function CheckoutScreen() {
               <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
                 <CollapsibleTrigger className="w-full text-left">
                   <div className="mb-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
                       <span className="display-title text-lg">Order summary</span>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center">
                         <span className="display-title text-lg whitespace-nowrap">
                           {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
                         </span>
