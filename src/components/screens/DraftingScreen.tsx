@@ -23,14 +23,10 @@ export function DraftingScreen() {
   const [animationError, setAnimationError] = useState(false);
 
   useEffect(() => {
-    // Initial 300ms delay before showing first message
-    const initialDelay = setTimeout(() => {
-      setCurrentMessageIndex(0);
-      setDisplayedMessageIndex(0);
-      setShowTypewriter(true);
-    }, 300);
-
-    return () => clearTimeout(initialDelay);
+    // Start immediately with no delay
+    setCurrentMessageIndex(0);
+    setDisplayedMessageIndex(0);
+    setShowTypewriter(true);
   }, []);
 
   // Rotate messages every 1.5 seconds after the initial delay
