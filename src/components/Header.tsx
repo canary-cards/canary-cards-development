@@ -42,9 +42,6 @@ export function Header({ className, isDark = false }: HeaderProps) {
             <span className={`font-semibold text-left ${isDark ? 'text-background' : 'text-primary'}`} style={{ fontFamily: 'Spectral', fontWeight: 600 }}>
               Canary Cards
             </span>
-            <span className={`text-sm hidden sm:block text-left ${isDark ? 'text-background/80' : 'text-muted-foreground'}`}>
-              Real postcards. Real impact.
-            </span>
           </div>
         </button>
         
