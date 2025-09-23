@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "@dotlottie/react-player": "^1.6.19",
-    "@fontsource/fredoka-one": "^5.2.5",
     "@fontsource/righteous": "^5.2.7",
     "@hookform/resolvers": "^3.9.0",
     "@lottiefiles/react-lottie-player": "^3.6.0",
