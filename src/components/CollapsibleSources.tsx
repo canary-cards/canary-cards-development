@@ -160,7 +160,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/10 transition-colors align-baseline"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/10 transition-colors align-middle leading-none"
                   aria-label={`Read source from ${domain} (opens in new tab)`}
                 >
                   {domain}
