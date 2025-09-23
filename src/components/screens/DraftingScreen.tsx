@@ -160,7 +160,7 @@ export function DraftingScreen() {
 
   return (
     <div className="min-h-screen h-screen flex items-center justify-center bg-background px-4">
-      <div className="text-center space-y-8 max-w-md mx-auto">
+      <div className="text-center space-y-6 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60">
             {!animationError ? (
@@ -185,7 +185,7 @@ export function DraftingScreen() {
               />
             )}
           </div>
-          <div className="flex items-center justify-center">
+          <div className="text-center space-y-3">
             <h1 
               className={`text-2xl display-title text-fill-yellow-progress ${
                 isCompleted ? 'completed' : ''
@@ -193,18 +193,18 @@ export function DraftingScreen() {
             >
               Drafting your postcard
             </h1>
+            
+            {/* Typewriter message with smooth transition */}
+            <div className="h-6 flex items-center justify-center">
+              {displayedMessageIndex >= 0 && (
+                <p className={`subtitle text-base transition-all duration-300 ease-in-out ${
+                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+                }`}>
+                  {draftingMessages[displayedMessageIndex]}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-        
-        {/* Typewriter message with smooth transition */}
-        <div className="h-8 flex items-center justify-center">
-          {displayedMessageIndex >= 0 && (
-            <p className={`subtitle text-base transition-all duration-300 ease-in-out ${
-              showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
-            }`}>
-              {draftingMessages[displayedMessageIndex]}
-            </p>
-          )}
         </div>
       </div>
     </div>
