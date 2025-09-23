@@ -357,18 +357,17 @@ export function ReturnAddressScreen() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="apartmentUnit" className="text-sm">Apartment/Unit (Optional)</Label>
-                    <Button
+                    <span className="text-sm text-muted-foreground">—</span>
+                    <button
                       type="button"
-                      variant="ghost"
                       onClick={() => {
                         setShowApartmentField(false);
                         setApartmentUnit('');
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 p-0 h-auto font-normal"
+                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:px-2 hover:py-1 hover:rounded font-normal transition-all"
                     >
-                      <Minus className="w-4 h-4 mr-1" />
                       Remove
-                    </Button>
+                    </button>
                   </div>
                   <div className="relative">
                     <Home className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
