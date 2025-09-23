@@ -39,7 +39,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
          >
           <Logo className="h-10" />
           <div className="hidden md:flex flex-col text-left">
-            <span className={`font-righteous text-3xl text-left ${isDark ? 'text-background' : 'text-primary'}`}>
+            <span className={`font-bubblegum text-3xl text-left ${isDark ? 'text-background' : 'text-primary'}`}>
               Canary Cards
             </span>
           </div>
