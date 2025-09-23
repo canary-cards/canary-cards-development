@@ -65,7 +65,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
           overflow: 'hidden', // Prevent text overflow
         }}
       >
-        <div className="space-y-2 sm:space-y-4 max-h-full">
+        <div className="space-y-4 max-h-full">
           <h2 className="text-2xl display-title leading-tight">
             {title}
           </h2>
