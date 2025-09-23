@@ -548,16 +548,14 @@ export function CheckoutScreen() {
               {/* Order Summary (Expandable) */}
               <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
                 <CollapsibleTrigger className="w-full text-left">
-                  <div className="mb-2">
-                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-                      <span className="display-title text-lg">Order summary</span>
-                      <div className="flex items-center">
-                        <span className="display-title text-lg whitespace-nowrap">
-                          - {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
-                        </span>
-                        <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ml-2 ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
-                      </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-wrap items-center gap-x-1">
+                      <span className="display-title text-lg">Order summary -</span>
+                      <span className="display-title text-lg whitespace-nowrap">
+                        {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
+                      </span>
                     </div>
+                    <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
