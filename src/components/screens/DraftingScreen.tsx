@@ -23,17 +23,17 @@ export function DraftingScreen() {
   const [animationError, setAnimationError] = useState(false);
 
   useEffect(() => {
-    // Initial 1.5s delay before showing first message
+    // Initial 300ms delay before showing first message
     const initialDelay = setTimeout(() => {
       setCurrentMessageIndex(0);
       setDisplayedMessageIndex(0);
       setShowTypewriter(true);
-    }, 1500);
+    }, 300);
 
     return () => clearTimeout(initialDelay);
   }, []);
 
-  // Rotate messages every 2 seconds after the initial delay
+  // Rotate messages every 1.5 seconds after the initial delay
   useEffect(() => {
     if (currentMessageIndex >= 0) {
       const interval = setInterval(() => {
@@ -45,12 +45,12 @@ export function DraftingScreen() {
             setTimeout(() => {
               setDisplayedMessageIndex(prev + 1);
               setShowTypewriter(true);
-            }, 300); // Half the transition duration for smooth crossfade
+            }, 200); // Faster crossfade for smoother transitions
             return prev + 1;
           }
           return prev; // Stay on last message
         });
-      }, 2000);
+      }, 1500);
 
       return () => clearInterval(interval);
     }
