@@ -528,7 +528,7 @@ export function CheckoutScreen() {
           {/* Mix & Match Card */}
           <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer ${selection === 'custom' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => setShowMixMatch(true)}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-medium text-primary">Mix and Match Recipients</span>
+              <span className="text-base font-medium text-primary">Optional: Mix and Match Recipients</span>
               <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
             </div>
             
