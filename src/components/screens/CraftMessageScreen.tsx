@@ -137,10 +137,6 @@ export function CraftMessageScreen() {
             payload: { personalImpact: newValue }
           });
         }
-        toast({
-          title: "Transcription complete",
-          description: "Your voice has been transcribed and added to the field.",
-        });
       } else {
         throw new Error('No transcription received');
       }
