@@ -187,7 +187,7 @@ export function DraftingScreen() {
           </div>
           <div className="flex items-center justify-center">
             <h1 
-              className={`text-2xl font-semibold text-primary text-fill-yellow-progress ${
+              className={`text-2xl display-title text-fill-yellow-progress ${
                 isCompleted ? 'completed' : ''
               }`}
             >
@@ -199,7 +199,7 @@ export function DraftingScreen() {
         {/* Typewriter message with smooth transition */}
         <div className="h-8 flex items-center justify-center">
           {displayedMessageIndex >= 0 && (
-            <p className={`text-lg text-primary/80 transition-all duration-300 ease-in-out ${
+            <p className={`subtitle text-base transition-all duration-300 ease-in-out ${
               showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
             }`}>
               {draftingMessages[displayedMessageIndex]}
