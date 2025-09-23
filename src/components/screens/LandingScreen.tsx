@@ -168,7 +168,7 @@ export function LandingScreen() {
                   </p>}
               </div>
               
-              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? 'bg-[hsl(var(--primary-pressed))] hover:bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode}>
+              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode}>
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     Finding Your Rep...
