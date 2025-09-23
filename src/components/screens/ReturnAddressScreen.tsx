@@ -348,7 +348,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="ghost"
                   onClick={() => setShowApartmentField(true)}
-                  className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:pr-4 p-0 h-auto font-normal transition-all"
+                  className="text-sm text-muted-foreground hover-safe:text-foreground hover-safe:bg-primary/10 hover-safe:pr-4 p-0 h-auto font-normal transition-all"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add apartment/unit (optional)
@@ -364,7 +364,7 @@ export function ReturnAddressScreen() {
                         setShowApartmentField(false);
                         setApartmentUnit('');
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:px-2 hover:py-1 hover:rounded-xl font-normal transition-all"
+                      className="text-sm text-muted-foreground hover-safe:text-foreground hover-safe:bg-primary/10 hover-safe:px-2 hover-safe:py-1 hover-safe:rounded-xl font-normal transition-all"
                     >
                       Remove
                     </button>

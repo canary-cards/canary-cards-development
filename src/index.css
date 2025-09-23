@@ -506,6 +506,28 @@ All colors MUST be HSL.
       color: hsl(var(--primary));
     }
     
+    .hover-safe\:text-foreground:hover {
+      color: hsl(var(--foreground));
+    }
+    
+    .hover-safe\:pr-4:hover {
+      padding-right: 1rem;
+    }
+    
+    .hover-safe\:px-2:hover {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    .hover-safe\:py-1:hover {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+    
+    .hover-safe\:rounded-xl:hover {
+      border-radius: 0.75rem;
+    }
+    
     .hover-safe\:border-primary:hover {
       border-color: hsl(var(--primary));
     }
