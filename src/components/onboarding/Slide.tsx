@@ -66,10 +66,10 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         }}
       >
         <div className="space-y-2 sm:space-y-4 max-h-full">
-          <h2 className="display-title text-xl sm:text-2xl md:text-3xl leading-tight">
+          <h2 className="text-2xl display-title leading-tight">
             {title}
           </h2>
-          <h3 className="subtitle text-sm sm:text-base leading-relaxed">
+          <h3 className="subtitle text-base leading-relaxed">
             {subtitle}
           </h3>
           {finePrint && (
