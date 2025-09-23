@@ -120,13 +120,7 @@ const truncateTitle = (title: string, maxWords: number = 8): string => {
 };
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Debounce toggle to prevent rapid clicking
-  const debouncedToggle = useCallback(() => {
-    setIsOpen(prev => !prev);
-  }, []);
   
   // Simulate loading state (in real app this would depend on data fetching)
   useEffect(() => {
@@ -147,98 +141,45 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const prioritizedSources = sources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
   
-  // Get unique domains with their highest priority source
+  // Get the primary source (highest priority) to create summary
+  const primarySource = prioritizedSources[0];
+  
+  // Get unique domains for counting
   const uniqueDomains = prioritizedSources.reduce((acc, source) => {
     const domain = new URL(source.url).hostname;
-    if (!acc.find(s => new URL(s.url).hostname === domain)) {
-      acc.push(source);
+    if (!acc.includes(domain)) {
+      acc.push(domain);
     }
     return acc;
-  }, [] as Source[]);
+  }, [] as string[]);
   
-  // For preview, show up to 3 unique publications
-  const previewSources = uniqueDomains.slice(0, 3);
+  // Get the primary domain for the chip
+  const primaryDomain = new URL(primarySource.url).hostname;
   
-  // Count additional unique publications (not articles)
-  const additionalCount = Math.max(0, uniqueDomains.length - previewSources.length);
+  // Create summary text from the primary source
+  const summaryText = primarySource.headline 
+    ? primarySource.headline.trim()
+    : primarySource.description.replace(/<[^>]*>/g, '').trim();
+  
+  // Count additional sources
+  const additionalCount = Math.max(0, sources.length - 1);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
-      <Collapsible open={isOpen} onOpenChange={debouncedToggle}>
-        <CollapsibleTrigger asChild>
-           <button 
-             className="w-full min-h-[44px] bg-white hover-safe:bg-primary/10 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none"
-             aria-expanded={isOpen}
-             aria-label={`${isOpen ? 'Collapse' : 'Expand'} sources (${uniqueDomains.length} sources available)`}
-           >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <ChevronRight 
-                className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                  isOpen ? 'rotate-90' : ''
-                }`} 
-              />
-              <span className="eyebrow-lowercase text-muted-foreground text-sm">
-                Sources from:
-              </span>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    {previewSources.map((source, index) => (
-                      <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
-                        <SourceIcon url={source.url} size={24} />
-                      </div>
-                    ))}
-                </div>
-                {additionalCount > 0 && (
-                  <span className="body-text text-muted-foreground text-sm whitespace-nowrap">
-                    +{additionalCount} more
-                  </span>
-                )}
-              </div>
-            </div>
-          </button>
-        </CollapsibleTrigger>
+      <h3 className="field-label">Sources</h3>
+      
+      <div className="space-y-3">
+        <p className="body-text text-sm leading-relaxed">
+          {summaryText}
+        </p>
         
-        <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 overflow-hidden">
-          {prioritizedSources.map((source, index) => {
-            // Use headline as the main title, fallback to cleaned description
-            const title = source.headline 
-              ? truncateTitle(source.headline.trim())
-              : truncateTitle(source.description.replace(/<[^>]*>/g, '').trim());
-            
-            return (
-              <div 
-                key={index} 
-                 className={`group flex items-start gap-3 pb-3 min-h-[44px] hover-safe:bg-primary/10 rounded-lg p-2 -m-2 transition-all duration-200 ${
-                   index < prioritizedSources.length - 1 ? 'border-b border-border/50 mb-3' : ''
-                 }`}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                  animation: isOpen ? 'fade-in 0.3s ease-out forwards' : undefined
-                }}
-              >
-                <div className="flex-shrink-0 mt-1">
-                  <SourceIcon url={source.url} size={24} />
-                </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <a 
-                    href={source.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="group/link flex items-center gap-1.5 body-text text-foreground text-sm font-medium leading-tight hover-safe:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-sm underline decoration-1 underline-offset-2 hover-safe:decoration-2"
-                    aria-label={`Read article: ${title} (opens in new tab)`}
-                  >
-                    <span className="flex-1">{title}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors flex-shrink-0" />
-                  </a>
-                  <div className="text-xs text-muted-foreground/80 font-medium">
-                    {new URL(source.url).hostname}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CollapsibleContent>
-      </Collapsible>
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+            {primaryDomain}
+            {additionalCount > 0 && ` +${additionalCount}`}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
