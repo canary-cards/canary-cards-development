@@ -21,7 +21,7 @@ export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreen
                   <h1 className="display-title">
                     Finalizing your order…
                   </h1>
-                  <p className="subtitle">
+                  <p className="text-primary font-semibold">
                     Your postcard details are on their way to be written and mailed.
                   </p>
                 </div>

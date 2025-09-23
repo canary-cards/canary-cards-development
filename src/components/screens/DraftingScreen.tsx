@@ -189,7 +189,7 @@ export function DraftingScreen() {
             {/* Typewriter message with smooth transition */}
             <div className="h-6 flex items-center justify-center">
               {displayedMessageIndex >= 0 && (
-                <p className={`subtitle text-base transition-all duration-300 ease-in-out ${
+                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
                   showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
                 }`}>
                   {draftingMessages[displayedMessageIndex]}
