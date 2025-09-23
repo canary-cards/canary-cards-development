@@ -267,7 +267,7 @@ export function ReturnAddressScreen() {
               <div className="space-y-2 relative">
                 <Label htmlFor="streetAddress">Street Address (for Return Address)*</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-4 w-4 h-4 text-muted-foreground z-10" />
+                  <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground z-10" />
                   <Textarea
                     ref={textareaRef}
                     id="streetAddress"
