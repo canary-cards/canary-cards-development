@@ -144,25 +144,10 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   // Get the primary source (highest priority) to create summary
   const primarySource = prioritizedSources[0];
   
-  // Get unique domains for counting
-  const uniqueDomains = prioritizedSources.reduce((acc, source) => {
-    const domain = new URL(source.url).hostname;
-    if (!acc.includes(domain)) {
-      acc.push(domain);
-    }
-    return acc;
-  }, [] as string[]);
-  
-  // Get the primary domain for the chip
-  const primaryDomain = new URL(primarySource.url).hostname;
-  
   // Create summary text from the primary source
   const summaryText = primarySource.headline 
     ? primarySource.headline.trim()
     : primarySource.description.replace(/<[^>]*>/g, '').trim();
-  
-  // Count additional sources
-  const additionalCount = Math.max(0, sources.length - 1);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
@@ -174,10 +159,21 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
         </p>
         
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-            {primaryDomain}
-            {additionalCount > 0 && ` +${additionalCount}`}
-          </span>
+          {prioritizedSources.map((source, index) => {
+            const domain = new URL(source.url).hostname;
+            return (
+              <a
+                key={index}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/10 transition-colors"
+                aria-label={`Read source from ${domain} (opens in new tab)`}
+              >
+                {domain}
+              </a>
+            );
+          })}
         </div>
       </div>
     </div>
