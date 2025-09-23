@@ -542,100 +542,96 @@ export function CheckoutScreen() {
           {/* Validation Error */}
           {validationError && <p className="text-sm text-destructive mb-4">{validationError}</p>}
 
-          {/* Section 3 - Order Summary */}
-          <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
-            <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white ${isOrderSummaryOpen ? 'border-primary' : 'border-border'}`}>
-              <CollapsibleTrigger className="w-full text-left">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="display-title text-lg">
-                    Order summary - {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
-                  </span>
-                  <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
-                </p>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="pt-4 space-y-2">
-                  {getSelectedRecipients().representative && (
-                    <div className="flex justify-between">
-                      <span>Rep. {rep?.name.split(' ').pop() || 'Representative'}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedRecipients().senator1 && senators[0] && (
-                    <div className="flex justify-between">
-                      <span>Sen. {senators[0].name.split(' ').pop()}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedRecipients().senator2 && senators[1] && (
-                    <div className="flex justify-between">
-                      <span>Sen. {senators[1].name.split(' ').pop()}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedCount() === 3 && (
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Bundle savings</span>
-                      <span>−$3.00</span>
-                    </div>
-                  )}
-                  <div className="border-t border-border pt-2 mt-2">
-                    <div className="flex justify-between text-lg font-bold text-foreground">
-                      <span>Total</span>
-                      <span>${getTotalPrice()}</span>
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
-
-          {/* Section 4 - Email & Payments */}
+          {/* Section 3 - Combined Order Summary & Email */}
           <div className="rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
-            <div className="p-2">
-              <div className="space-y-6">
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
-                  <div className="relative">
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="you@example.com" 
-                      value={email} 
-                      onChange={e => handleEmailChange(e.target.value)}
-                      onBlur={handleEmailBlur}
-                      className={`bg-white pr-10 ${
-                        emailError ? 'border-destructive focus-visible:border-destructive' : ''
-                      }`} 
-                    />
-                    {emailValid && (
-                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    )}
+            <div className="p-2 space-y-6">
+              {/* Order Summary (Expandable) */}
+              <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
+                <CollapsibleTrigger className="w-full text-left">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="display-title text-lg">
+                      Order summary - {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
+                    </span>
+                    <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
                   </div>
-                  {emailError && (
-                    <div className="text-sm text-destructive">
-                      {emailError}
-                    </div>
-                  )}
                   <p className="text-sm text-muted-foreground">
-                    We'll send you an order confirmation here after checkout and when your card is mailed.
+                    Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
                   </p>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="pt-4 space-y-2">
+                    {getSelectedRecipients().representative && (
+                      <div className="flex justify-between">
+                        <span>Rep. {rep?.name.split(' ').pop() || 'Representative'}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedRecipients().senator1 && senators[0] && (
+                      <div className="flex justify-between">
+                        <span>Sen. {senators[0].name.split(' ').pop()}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedRecipients().senator2 && senators[1] && (
+                      <div className="flex justify-between">
+                        <span>Sen. {senators[1].name.split(' ').pop()}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedCount() === 3 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Bundle savings</span>
+                        <span>−$3.00</span>
+                      </div>
+                    )}
+                    <div className="border-t border-border pt-2 mt-2">
+                      <div className="flex justify-between text-lg font-bold text-foreground">
+                        <span>Total</span>
+                        <span>${getTotalPrice()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Divider */}
+              <div className="border-t border-border"></div>
+
+              {/* Email Input */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
+                <div className="relative">
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    value={email} 
+                    onChange={e => handleEmailChange(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    className={`bg-white pr-10 ${
+                      emailError ? 'border-destructive focus-visible:border-destructive' : ''
+                    }`} 
+                  />
+                  {emailValid && (
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  )}
                 </div>
+                {emailError && (
+                  <div className="text-sm text-destructive">
+                    {emailError}
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  We'll send you an order confirmation here after checkout and when your card is mailed.
+                </p>
+              </div>
 
-
-
-
-                {/* Navigation */}
-                <div className="flex gap-2 sm:gap-4 pt-4 border-t">
-                  <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4">
-                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
-                    <span className="text-sm sm:text-base">Back</span>
-                  </Button>
-                </div>
+              {/* Navigation */}
+              <div className="flex gap-2 sm:gap-4 pt-4 border-t">
+                <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4">
+                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="text-sm sm:text-base">Back</span>
+                </Button>
               </div>
             </div>
           </div>
