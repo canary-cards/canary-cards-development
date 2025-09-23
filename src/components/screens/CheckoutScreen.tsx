@@ -594,8 +594,8 @@ export function CheckoutScreen() {
           </Collapsible>
 
           {/* Section 4 - Email & Payments */}
-          <Card className="card-warm">
-            <CardContent className="p-6">
+          <div className="rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
+            <div className="p-2">
               <div className="space-y-6">
                 {/* Email Input */}
                 <div className="space-y-2">
@@ -637,8 +637,8 @@ export function CheckoutScreen() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Sticky CTA for Both Mobile and Desktop */}
