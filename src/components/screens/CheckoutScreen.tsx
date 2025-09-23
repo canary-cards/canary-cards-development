@@ -668,7 +668,7 @@ export function CheckoutScreen() {
       <BottomSheet open={showMixMatch} onOpenChange={setShowMixMatch}>
         <BottomSheetContent>
           <BottomSheetHeader className="p-6 pb-4">
-            <BottomSheetTitle>Mix & match recipients</BottomSheetTitle>
+            <BottomSheetTitle className="text-base font-medium">Mix & match recipients</BottomSheetTitle>
             <p className="text-sm text-muted-foreground">$5 each. Choose any combination.</p>
           </BottomSheetHeader>
           
