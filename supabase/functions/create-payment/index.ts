@@ -48,6 +48,9 @@ serve(async (req) => {
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
           postcard_draftId: postcardData.draftId || "",
+          // Include representative and senators data - essential for sending
+          postcard_representative: postcardData.representative ? JSON.stringify(postcardData.representative) : "",
+          postcard_senators: postcardData.senators ? JSON.stringify(postcardData.senators) : "[]",
         };
         console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {

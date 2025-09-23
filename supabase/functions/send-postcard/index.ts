@@ -128,57 +128,11 @@ serve(async (req) => {
 
     const senderAddress = parseAddress(userInfo.streetAddress);
 
-    // Function to fetch available letter templates from IgnitePost
-    const fetchAvailableTemplates = async () => {
-      try {
-        console.log('Fetching available letter templates from IgnitePost...');
-        const response = await fetch('https://dashboard.ignitepost.com/api/v1/letter_templates', {
-          method: 'GET',
-          headers: {
-            'X-TOKEN': apiKey,
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Template API request failed: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Template API response:', JSON.stringify(result, null, 2));
-
-        if (Array.isArray(result) && result.length > 0) {
-          // API returns templates directly as an array
-          const templateIds = result.map(template => template.id.toString());
-          console.log('Available template IDs:', templateIds);
-          return templateIds;
-        } else if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-          // Fallback for wrapped response format
-          const templateIds = result.data.map(template => template.id.toString());
-          console.log('Available template IDs:', templateIds);
-          return templateIds;
-        } else {
-          throw new Error('No templates found in API response');
-        }
-      } catch (error) {
-        console.error('Failed to fetch templates from API:', error);
-        return null;
-      }
-    };
-
-    // Function to select a random template ID
-    const selectRandomTemplate = async () => {
-      // First try to fetch templates dynamically
-      const availableTemplates = await fetchAvailableTemplates();
-      
-      let templateList;
-      if (availableTemplates && availableTemplates.length > 0) {
-        templateList = availableTemplates;
-        console.log('Using dynamically fetched templates:', templateList);
-      } else {
-        // Fallback to known template IDs
-        templateList = ['10428', '10420'];
-        console.log('Using fallback templates:', templateList);
-      }
+    // Function to select a random template ID from hardcoded list
+    const selectRandomTemplate = () => {
+      // Use hardcoded template list instead of API calls
+      const templateList = ['10428', '10420', '10429', '10430', '10431'];
+      console.log('Using hardcoded template list:', templateList);
 
       // Randomly select a template
       const randomIndex = Math.floor(Math.random() * templateList.length);
@@ -377,7 +331,7 @@ serve(async (req) => {
     };
 
     // Select a random template and font for all postcards in this batch
-    const selectedTemplateId = await selectRandomTemplate();
+    const selectedTemplateId = selectRandomTemplate();
     const selectedFontKey = selectRandomFont();
 
     // Send to representative
