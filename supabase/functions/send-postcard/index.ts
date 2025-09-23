@@ -130,8 +130,8 @@ serve(async (req) => {
 
     // Function to select a random template ID from hardcoded list
     const selectRandomTemplate = () => {
-      // Use hardcoded template list instead of API calls
-      const templateList = ['10428', '10420', '10429', '10430', '10431'];
+      // Use only the two active templates as requested
+      const templateList = ['10420', '10428'];
       console.log('Using hardcoded template list:', templateList);
 
       // Randomly select a template
@@ -233,6 +233,7 @@ serve(async (req) => {
         letter_template_id: templateId,
         font: fontKey,
         message: message,
+        image: 'white', // Required by IgnitePost API - use white background for professional correspondence
         recipient_name: recipientName,
         recipient_address_one: recipientAddress.address_one,
         recipient_city: recipientAddress.city,
