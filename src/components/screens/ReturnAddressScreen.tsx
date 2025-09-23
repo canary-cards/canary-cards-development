@@ -364,7 +364,7 @@ export function ReturnAddressScreen() {
                         setShowApartmentField(false);
                         setApartmentUnit('');
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:px-2 hover:py-1 hover:rounded font-normal transition-all"
+                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:px-2 hover:py-1 hover:rounded-xl font-normal transition-all"
                     >
                       Remove
                     </button>
