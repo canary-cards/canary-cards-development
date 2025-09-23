@@ -348,7 +348,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="ghost"
                   onClick={() => setShowApartmentField(true)}
-                  className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 p-0 h-auto font-normal"
+                  className="text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:pr-4 p-0 h-auto font-normal transition-all"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add apartment/unit (optional)
