@@ -599,7 +599,7 @@ export function CheckoutScreen() {
 
               {/* Email Input */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
+                <Label htmlFor="email" className="display-title text-lg">Your Email</Label>
                 <div className="relative">
                   <Input 
                     id="email" 
