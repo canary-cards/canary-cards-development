@@ -186,11 +186,7 @@ export function DraftingScreen() {
             )}
           </div>
           <div className="text-center space-y-3">
-            <h1 
-              className={`text-2xl display-title text-fill-yellow-progress ${
-                isCompleted ? 'completed' : ''
-              }`}
-            >
+            <h1 className="text-2xl display-title">
               Drafting your postcard
             </h1>
             
