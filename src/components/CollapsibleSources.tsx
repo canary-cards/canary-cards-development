@@ -155,17 +155,17 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           return (
             <div key={index} className="space-y-2">
               <p className="body-text text-sm leading-relaxed">
-                {summaryText}
+                {summaryText}{' '}
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/10 transition-colors ml-2"
+                  aria-label={`Read source from ${domain} (opens in new tab)`}
+                >
+                  {domain}
+                </a>
               </p>
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/10 transition-colors"
-                aria-label={`Read source from ${domain} (opens in new tab)`}
-              >
-                {domain}
-              </a>
             </div>
           );
         })}
