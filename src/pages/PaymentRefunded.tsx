@@ -74,7 +74,7 @@ export default function PaymentRefunded() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center space-y-8">
             <div className="flex justify-center">
-              <AlertCircle className="h-8 w-8 text-destructive" />
+              <AlertCircle className="h-6 w-6 text-destructive/70" />
             </div>
             
             <div className="space-y-4">
