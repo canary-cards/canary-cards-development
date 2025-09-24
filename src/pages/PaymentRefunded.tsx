@@ -109,7 +109,7 @@ export default function PaymentRefunded() {
                 Refund issued: ${displayRefundAmount}
               </p>
             </div>
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-green-600 text-center">
               Expected in 5–10 business days
             </p>
             {displayRefundId && (
