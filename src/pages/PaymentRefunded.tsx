@@ -54,7 +54,7 @@ export default function PaymentRefunded() {
             
             <div className="space-y-3">
               <h1 className="text-2xl display-title">
-                Payment couldn't be processed
+                {displayFailedCount === 1 ? "Postcard" : "Postcards"} couldn't be processed
               </h1>
               
               {orderId && (
