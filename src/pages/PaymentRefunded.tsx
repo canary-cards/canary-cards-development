@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, Home, TriangleAlert } from 'lucide-react';
+import { AlertCircle, CheckCircle, TriangleAlert } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
@@ -93,7 +93,7 @@ export default function PaymentRefunded() {
             
             <div className="space-y-4">
               <h1 className="display-title text-primary">
-                Postcard couldn't be sent — but you've been refunded
+                Postcard refunded
               </h1>
               
               {orderId && (
@@ -103,7 +103,7 @@ export default function PaymentRefunded() {
               )}
               
               <p className="body-text text-muted-foreground">
-                We refunded your ${displayRefundAmount} postcard{displayFailedCount > 1 ? 's' : ''}. You'll see it in 5–10 business days. No action is needed. We'll notify you when the issue is fixed.
+                No action needed. We'll notify you when the issue is fixed.
               </p>
               
                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6 animate-fade-in">
@@ -163,9 +163,9 @@ export default function PaymentRefunded() {
                                   {String((result as any).recipient)} postcard failed
                                 </h3>
                                 {(result as any).error && (
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {String((result as any).error)}
-                                  </p>
+                                   <p className="text-sm text-muted-foreground mt-1">
+                                     Mailing issue on our side — we're fixing it
+                                   </p>
                                 )}
                               </div>
                             </div>
@@ -177,9 +177,9 @@ export default function PaymentRefunded() {
                               <h3 className="font-medium text-foreground">
                                 {displayFailedCount} postcard{displayFailedCount > 1 ? 's' : ''} failed to send
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Unable to deliver to your selected representative{displayFailedCount > 1 ? 's' : ''}
-                              </p>
+               <p className="text-sm text-muted-foreground mt-1">
+                 Mailing issue on our side — we're fixing it
+               </p>
                             </div>
                           </div>
                         )}
@@ -208,9 +208,8 @@ export default function PaymentRefunded() {
             <Separator className="my-8" />
 
             <div className="space-y-4">
-              <Button variant="primary" asChild className="w-full">
+                  <Button variant="primary" asChild className="w-full">
                 <Link to="/">
-                  <Home className="h-4 w-4 mr-2" />
                   Back to home
                 </Link>
               </Button>
