@@ -2,8 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AlertCircle, RefreshCcw, CheckCircle, ChevronDown, ArrowLeft } from 'lucide-react';
+import { AlertCircle, RefreshCcw, CheckCircle, ArrowLeft } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
@@ -30,7 +29,6 @@ function calculateRefundAmount(failedCount: number, totalCount: number): number 
 export default function PaymentRefunded() {
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
-  const [showDetails, setShowDetails] = useState(false);
   
   // Get data from state or URL params (for testing)
   const { 
@@ -103,6 +101,18 @@ export default function PaymentRefunded() {
                 <p className="text-sm text-green-600">
                   You'll see it in 5–10 business days
                 </p>
+                {displayRefundId && (
+                  <div className="mt-3 pt-3 border-t border-green-200">
+                    <p className="text-xs text-green-700">
+                      <span className="font-medium">Refund ID:</span> {displayRefundId}
+                    </p>
+                    {orderId && (
+                      <p className="text-xs text-green-700 mt-1">
+                        <span className="font-medium">Order:</span> #{formatOrderNumber(orderId)}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               
               {/* Show detailed postcard results when available */}
@@ -154,29 +164,6 @@ export default function PaymentRefunded() {
                     </div>
                   </div>
                 </div>
-              )}
-              
-              {displayRefundId && (
-                <Collapsible open={showDetails} onOpenChange={setShowDetails}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                      <span className="text-sm">Details</span>
-                      <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2">
-                    <div className="bg-muted/30 border border-muted rounded-lg p-3">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium">Refund ID:</span> {displayRefundId}
-                      </p>
-                      {orderId && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          <span className="font-medium">Order:</span> #{formatOrderNumber(orderId)}
-                        </p>
-                      )}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
               )}
             </div>
             
