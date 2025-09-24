@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Info, ArrowLeft, AlertCircle, RefreshCcw } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 
+// Helper function to calculate refund amount based on pricing structure
+function calculateRefundAmount(failedCount: number, totalCount: number): number {
+  // Pricing structure:
+  // - $5 for a single postcard
+  // - $12 for 3 postcards (3-pack)
+  // - $5 each for mix and match
+  
+  if (totalCount === 1) {
+    // Single postcard
+    return 5.00;
+  } else if (totalCount === 3) {
+    // 3-pack pricing ($12 total = $4 per postcard)
+    return (failedCount * 12) / 3;
+  } else {
+    // Mix and match pricing ($5 each)
+    return failedCount * 5.00;
+  }
+}
+
 export default function PaymentRefunded() {
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
@@ -29,8 +48,11 @@ export default function PaymentRefunded() {
   
   const displayFailedCount = urlFailedCount ? parseInt(urlFailedCount) : failedCount;
   const displayTotalCount = urlTotalCount ? parseInt(urlTotalCount) : totalCount;
+  
+  // Calculate refund amount based on pricing structure
+  const calculatedRefundAmount = calculateRefundAmount(displayFailedCount, displayTotalCount);
   const displayRefundAmount = urlRefundAmount ? (parseInt(urlRefundAmount) / 100).toFixed(2) : 
-    (refundAmountCents ? (refundAmountCents / 100).toFixed(2) : null);
+    calculatedRefundAmount.toFixed(2);
   const displayRefundId = urlRefundId || refundId;
   const displayErrors = urlError ? [urlError] : (errors.length > 0 ? errors : []);
   
@@ -79,16 +101,14 @@ export default function PaymentRefunded() {
                 </p>
               )}
               
-              {displayRefundAmount && (
-                <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mt-4">
-                  <p className="text-sm font-medium">
-                    Refund: ${displayRefundAmount}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    You'll see this refund in your account within 5–10 business days.
-                  </p>
-                </div>
-              )}
+              <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mt-4">
+                <p className="text-sm font-medium">
+                  Refund: ${displayRefundAmount}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  You'll see this refund in your account within 5–10 business days.
+                </p>
+              </div>
               
               {/* Show detailed postcard results when available */}
               {results.length > 0 && (
