@@ -162,7 +162,7 @@ export default function PaymentRefunded() {
                           {String((result as any).recipient)} postcard failed
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Mailing issue on our side — we're fixing it
+                          Mailing issue on our end — we're already fixing it
                         </p>
                       </div>
                     </div>
@@ -175,7 +175,7 @@ export default function PaymentRefunded() {
                         {displayFailedCount} postcard{displayFailedCount > 1 ? 's' : ''} failed to send
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Mailing issue on our side — we're fixing it
+                        Mailing issue on our end — we're already fixing it
                       </p>
                     </div>
                   </div>
