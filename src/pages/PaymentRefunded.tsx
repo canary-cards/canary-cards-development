@@ -49,7 +49,7 @@ export default function PaymentRefunded() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center space-y-6">
             <div className="flex justify-center">
-              <Info className="h-16 w-16 text-muted-foreground" />
+              <Info className="h-16 w-16 text-destructive" />
             </div>
             
             <div className="space-y-3">
