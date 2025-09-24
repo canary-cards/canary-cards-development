@@ -35,6 +35,39 @@ function getApiKey(envVar: string, fallback?: string): string {
   throw new Error(`Missing required API key: ${envVar}`);
 }
 
+// Helper function to clean AI responses from character count debugging info
+function cleanAIResponse(text: string): string {
+  if (!text) return text;
+  
+  const originalText = text;
+  
+  // Remove various patterns of character count debugging info
+  const cleanedText = text
+    // Remove [Character count: X] variations
+    .replace(/\[Character count:\s*\d+\]/gi, '')
+    .replace(/\(Character count:\s*\d+\)/gi, '')
+    .replace(/Character count:\s*\d+/gi, '')
+    // Remove [X characters] variations  
+    .replace(/\[\d+\s*characters?\]/gi, '')
+    .replace(/\(\d+\s*characters?\)/gi, '')
+    // Remove [Length: X] variations
+    .replace(/\[Length:\s*\d+\]/gi, '')
+    .replace(/\(Length:\s*\d+\)/gi, '')
+    // Remove standalone character counts at end
+    .replace(/\s*\d+\s*chars?\s*$/gi, '')
+    // Remove extra whitespace and newlines that might be left
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+  
+  // Log if we cleaned anything
+  if (cleanedText !== originalText) {
+    console.log(`🧹 Cleaned AI response: removed character count debugging info`);
+    console.log(`Original length: ${originalText.length}, Cleaned length: ${cleanedText.length}`);
+  }
+  
+  return cleanedText;
+}
+
 // Helper function to extract representative's last name
 function extractRepresentativeLastName(representativeName: string): string {
   if (!representativeName) return 'Representative';
@@ -417,6 +450,12 @@ GREETING HANDLING:
 - TARGET: ${Math.max(contentMaxLength - 25, contentMaxLength - 20)}-${contentMaxLength - 5} characters for optimal space utilization
 - Character counting includes newlines
 
+⚠️ CRITICAL OUTPUT RULE:
+- DO NOT include "[Character count: X]" or any character counting information in your response
+- DO NOT include "(X characters)" or similar meta-information
+- Character limits are for internal validation only - never output them
+- Your response should ONLY contain the postcard message content
+
 TONE & STYLE (CRITICAL FOR AUTHENTICITY):
 - Use everyday conversational language with contractions ("can't", "won't", "we're")
 - Express genuine emotion but stay factual - think "concerned neighbor"
@@ -461,7 +500,10 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
   });
 
   const result = await response.json();
-  const text = result.content[0]?.text?.trim() || '';
+  const rawText = result.content[0]?.text?.trim() || '';
+  
+  // Clean the AI response to remove any character count debugging info
+  const text = cleanAIResponse(rawText);
   
   // Prepend the greeting to the AI-generated content
   const finalPostcard = greeting + text;
@@ -524,6 +566,12 @@ FORMAT REQUIREMENTS:
 - DO NOT end with "Sincerely, [name]" or any signature line
 - Keep the message focused and direct
 
+⚠️ CRITICAL OUTPUT RULE:
+- DO NOT include "[Character count: X]" or any character counting information in your response
+- DO NOT include "(X characters)" or similar meta-information  
+- Character limits are for internal validation only - never output them
+- Your response should ONLY contain the shortened postcard message content
+
 QUALITY STANDARDS:
 - The shortened version should be a complete, compelling postcard on its own
 - Better to make one point well than multiple points poorly
@@ -558,7 +606,10 @@ Write the shortened version that focuses on the most compelling point:`;
   });
 
   const result = await response.json();
-  const shortenedText = result.content[0]?.text?.trim() || '';
+  const rawShortenedText = result.content[0]?.text?.trim() || '';
+  
+  // Clean the AI response to remove any character count debugging info
+  const shortenedText = cleanAIResponse(rawShortenedText);
   
   // Prepend the greeting to the shortened content
   const finalShortened = greeting + shortenedText;
@@ -613,6 +664,9 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     const repLastName = extractRepresentativeLastName(representative.name);
     const greeting = `Rep. ${repLastName},\n`;
     let fallbackContent = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
+    
+    // Clean the fallback content as well in case it contains debugging info
+    fallbackContent = cleanAIResponse(fallbackContent);
     let fallbackPostcard = greeting + fallbackContent;
 
     // Apply shortening to fallback postcard if needed
@@ -725,12 +779,15 @@ serve(async (req) => {
         summary: source.summary
       }));
       
+      // Final validation: ensure postcard doesn't contain character count info
+      const cleanedPostcard = cleanAIResponse(result.postcard);
+      
       finalResult = {
-        postcard: result.postcard,
+        postcard: cleanedPostcard,
         sources: appSources
       };
       
-      console.log(`✅ Generated postcard (${result.postcard.length} chars) with ${result.sources.length} sources`);
+      console.log(`✅ Generated postcard (${cleanedPostcard.length} chars) with ${result.sources.length} sources`);
       
     } catch (error) {
       console.error('AI generation error:', error);
