@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCcw, CheckCircle, ArrowLeft, TriangleAlert } from 'lucide-react';
+import { AlertCircle, CheckCircle, Home, TriangleAlert } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
@@ -80,29 +80,6 @@ export default function PaymentRefunded() {
   const successfulPostcards = parsedResults.filter((r: PostcardResult) => r.status === 'success');
   const failedPostcards = parsedResults.filter((r: PostcardResult) => r.status === 'error');
   
-  // Generate dynamic button text based on failed postcards
-  const getResendButtonText = () => {
-    if (failedPostcards.length === 0) {
-      return "Resend your postcard now";
-    }
-    
-    // If all postcards failed (no successful ones), use generic text
-    if (successfulPostcards.length === 0) {
-      return "Try all postcards again";
-    }
-    
-    const failedNames = failedPostcards.map((result: PostcardResult) => 
-      String((result as any).recipient)
-    );
-    
-    if (failedNames.length === 1) {
-      return `Try ${failedNames[0]} again`;
-    } else if (failedNames.length === 2) {
-      return `Try ${failedNames[0]} & ${failedNames[1]} again`;
-    } else {
-      return `Try ${failedNames.slice(0, -1).join(', ')} & ${failedNames[failedNames.length - 1]} again`;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col animate-fade-in">
@@ -116,7 +93,7 @@ export default function PaymentRefunded() {
             
             <div className="space-y-4">
               <h1 className="display-title text-primary">
-                Postcard{displayFailedCount > 1 ? 's' : ''} hit a snag – but you're covered
+                Postcard couldn't be sent — but you've been refunded
               </h1>
               
               {orderId && (
@@ -126,7 +103,7 @@ export default function PaymentRefunded() {
               )}
               
               <p className="body-text text-muted-foreground">
-                We refunded your postcard{displayFailedCount > 1 ? 's' : ''}, no action needed on your part.
+                We refunded your ${displayRefundAmount} postcard{displayFailedCount > 1 ? 's' : ''}. You'll see it in 5–10 business days. No action is needed. We'll notify you when the issue is fixed.
               </p>
               
                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6 animate-fade-in">
@@ -230,21 +207,14 @@ export default function PaymentRefunded() {
             
             <Separator className="my-8" />
 
-             <div className="space-y-4">
-                <Button asChild className="w-full h-auto whitespace-normal">
-                  <Link to="/onboarding">
-                    <RefreshCcw className="h-4 w-4 mr-1" />
-                    {getResendButtonText()}
-                  </Link>
-                </Button>
-               
-               <Button variant="secondary" asChild className="w-full text-muted-foreground">
-                 <Link to="/">
-                   <ArrowLeft className="h-4 w-4 mr-1" />
-                   Back to home
-                 </Link>
-               </Button>
-             </div>
+            <div className="space-y-4">
+              <Button variant="primary" asChild className="w-full">
+                <Link to="/">
+                  <Home className="h-4 w-4 mr-2" />
+                  Back to home
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
