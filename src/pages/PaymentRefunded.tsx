@@ -113,7 +113,7 @@ export default function PaymentRefunded() {
               Expected in 5–10 business days
             </p>
             {displayRefundId && (
-              <div className="mt-3 pt-3 border-t border-green-200">
+              <div className="mt-3 pt-3 border-t border-green-200 text-center">
                 <p className="text-xs text-green-700">
                   <span className="font-medium">Refund ID:</span> {displayRefundId}
                 </p>
