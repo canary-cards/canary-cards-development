@@ -80,7 +80,7 @@ export default function PaymentRefunded() {
             
             <div className="space-y-4">
               <h1 className="text-2xl display-title text-primary">
-                Postcard didn't go through — but you're covered
+                Postcard{displayFailedCount > 1 ? 's' : ''} didn't go through — but you're covered
               </h1>
               
               {orderId && (
