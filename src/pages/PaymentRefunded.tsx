@@ -88,19 +88,9 @@ export default function PaymentRefunded() {
                 </p>
               )}
               
-              {displayTotalCount === 1 ? (
-                <p className="body-text text-muted-foreground">
-                  We refunded your ${displayRefundAmount} postcard.
-                </p>
-              ) : displayFailedCount === displayTotalCount ? (
-                <p className="body-text text-muted-foreground">
-                  We refunded your ${displayRefundAmount} for {displayFailedCount} postcards.
-                </p>
-              ) : (
-                <p className="body-text text-muted-foreground">
-                  We refunded your ${displayRefundAmount} for {displayFailedCount} failed {displayFailedCount === 1 ? 'postcard' : 'postcards'}.
-                </p>
-              )}
+              <p className="body-text text-muted-foreground">
+                We refunded your postcard{displayFailedCount > 1 ? 's' : ''}, no action needed on your part.
+              </p>
               
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
                 <div className="flex items-center justify-center gap-2 mb-2">
