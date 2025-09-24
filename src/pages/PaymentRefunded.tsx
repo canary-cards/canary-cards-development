@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertCircle, RefreshCcw, CheckCircle, ChevronDown, ArrowLeft } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 
 // Helper function to calculate refund amount based on pricing structure
@@ -72,7 +73,7 @@ export default function PaymentRefunded() {
       <Header />
       <div className="flex-1 flex items-start justify-center p-4 pt-12">
         <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center space-y-8">
+          <CardContent className="p-8 text-center space-y-10">
             <div className="flex justify-center">
               <AlertCircle className="h-6 w-6 text-destructive/70" />
             </div>
@@ -178,6 +179,8 @@ export default function PaymentRefunded() {
                 </Collapsible>
               )}
             </div>
+            
+            <Separator className="my-6" />
 
             <div className="space-y-4">
               <Button asChild className="w-full">
