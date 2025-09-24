@@ -193,7 +193,7 @@ export default function PaymentRefunded() {
               <Button asChild className="w-full">
                 <Link to="/onboarding">
                   <RefreshCcw className="h-4 w-4 mr-2" />
-                  Try Again — resend your postcard now
+                  Try Again, resend your postcard
                 </Link>
               </Button>
               
