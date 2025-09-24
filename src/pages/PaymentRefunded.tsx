@@ -96,7 +96,7 @@ export default function PaymentRefunded() {
             </p>
           )}
           <p className="subtitle">
-            No action needed. We'll notify you when the issue is fixed.
+            We've got it covered. No action needed — we'll let you know when it's fixed.
           </p>
         </div>
 
