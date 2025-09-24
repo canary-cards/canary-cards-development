@@ -197,7 +197,7 @@ export default function PaymentRefunded() {
                 </Link>
               </Button>
               
-              <Button variant="outline" asChild className="w-full text-muted-foreground">
+              <Button variant="secondary" asChild className="w-full text-muted-foreground">
                 <Link to="/">
                   Back to Home
                 </Link>
