@@ -86,6 +86,11 @@ export default function PaymentRefunded() {
       return "Resend your postcard now";
     }
     
+    // If all postcards failed (no successful ones), use generic text
+    if (successfulPostcards.length === 0) {
+      return "Try all postcards again";
+    }
+    
     const failedNames = failedPostcards.map((result: PostcardResult) => 
       String((result as any).recipient)
     );
@@ -226,7 +231,7 @@ export default function PaymentRefunded() {
             <Separator className="my-8" />
 
              <div className="space-y-4">
-                <Button asChild className="w-full">
+                <Button asChild className="w-full h-auto whitespace-normal">
                   <Link to="/onboarding">
                     <RefreshCcw className="h-4 w-4 mr-1" />
                     {getResendButtonText()}
