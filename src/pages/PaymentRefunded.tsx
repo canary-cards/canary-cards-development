@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCcw, CheckCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, RefreshCcw, CheckCircle, ArrowLeft, TriangleAlert } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
@@ -106,7 +106,7 @@ export default function PaymentRefunded() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center space-y-10">
             <div className="flex justify-center">
-              <AlertCircle className="h-6 w-6 text-destructive/70" />
+              <TriangleAlert className="h-6 w-6 text-destructive/70" />
             </div>
             
             <div className="space-y-4">
