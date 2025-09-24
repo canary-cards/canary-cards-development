@@ -104,7 +104,7 @@ export default function PaymentRefunded() {
       <Header />
       <div className="flex-1 flex items-start justify-center p-4 pt-12">
         <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center space-y-10">
+          <CardContent className="p-8 text-center space-y-6">
             <div className="flex justify-center">
               <TriangleAlert className="h-6 w-6 text-destructive/70" />
             </div>
