@@ -192,7 +192,7 @@ export default function PaymentRefunded() {
             <div className="space-y-4">
               <Button asChild className="w-full">
                 <Link to="/onboarding">
-                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  <RefreshCcw className="h-4 w-4 mr-1" />
                   Try Again - resend your postcard
                 </Link>
               </Button>
