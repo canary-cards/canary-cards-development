@@ -202,10 +202,10 @@ export default function PaymentRefunded() {
           </Card>
         )}
 
-        {/* Back to Home Button */}
+        {/* Return Home Button */}
         <Button variant="primary" asChild className="w-full">
           <Link to="/">
-            Back to home
+            Return home
           </Link>
         </Button>
       </div>
