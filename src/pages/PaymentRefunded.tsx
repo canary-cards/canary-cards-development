@@ -88,7 +88,7 @@ export default function PaymentRefunded() {
         {/* Title and Subtitle */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Postcard refunded
+            {displayFailedCount > 1 ? 'Postcards refunded' : 'Postcard refunded'}
           </h1>
           {orderId && (
             <p className="text-sm text-muted-foreground mb-4">
