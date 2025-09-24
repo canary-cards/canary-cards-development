@@ -65,6 +65,25 @@ export default function PaymentRefunded() {
   }
   const successfulPostcards = results.filter((r: PostcardResult) => r.status === 'success');
   const failedPostcards = results.filter((r: PostcardResult) => r.status === 'error');
+  
+  // Generate dynamic button text based on failed postcards
+  const getResendButtonText = () => {
+    if (failedPostcards.length === 0) {
+      return "Resend your postcard now";
+    }
+    
+    const failedNames = failedPostcards.map((result: PostcardResult) => 
+      String((result as any).recipient)
+    );
+    
+    if (failedNames.length === 1) {
+      return `Try ${failedNames[0]} again`;
+    } else if (failedNames.length === 2) {
+      return `Try ${failedNames[0]} & ${failedNames[1]} again`;
+    } else {
+      return `Try ${failedNames.slice(0, -1).join(', ')} & ${failedNames[failedNames.length - 1]} again`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col animate-fade-in">
@@ -182,7 +201,7 @@ export default function PaymentRefunded() {
                 <Button asChild className="w-full">
                   <Link to="/onboarding">
                     <RefreshCcw className="h-4 w-4 mr-1" />
-                    Resend your postcard now
+                    {getResendButtonText()}
                   </Link>
                 </Button>
                
