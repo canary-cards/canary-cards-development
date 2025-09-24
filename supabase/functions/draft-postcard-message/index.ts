@@ -394,7 +394,7 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   const location = await getLocationFromZip(zipCode);
   
   const repLastName = extractRepresentativeLastName(representative.name);
-  const greeting = `Rep. ${repLastName}\n`;
+  const greeting = `Rep. ${repLastName},\n`;
   const greetingLength = greeting.length;
   const contentMaxLength = 300 - greetingLength;
   
@@ -411,7 +411,7 @@ GREETING HANDLING:
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
 - HARD MAXIMUM: ${contentMaxLength} characters for your content (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
-- A greeting "Rep. ${repLastName}" will be automatically added, using ${greetingLength} characters
+- A greeting "Rep. ${repLastName}," will be automatically added, using ${greetingLength} characters
 - Total final postcard will be exactly 300 characters maximum
 - If your draft is even 1 character over ${contentMaxLength}, it will be rejected and not sent.
 - TARGET: ${Math.max(contentMaxLength - 25, contentMaxLength - 20)}-${contentMaxLength - 5} characters for optimal space utilization
@@ -496,7 +496,7 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   // Extract greeting from original postcard to maintain consistency
   const repLastName = extractRepresentativeLastName(representative.name);
-  const greeting = `Rep. ${repLastName}\n`;
+  const greeting = `Rep. ${repLastName},\n`;
   const greetingLength = greeting.length;
   
   // Remove existing greeting from original postcard for shortening
@@ -516,7 +516,7 @@ STRATEGY:
 - Keep the personal connection and emotional impact
 - Maintain the authentic voice and conversational tone
 - Include a call to action 
-- NO salutation or signature - the greeting "Rep. ${repLastName}" will be added automatically
+- NO salutation or signature - the greeting "Rep. ${repLastName}," will be added automatically
 
 FORMAT REQUIREMENTS:
 - DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
@@ -534,7 +534,7 @@ ABSOLUTE REQUIREMENTS:
 - Must be under ${contentMaxLength} characters for content (including newlines)
 - No salutation, no signature - just direct message content
 - Must sound like a real person, not a form letter
-- The greeting "Rep. ${repLastName}" will be automatically added (${greetingLength} chars)
+- The greeting "Rep. ${repLastName}," will be automatically added (${greetingLength} chars)
 
 Original postcard content to shorten:
 ${contentToShorten}
@@ -611,7 +611,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     // Fallback simple postcard with greeting
     const { state } = await getLocationFromZip(zipCode);
     const repLastName = extractRepresentativeLastName(representative.name);
-    const greeting = `Rep. ${repLastName}\n`;
+    const greeting = `Rep. ${repLastName},\n`;
     let fallbackContent = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
     let fallbackPostcard = greeting + fallbackContent;
 
