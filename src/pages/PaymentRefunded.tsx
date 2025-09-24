@@ -154,7 +154,7 @@ export default function PaymentRefunded() {
                   {successfulPostcards.length > 0 && (
                     <div className="bg-muted/30 border border-muted rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                         <div className="text-left">
                           <h3 className="font-medium text-foreground mb-2">
                             {successfulPostcards.length} postcard{successfulPostcards.length > 1 ? 's' : ''} sent successfully
@@ -175,7 +175,7 @@ export default function PaymentRefunded() {
                         {failedPostcards.length > 0 ? (
                           failedPostcards.map((result: PostcardResult, idx: number) => (
                             <div key={idx} className="flex items-start gap-3">
-                              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                               <div className="text-left">
                                 <h3 className="font-medium text-foreground">
                                   {String((result as any).recipient)} postcard failed
@@ -190,7 +190,7 @@ export default function PaymentRefunded() {
                           ))
                         ) : (
                           <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                            <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                             <div className="text-left">
                               <h3 className="font-medium text-foreground">
                                 {displayFailedCount} postcard{displayFailedCount > 1 ? 's' : ''} failed to send
