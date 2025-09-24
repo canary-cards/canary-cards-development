@@ -2,8 +2,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Info, ArrowLeft, AlertCircle, RefreshCcw } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertCircle, RefreshCcw, CheckCircle, ChevronDown } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
+import { useState } from 'react';
 
 // Helper function to calculate refund amount based on pricing structure
 function calculateRefundAmount(failedCount: number, totalCount: number): number {
@@ -27,6 +29,7 @@ function calculateRefundAmount(failedCount: number, totalCount: number): number 
 export default function PaymentRefunded() {
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
+  const [showDetails, setShowDetails] = useState(false);
   
   // Get data from state or URL params (for testing)
   const { 
@@ -65,18 +68,18 @@ export default function PaymentRefunded() {
   const failedPostcards = results.filter((r: PostcardResult) => r.status === 'error');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col animate-fade-in">
       <Header />
-      <div className="flex-1 flex items-start justify-center p-4 pt-8">
+      <div className="flex-1 flex items-start justify-center p-4 pt-12">
         <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center space-y-6">
+          <CardContent className="p-8 text-center space-y-8">
             <div className="flex justify-center">
-              <Info className="h-16 w-16 text-destructive" />
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
             
-            <div className="space-y-3">
-              <h1 className="text-2xl display-title">
-                {displayFailedCount === 1 ? "Postcard" : "Postcards"} couldn't be processed
+            <div className="space-y-4">
+              <h1 className="text-2xl display-title text-primary">
+                Something went wrong — but you're covered
               </h1>
               
               {orderId && (
@@ -87,26 +90,27 @@ export default function PaymentRefunded() {
               
               {displayTotalCount === 1 ? (
                 <p className="body-text text-muted-foreground">
-                  Your postcard failed to order. We've issued a refund for the failed postcard.
+                  We refunded your ${displayRefundAmount} postcard.
                 </p>
               ) : displayFailedCount === displayTotalCount ? (
                 <p className="body-text text-muted-foreground">
-                  {displayFailedCount} of {displayTotalCount} postcards failed to order. 
-                  We've issued a refund for the failed postcards.
+                  We refunded your ${displayRefundAmount} for {displayFailedCount} postcards.
                 </p>
               ) : (
                 <p className="body-text text-muted-foreground">
-                  {displayFailedCount} of {displayTotalCount} postcards failed to order. 
-                  We've issued a partial refund for the failed {displayFailedCount === 1 ? 'postcard' : 'postcards'}.
+                  We refunded your ${displayRefundAmount} for {displayFailedCount} failed {displayFailedCount === 1 ? 'postcard' : 'postcards'}.
                 </p>
               )}
               
-              <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mt-4">
-                <p className="text-sm font-medium">
-                  Refund: ${displayRefundAmount}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  You'll see this refund in your account within 5–10 business days.
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <p className="text-sm font-medium text-green-800">
+                    Refund issued: ${displayRefundAmount}
+                  </p>
+                </div>
+                <p className="text-sm text-green-600">
+                  You'll see it in 5–10 business days
                 </p>
               </div>
               
@@ -162,23 +166,39 @@ export default function PaymentRefunded() {
               )}
               
               {displayRefundId && (
-                <p className="text-sm text-muted-foreground">
-                  Refund ID: {displayRefundId}
-                </p>
+                <Collapsible open={showDetails} onOpenChange={setShowDetails}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <span className="text-sm">Details</span>
+                      <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2">
+                    <div className="bg-muted/30 border border-muted rounded-lg p-3">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Refund ID:</span> {displayRefundId}
+                      </p>
+                      {orderId && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          <span className="font-medium">Order:</span> #{formatOrderNumber(orderId)}
+                        </p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <Button asChild className="w-full">
                 <Link to="/onboarding">
                   <RefreshCcw className="h-4 w-4 mr-2" />
-                  Try Again
+                  Try Again — resend your postcard now
                 </Link>
               </Button>
               
-              <Button variant="outline" asChild className="w-full">
+              <Button variant="outline" asChild className="w-full text-muted-foreground">
                 <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Home
                 </Link>
               </Button>
