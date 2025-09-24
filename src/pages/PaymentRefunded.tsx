@@ -48,6 +48,20 @@ export default function PaymentRefunded() {
   const urlRefundId = urlParams.get('refundId');
   const urlError = urlParams.get('error');
   
+  // URL params for testing postcard results
+  const urlResults = urlParams.get('results');
+  let parsedResults = results;
+  
+  // Parse URL results for testing
+  if (urlResults) {
+    try {
+      parsedResults = JSON.parse(decodeURIComponent(urlResults));
+    } catch (e) {
+      console.warn('Invalid results parameter:', e);
+      parsedResults = results;
+    }
+  }
+  
   const displayFailedCount = urlFailedCount ? parseInt(urlFailedCount) : failedCount;
   const displayTotalCount = urlTotalCount ? parseInt(urlTotalCount) : totalCount;
   
@@ -63,8 +77,8 @@ export default function PaymentRefunded() {
     status: 'success' | 'error';
     [key: string]: unknown;
   }
-  const successfulPostcards = results.filter((r: PostcardResult) => r.status === 'success');
-  const failedPostcards = results.filter((r: PostcardResult) => r.status === 'error');
+  const successfulPostcards = parsedResults.filter((r: PostcardResult) => r.status === 'success');
+  const failedPostcards = parsedResults.filter((r: PostcardResult) => r.status === 'error');
   
   // Generate dynamic button text based on failed postcards
   const getResendButtonText = () => {
@@ -135,7 +149,7 @@ export default function PaymentRefunded() {
               </div>
               
               {/* Show detailed postcard results when available */}
-              {results.length > 0 && (
+              {parsedResults.length > 0 && (
                 <div className="space-y-4 mt-6">
                   {successfulPostcards.length > 0 && (
                     <div className="bg-muted/30 border border-muted rounded-lg p-4">
@@ -180,7 +194,7 @@ export default function PaymentRefunded() {
               )}
               
               {/* Fallback to legacy error display */}
-              {results.length === 0 && displayErrors.length > 0 && (
+              {parsedResults.length === 0 && displayErrors.length > 0 && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mt-4">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
