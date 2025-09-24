@@ -35,6 +35,26 @@ function getApiKey(envVar: string, fallback?: string): string {
   throw new Error(`Missing required API key: ${envVar}`);
 }
 
+// Helper function to extract representative's last name
+function extractRepresentativeLastName(representativeName: string): string {
+  if (!representativeName) return 'Representative';
+  
+  const nameParts = representativeName.trim().split(/\s+/);
+  
+  // Handle edge cases
+  if (nameParts.length === 1) return nameParts[0];
+  
+  // Get the last part of the name (handles most cases including Jr./Sr.)
+  let lastName = nameParts[nameParts.length - 1];
+  
+  // If last part is a suffix (Jr., Sr., III, etc.), use the second-to-last part
+  if (/^(Jr\.?|Sr\.?|III?|IV|V)$/i.test(lastName) && nameParts.length > 2) {
+    lastName = nameParts[nameParts.length - 2];
+  }
+  
+  return lastName;
+}
+
 async function getLocationFromZip(zipCode: string): Promise<{ state: string; city: string; region: string }> {
   // Fallback for common zip codes to avoid API calls
   const commonZipMap: { [key: string]: { state: string; city: string; region: string } } = {
@@ -373,21 +393,28 @@ async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis,
   const apiKey = getApiKey('anthropickey');
   const location = await getLocationFromZip(zipCode);
   
+  const repLastName = extractRepresentativeLastName(representative.name);
+  const greeting = `Rep. ${repLastName}\n`;
+  const greetingLength = greeting.length;
+  const contentMaxLength = 300 - greetingLength;
+  
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
-[content - start directly with the message, no salutation or "Dear Rep." or "Rep. Name,"]
+[content - start directly with the message content, NO greeting needed as it will be added automatically]
 
-NO SALUTATION RULE:
-- DO NOT start with "Rep. Name," or "Dear Rep." or any greeting
+GREETING HANDLING:
+- DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
 - Start directly with your message content
 - DO NOT end with "Sincerely, [name]" or any signature line
 - Keep the message focused and direct
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
-- HARD MAXIMUM: 300 characters (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
-- If your draft is even 1 character over, it will be rejected and not sent. DO NOT EXCEED 300 CHARACTERS UNDER ANY CIRCUMSTANCES.
-- TARGET: 275-280 characters (optimal space utilization)
+- HARD MAXIMUM: ${contentMaxLength} characters for your content (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- A greeting "Rep. ${repLastName}" will be automatically added, using ${greetingLength} characters
+- Total final postcard will be exactly 300 characters maximum
+- If your draft is even 1 character over ${contentMaxLength}, it will be rejected and not sent.
+- TARGET: ${Math.max(contentMaxLength - 25, contentMaxLength - 20)}-${contentMaxLength - 5} characters for optimal space utilization
 - Character counting includes newlines
 
 TONE & STYLE (CRITICAL FOR AUTHENTICITY):
@@ -436,7 +463,10 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g
   const result = await response.json();
   const text = result.content[0]?.text?.trim() || '';
   
-  return text;
+  // Prepend the greeting to the AI-generated content
+  const finalPostcard = greeting + text;
+  
+  return finalPostcard;
 }
 
 // Helper function to smart truncate text at the last period under the limit
@@ -460,13 +490,25 @@ function smartTruncate(text: string, maxLength: number = 300): string {
   return text.substring(0, maxLength - 50) + '...';
 }
 
-async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string): Promise<string> {
+async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string, representative: any): Promise<string> {
   const apiKey = getApiKey('anthropickey');
   const location = await getLocationFromZip(zipCode);
   
+  // Extract greeting from original postcard to maintain consistency
+  const repLastName = extractRepresentativeLastName(representative.name);
+  const greeting = `Rep. ${repLastName}\n`;
+  const greetingLength = greeting.length;
+  
+  // Remove existing greeting from original postcard for shortening
+  const contentToShorten = originalPostcard.startsWith(greeting) 
+    ? originalPostcard.substring(greetingLength)
+    : originalPostcard;
+  
+  const contentMaxLength = 300 - greetingLength;
+  
   const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard to under 300 characters while keeping it excellent.
+TASK: Shorten this postcard content to under ${contentMaxLength} characters while keeping it excellent.
 
 STRATEGY:
 - If the postcard makes multiple points, choose the STRONGEST one and focus on it
@@ -474,10 +516,10 @@ STRATEGY:
 - Keep the personal connection and emotional impact
 - Maintain the authentic voice and conversational tone
 - Include a call to action 
-- NO salutation or signature - start directly with the message content
+- NO salutation or signature - the greeting "Rep. ${repLastName}" will be added automatically
 
 FORMAT REQUIREMENTS:
-- DO NOT start with "Rep. Name," or "Dear Rep." or any greeting
+- DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
 - Start directly with your message content  
 - DO NOT end with "Sincerely, [name]" or any signature line
 - Keep the message focused and direct
@@ -489,12 +531,13 @@ QUALITY STANDARDS:
 - Don't sacrifice authenticity for brevity
 
 ABSOLUTE REQUIREMENTS:
-- Must be under 300 characters (including newlines)
+- Must be under ${contentMaxLength} characters for content (including newlines)
 - No salutation, no signature - just direct message content
 - Must sound like a real person, not a form letter
+- The greeting "Rep. ${repLastName}" will be automatically added (${greetingLength} chars)
 
-Original postcard to shorten:
-${originalPostcard}
+Original postcard content to shorten:
+${contentToShorten}
 
 Write the shortened version that focuses on the most compelling point:`;
 
@@ -517,7 +560,10 @@ Write the shortened version that focuses on the most compelling point:`;
   const result = await response.json();
   const shortenedText = result.content[0]?.text?.trim() || '';
   
-  return shortenedText;
+  // Prepend the greeting to the shortened content
+  const finalShortened = greeting + shortenedText;
+  
+  return finalShortened;
 }
 
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
@@ -544,7 +590,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     // Step 4: Shorten if needed
     if (postcard.length > 300) {
       console.log(`Postcard too long (${postcard.length} chars), shortening...`);
-      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode);
+      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode, representative);
       console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
       
       // Use shortened version if it's actually shorter and under limit
@@ -562,15 +608,18 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   } catch (error) {
     console.error("Error generating postcard:", error);
     
-    // Fallback simple postcard
+    // Fallback simple postcard with greeting
     const { state } = await getLocationFromZip(zipCode);
-    let fallbackPostcard = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
+    const repLastName = extractRepresentativeLastName(representative.name);
+    const greeting = `Rep. ${repLastName}\n`;
+    let fallbackContent = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
+    let fallbackPostcard = greeting + fallbackContent;
 
     // Apply shortening to fallback postcard if needed
     if (fallbackPostcard.length > 300) {
       console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
       try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode);
+        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode, representative);
         if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 300) {
           fallbackPostcard = shortenedFallback;
           console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
