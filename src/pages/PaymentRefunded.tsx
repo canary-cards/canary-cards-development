@@ -63,14 +63,19 @@ export default function PaymentRefunded() {
                 </p>
               )}
               
-              {displayFailedCount === displayTotalCount ? (
+              {displayTotalCount === 1 ? (
                 <p className="body-text text-muted-foreground">
-                  Don't worry - no charge was made to your card. This can happen due to network issues or payment processing delays.
+                  Your postcard failed to order. We've issued a refund for the failed postcard.
+                </p>
+              ) : displayFailedCount === displayTotalCount ? (
+                <p className="body-text text-muted-foreground">
+                  {displayFailedCount} of {displayTotalCount} postcards failed to order. 
+                  We've issued a refund for the failed postcards.
                 </p>
               ) : (
                 <p className="body-text text-muted-foreground">
-                  {displayFailedCount} of {displayTotalCount} postcard{displayTotalCount > 1 ? 's' : ''} failed to order. 
-                  We've issued a partial refund for the failed postcard{displayFailedCount > 1 ? 's' : ''}.
+                  {displayFailedCount} of {displayTotalCount} postcards failed to order. 
+                  We've issued a partial refund for the failed {displayFailedCount === 1 ? 'postcard' : 'postcards'}.
                 </p>
               )}
               
