@@ -78,7 +78,7 @@ export default function PaymentRefunded() {
               <AlertCircle className="h-6 w-6 text-destructive/70" />
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h1 className="text-2xl display-title text-primary">
                 Postcard{displayFailedCount > 1 ? 's' : ''} didn't go through — but you're covered
               </h1>
@@ -180,7 +180,7 @@ export default function PaymentRefunded() {
               )}
             </div>
             
-            <Separator className="my-6" />
+            <Separator className="my-8" />
 
              <div className="space-y-4">
                <Button asChild className="w-full">
