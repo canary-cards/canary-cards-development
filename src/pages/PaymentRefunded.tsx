@@ -117,34 +117,43 @@ export default function PaymentRefunded() {
               
               {/* Show detailed postcard results when available */}
               {results.length > 0 && (
-                <div className="space-y-3 mt-4">
+                <div className="space-y-4 mt-6">
                   {successfulPostcards.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <div className="h-4 w-4 bg-green-500 rounded-full mt-0.5 flex-shrink-0"></div>
-                        <div className="text-sm text-green-800 text-left">
-                          <p className="font-medium">Sent successfully:</p>
-                           {successfulPostcards.map((result: PostcardResult, idx: number) => (
-                             <p key={idx} className="mt-1">{String((result as any).recipient)}</p>
-                           ))}
+                    <div className="bg-muted/30 border border-muted rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-left">
+                          <h3 className="font-medium text-foreground mb-2">
+                            {successfulPostcards.length} postcard{successfulPostcards.length > 1 ? 's' : ''} sent successfully
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {successfulPostcards.map((result: PostcardResult, idx: number) => 
+                              String((result as any).recipient)
+                            ).join(' & ')} will receive your message
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
                   
                   {failedPostcards.length > 0 && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-destructive text-left">
-                          <p className="font-medium">Couldn't send:</p>
-                           {failedPostcards.map((result: PostcardResult, idx: number) => (
-                             <div key={idx} className="mt-1">
-                               <p className="font-medium">{String((result as any).recipient)}</p>
-                               {(result as any).error && <p className="text-xs opacity-75">{String((result as any).error)}</p>}
+                    <div className="bg-muted/30 border border-muted rounded-lg p-4">
+                      <div className="space-y-3">
+                        {failedPostcards.map((result: PostcardResult, idx: number) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                            <div className="text-left">
+                              <h3 className="font-medium text-foreground">
+                                {String((result as any).recipient)} postcard failed
+                              </h3>
+                              {(result as any).error && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {String((result as any).error)}
+                                </p>
+                              )}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
