@@ -149,7 +149,7 @@ export default function PaymentRefunded() {
               </div>
               
               {/* Show detailed postcard results when available */}
-              {parsedResults.length > 0 && (
+              {(parsedResults.length > 0 || displayFailedCount > 0) && (
                 <div className="space-y-4 mt-6">
                   {successfulPostcards.length > 0 && (
                     <div className="bg-muted/30 border border-muted rounded-lg p-4">
@@ -169,24 +169,38 @@ export default function PaymentRefunded() {
                     </div>
                   )}
                   
-                  {failedPostcards.length > 0 && (
+                  {(failedPostcards.length > 0 || (parsedResults.length === 0 && displayFailedCount > 0)) && (
                     <div className="bg-muted/30 border border-muted rounded-lg p-4">
                       <div className="space-y-3">
-                        {failedPostcards.map((result: PostcardResult, idx: number) => (
-                          <div key={idx} className="flex items-start gap-3">
+                        {failedPostcards.length > 0 ? (
+                          failedPostcards.map((result: PostcardResult, idx: number) => (
+                            <div key={idx} className="flex items-start gap-3">
+                              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                              <div className="text-left">
+                                <h3 className="font-medium text-foreground">
+                                  {String((result as any).recipient)} postcard failed
+                                </h3>
+                                {(result as any).error && (
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {String((result as any).error)}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex items-start gap-3">
                             <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
                             <div className="text-left">
                               <h3 className="font-medium text-foreground">
-                                {String((result as any).recipient)} postcard failed
+                                {displayFailedCount} postcard{displayFailedCount > 1 ? 's' : ''} failed to send
                               </h3>
-                              {(result as any).error && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {String((result as any).error)}
-                                </p>
-                              )}
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Unable to deliver to your selected representative{displayFailedCount > 1 ? 's' : ''}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   )}
