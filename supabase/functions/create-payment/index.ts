@@ -179,6 +179,9 @@ serve(async (req) => {
           postcardData.representative?.name,
           ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map(s => s.name)
         ].filter(Boolean)) : "[]",
+        // Add simulation parameters for testing
+        simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
+        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0", 
         ...postcardMetadata // Include all postcard data in session metadata
       }
     });

@@ -200,10 +200,16 @@ serve(async (req) => {
       
       if (isNewOrder) {
         try {
+          // Extract simulation parameters from metadata
+          const simulateFailure = metadata.simulateFailure ? parseInt(metadata.simulateFailure) : 0;
+          const simulatedFailed = metadata.simulatedFailed ? parseInt(metadata.simulatedFailed) : 0;
+          
           const sendResponse = await supabase.functions.invoke('send-postcard', {
             body: { 
               postcardData,
-              orderId: order.id
+              orderId: order.id,
+              simulateFailure,
+              simulatedFailed
             }
           });
           

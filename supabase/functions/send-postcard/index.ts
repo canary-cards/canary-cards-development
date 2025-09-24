@@ -25,7 +25,20 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData, orderId } = await req.json();
+    const { postcardData, orderId, simulateFailure, simulatedFailed } = await req.json();
+    
+    // Check if we're on a lovable.app domain to enable simulation
+    const origin = req.headers.get('origin') || '';
+    const isLovableDomain = origin.includes('.lovable.app') || origin.includes('lovable.app');
+    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed > 0;
+    
+    console.log('Simulation check:', {
+      origin,
+      isLovableDomain,
+      simulateFailure,
+      simulatedFailed,
+      shouldSimulateFailure
+    });
     console.log('Received postcard data:', JSON.stringify(postcardData, null, 2));
 
     if (!postcardData || !orderId) {
@@ -184,7 +197,7 @@ serve(async (req) => {
     };
 
     // Function to create a postcard order
-    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string, fontKey: string) => {
+    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string, fontKey: string, shouldFailOrder: boolean = false) => {
       const recipientName = recipientType === 'representative' 
         ? `Rep. ${recipient.name.split(' ').pop()}` 
         : `Sen. ${recipient.name.split(' ').pop()}`;
@@ -233,7 +246,8 @@ serve(async (req) => {
         letter_template_id: templateId,
         font: fontKey,
         message: message,
-        image: 'white', // Required by IgnitePost API - use white background for professional correspondence
+        // Only include image parameter if not simulating failure
+        ...(shouldFailOrder ? {} : { image: 'white' }), // Remove image parameter for failure simulation
         recipient_name: recipientName,
         recipient_address_one: recipientAddress.address_one,
         recipient_city: recipientAddress.city,
@@ -253,7 +267,7 @@ serve(async (req) => {
         'metadata[postcard_id]': postcardId
       };
 
-      console.log(`Creating ${recipientType} postcard order with UID ${postcardId}:`, JSON.stringify(orderData, null, 2));
+      console.log(`Creating ${recipientType} postcard order${shouldFailOrder ? ' (SIMULATING FAILURE)' : ''} with UID ${postcardId}:`, JSON.stringify(orderData, null, 2));
 
       let ignitepostResult = null;
       let deliveryStatus = 'failed';
@@ -316,6 +330,7 @@ serve(async (req) => {
     };
 
     const results = [];
+    let failureCounter = 0; // Track how many failures to simulate
 
     // Helper function to replace user placeholders
     const replaceUserPlaceholders = (message: string) => {
@@ -345,7 +360,11 @@ serve(async (req) => {
       // Replace user placeholders
       repMessage = replaceUserPlaceholders(repMessage);
       
-      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId, selectedFontKey);
+      // Determine if this postcard should fail (representative is first, so fails if any failure requested)
+      const shouldFailThisOrder = shouldSimulateFailure && failureCounter < simulatedFailed;
+      if (shouldFailThisOrder) failureCounter++;
+      
+      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId, selectedFontKey, shouldFailThisOrder);
       results.push({
         type: 'representative',
         recipient: representative.name,
@@ -379,7 +398,11 @@ serve(async (req) => {
           // Replace user placeholders
           senMessage = replaceUserPlaceholders(senMessage);
           
-          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId, selectedFontKey);
+          // Determine if this postcard should fail (continue failure counter from representative)
+          const shouldFailThisOrder = shouldSimulateFailure && failureCounter < simulatedFailed;
+          if (shouldFailThisOrder) failureCounter++;
+          
+          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId, selectedFontKey, shouldFailThisOrder);
           results.push({
             type: 'senator',
             recipient: senator.name,
