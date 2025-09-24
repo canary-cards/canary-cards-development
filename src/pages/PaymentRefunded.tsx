@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AlertCircle, RefreshCcw, CheckCircle, ChevronDown } from 'lucide-react';
+import { AlertCircle, RefreshCcw, CheckCircle, ChevronDown, ArrowLeft } from 'lucide-react';
 import { formatOrderNumber } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -199,6 +199,7 @@ export default function PaymentRefunded() {
               
               <Button variant="secondary" asChild className="w-full text-muted-foreground">
                 <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
                   Back to Home
                 </Link>
               </Button>
