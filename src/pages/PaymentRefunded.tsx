@@ -182,21 +182,21 @@ export default function PaymentRefunded() {
             
             <Separator className="my-6" />
 
-            <div className="space-y-4">
-              <Button asChild className="w-full">
-                <Link to="/onboarding">
-                  <RefreshCcw className="h-4 w-4 mr-1" />
-                  Try Again - resend your postcard
-                </Link>
-              </Button>
-              
-              <Button variant="secondary" asChild className="w-full text-muted-foreground">
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Home
-                </Link>
-              </Button>
-            </div>
+             <div className="space-y-4">
+               <Button asChild className="w-full">
+                 <Link to="/onboarding">
+                   <RefreshCcw className="h-4 w-4 mr-1" />
+                   Resend your postcard
+                 </Link>
+               </Button>
+               
+               <Button variant="secondary" asChild className="w-full text-muted-foreground">
+                 <Link to="/">
+                   <ArrowLeft className="h-4 w-4 mr-1" />
+                   Back to home
+                 </Link>
+               </Button>
+             </div>
           </CardContent>
         </Card>
       </div>
