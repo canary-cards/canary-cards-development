@@ -1,4 +1,5 @@
 import { toast } from '@/hooks/use-toast';
+import { getFrontendUrl } from '@/lib/environment';
 
 /**
  * Centralized sharing functionality for consistent behavior across the app
@@ -9,20 +10,17 @@ export const SHARE_TEXT = 'Did something small but powerful today: sent a real p
 export const SHARE_TITLE = 'Canary Cards';
 
 /**
- * Get the app URL for sharing, excluding Lovable editor URLs
+ * Get the app URL for sharing using environment-aware configuration
  */
-export const getAppUrl = (): string | null => {
-  if (window.location.origin.includes('lovable.app') && window.location.pathname.includes('/edit/')) {
-    return null;
-  }
-  return window.location.origin;
+export const getAppUrl = (): string => {
+  return getFrontendUrl();
 };
 
 /**
  * Generate a referral URL with optional ref parameter
  */
 export const generateReferralUrl = (ref?: string): string => {
-  const baseUrl = getAppUrl() || window.location.origin;
+  const baseUrl = getAppUrl();
   return ref ? `${baseUrl}?ref=${ref}` : baseUrl;
 };
 
