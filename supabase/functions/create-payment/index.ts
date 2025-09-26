@@ -70,7 +70,7 @@ serve(async (req) => {
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
+      apiVersion: "2024-06-20",
     });
 
     // Set pricing based on send option
@@ -152,7 +152,7 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      payment_method_types: ['card', 'link'],
+      automatic_payment_methods: { enabled: true },
       line_items: [
         {
           price_data: {
@@ -177,7 +177,7 @@ serve(async (req) => {
                                                     sendOption === 'double' ? Math.min(postcardData.senators.length + 1, 2) : 1) : 1,
         recipient_list: postcardData ? JSON.stringify([
           postcardData.representative?.name,
-          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map(s => s.name)
+          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
         ].filter(Boolean)) : "[]",
         // Add simulation parameters for testing
         simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
@@ -199,7 +199,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Payment creation error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
