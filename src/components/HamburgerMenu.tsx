@@ -110,22 +110,6 @@ function FAQContent() {
               No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
             </p>
           </div>
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              Who do you share my data with?
-            </h4>
-            <p className="body-text">
-              We share only what's necessary with trusted partners: IgnitePost to write and mail postcards, Supabase to securely store postcard text, Geocodio/Google Places to look up representatives, and Stripe/Resend for payments and emails.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              Can I opt out of emails?
-            </h4>
-            <p className="body-text">
-              Yes. You can opt out of marketing emails anytime by clicking "unsubscribe" in any email or contacting us at hello@canary.cards.
-            </p>
-          </div>
         </div>
       </div>
 
