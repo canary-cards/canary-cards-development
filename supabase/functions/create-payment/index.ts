@@ -70,7 +70,7 @@ serve(async (req) => {
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
+      apiVersion: "2024-06-20",
     });
 
     // Set pricing based on send option
@@ -152,7 +152,10 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      payment_method_types: ['card', 'link'],
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never', // Keep embedded experience
+      },
       line_items: [
         {
           price_data: {
