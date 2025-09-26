@@ -165,6 +165,34 @@ function PrivacyTermsContent() {
           </div>
           
           <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">How We Use Your Data</h4>
+            <p className="body-text text-sm">
+              We use your information to send and deliver postcards, provide order confirmations and delivery updates, improve Canary Cards, understand what issues matter to communities, and send occasional marketing emails (you can opt out at any time).
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">What We Don't Do</h4>
+            <p className="body-text text-sm">
+              We do not sell or share your personal data (name, address, email). We do not share your individual postcard text beyond what's required to fulfill and deliver it.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Sharing With Trusted Partners</h4>
+            <p className="body-text text-sm">
+              We share only what's necessary with vendors who help us operate: IgnitePost to write and mail postcards, Supabase to securely store postcard text, Geocodio/Google Places to look up representatives and validate addresses, and Stripe/Resend for payments and transactional emails.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Your Choices & Rights</h4>
+            <p className="body-text text-sm">
+              You can opt out of marketing emails anytime by clicking "unsubscribe" in the email or contacting us. You can request a copy of the data we hold about you.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
             <h4 className="eyebrow normal-case text-primary">Your Privacy</h4>
             <p className="body-text text-sm">
               We don't sell your personal data. We share only what's necessary with trusted partners like IgnitePost, Supabase, and Stripe to deliver your postcards.
