@@ -112,11 +112,34 @@ const getSourcePriority = (url: string): number => {
   return 1;
 };
 
-// Better title truncation - ensure ellipsis doesn't break mid-word
-const truncateTitle = (title: string, maxWords: number = 8): string => {
-  const words = title.split(' ').filter(word => word.length > 0);
-  if (words.length <= maxWords) return title;
-  return words.slice(0, maxWords).join(' ') + '...';
+// HTML entity decoding function
+const decodeHtmlEntities = (text: string): string => {
+  const textArea = document.createElement('textarea');
+  textArea.innerHTML = text;
+  return textArea.value;
+};
+
+// Better text truncation for summaries
+const truncateText = (text: string, maxLength: number = 200): string => {
+  if (text.length <= maxLength) return text;
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return lastSpace > 0 ? truncated.slice(0, lastSpace) + '...' : truncated + '...';
+};
+
+// Get the best content from source with fallback logic
+const getSourceContent = (source: Source): string => {
+  // Priority: summary > headline > description
+  if (source.summary && source.summary.trim()) {
+    return decodeHtmlEntities(source.summary.trim());
+  }
+  if (source.headline && source.headline.trim()) {
+    return decodeHtmlEntities(source.headline.trim());
+  }
+  if (source.description && source.description.trim()) {
+    return decodeHtmlEntities(source.description.replace(/<[^>]*>/g, '').trim());
+  }
+  return 'Recent developments in this policy area.';
 };
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
@@ -148,20 +171,22 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       <div className="space-y-4">
         {prioritizedSources.map((source, index) => {
           const domain = new URL(source.url).hostname;
-          const summaryText = source.headline 
-            ? source.headline.trim()
-            : source.description.replace(/<[^>]*>/g, '').trim();
+          const content = getSourceContent(source);
+          const truncatedContent = truncateText(content);
           
           return (
             <div key={index} className="space-y-2">
-              <div className="body-text text-sm leading-relaxed">
-                {summaryText}{' '}
+              <div className="body-text text-sm leading-relaxed text-foreground">
+                {truncatedContent}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Source:</span>
                 <a
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
-                  aria-label={`Read source from ${domain} (opens in new tab)`}
+                  className="inline-block text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                  aria-label={`Read full article from ${domain} (opens in new tab)`}
                 >
                   {domain}
                 </a>
