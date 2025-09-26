@@ -240,7 +240,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: 'Failed to process webhook',
-        message: (error as Error).message 
+        message: error.message 
       }), 
       {
         status: 500,

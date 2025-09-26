@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req: Request): Promise<Response> => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -106,20 +106,11 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // This should never be reached, but TypeScript requires it
-    return new Response(JSON.stringify({ 
-      success: false,
-      error: "Invalid action" 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
-
   } catch (error) {
     console.error("Postcard draft error:", error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: (error as Error).message 
+      error: error.message 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

@@ -75,7 +75,7 @@ serve(async (req) => {
         console.log(`Stripe API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
     } catch (e) {
-      console.log(`Stripe API test failed: ${(e as Error).message}`);
+      console.log(`Stripe API test failed: ${e.message}`);
     }
 
     // Test Google Places
@@ -97,7 +97,7 @@ serve(async (req) => {
         console.log(`Google Places API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
     } catch (e) {
-      console.log(`Google Places API test failed: ${(e as Error).message}`);
+      console.log(`Google Places API test failed: ${e.message}`);
     }
 
     // Test Anthropic
@@ -121,7 +121,7 @@ serve(async (req) => {
         console.log(`Anthropic API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
     } catch (e) {
-      console.log(`Anthropic API test failed: ${(e as Error).message}`);
+      console.log(`Anthropic API test failed: ${e.message}`);
     }
 
     const result = {
@@ -145,7 +145,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Diagnostics error:", error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

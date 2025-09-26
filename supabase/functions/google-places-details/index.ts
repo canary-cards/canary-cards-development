@@ -111,7 +111,7 @@ serve(async (req) => {
     console.error('Edge function error:', error)
     return new Response(
       JSON.stringify({ 
-        error: (error as Error).message,
+        error: error.message,
         streetAddress: '',
         city: '',
         state: '',

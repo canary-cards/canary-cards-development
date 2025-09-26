@@ -293,7 +293,7 @@ serve(async (req) => {
           deliveryStatus = 'submitted';
         }
       } catch (error) {
-        ignitepostError = (error as Error).message;
+        ignitepostError = error.message;
         console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
@@ -319,7 +319,7 @@ serve(async (req) => {
       }
 
       if (deliveryStatus === 'failed') {
-          throw new Error(ignitepostError || 'IgnitePost API error');
+        throw new Error(ignitepostError);
       }
 
       return { 
@@ -377,7 +377,7 @@ serve(async (req) => {
         type: 'representative',
         recipient: representative.name,
         status: 'error',
-        error: (error as Error).message
+        error: error.message
       });
     }
 
@@ -415,7 +415,7 @@ serve(async (req) => {
             type: 'senator',
             recipient: senator.name,
             status: 'error',
-            error: (error as Error).message
+            error: error.message
           });
         }
       }
@@ -525,7 +525,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to send postcards',
-        details: (error as Error).message 
+        details: error.message 
       }),
       { 
         status: 500, 

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -156,7 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
       postcardMessagesSection = representativesToShow.map((rep, index) => {
         const nameParts = rep.name.split(' ');
         const lastName = nameParts[nameParts.length - 1];
-        const shortTitle = rep.name.includes('Representative') || rep.name.includes('Rep.') ? 'Rep.' : 'Sen.';
+        const shortTitle = rep.type === 'representative' ? 'Rep.' : 'Sen.';
         
         return `
         <div style="background-color: #ffffff; padding: 1.5rem; border-radius: 12px; border: 1px solid #E8DECF; margin-bottom: 1rem;">
