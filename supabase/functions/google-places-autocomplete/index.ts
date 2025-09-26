@@ -116,7 +116,7 @@ serve(async (req) => {
     console.error('Edge function error:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: (error as Error).message,
         predictions: [],
         status: 'ERROR'
       }),

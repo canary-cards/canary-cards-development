@@ -158,7 +158,7 @@ serve(async (req) => {
           console.error('Connection validation failed:', error);
           return new Response(JSON.stringify({
             success: false,
-            error: `Connection failed: ${error.message}`,
+            error: `Connection failed: ${(error as Error).message}`,
             environment,
             timestamp: new Date().toISOString()
           }), {
@@ -193,7 +193,7 @@ serve(async (req) => {
           console.error('Error fetching RLS policies:', error);
           return new Response(JSON.stringify({
             success: false,
-            error: `Failed to fetch RLS policies: ${error.message}`
+            error: `Failed to fetch RLS policies: ${(error as Error).message}`
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -250,7 +250,7 @@ serve(async (req) => {
           console.error('Database check failed:', error);
           return new Response(JSON.stringify({
             success: false,
-            error: `Failed to check database: ${error.message}`,
+            error: `Failed to check database: ${(error as Error).message}`,
             environment,
             timestamp: new Date().toISOString()
           }), {
@@ -374,11 +374,11 @@ serve(async (req) => {
               .from('deployment_logs')
               .update({
                 status: 'failed',
-                message: `Deployment failed: ${error.message}`,
+                message: `Deployment failed: ${(error as Error).message}`,
                 completed_at: new Date().toISOString(),
                 details: {
-                  error: error.message,
-                  stack: error.stack,
+                  error: (error as Error).message,
+                  stack: (error as Error).stack,
                   timestamp: new Date().toISOString()
                 }
               })
@@ -389,7 +389,7 @@ serve(async (req) => {
 
           return new Response(JSON.stringify({
             success: false,
-            error: `Production deployment failed: ${error.message}`,
+            error: `Production deployment failed: ${(error as Error).message}`,
             deployment_id,
             timestamp: new Date().toISOString()
           }), {
@@ -413,9 +413,9 @@ serve(async (req) => {
     console.error('Migration Helper Error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: (error as Error).message,
       timestamp: new Date().toISOString(),
-      stack: error.stack
+      stack: (error as Error).stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

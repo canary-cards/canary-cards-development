@@ -240,13 +240,13 @@ serve(async (req) => {
           // Create error results for frontend handling
           postcardResults = {
             success: false,
-            error: sendError.message,
+            error: (sendError as Error).message,
             summary: { totalSent: 0, totalFailed: 1, total: 1 },
             results: [{
               type: 'representative',
               recipient: postcardData.representative?.name || 'Unknown',
               status: 'error',
-              error: sendError.message
+              error: (sendError as Error).message
             }]
           };
         }
@@ -386,7 +386,7 @@ serve(async (req) => {
     console.error("Payment verification error:", error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message 
+      error: (error as Error).message 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
