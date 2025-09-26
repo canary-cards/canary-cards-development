@@ -11,10 +11,10 @@ export const SHARE_TITLE = 'Send a handwritten postcard to Congress';
 export const SHARE_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
 
 /**
- * Get the app URL for sharing using environment-aware configuration
+ * Get the app URL for sharing - always use production domain
  */
 export const getAppUrl = (): string => {
-  return getFrontendUrl();
+  return 'https://canary.cards';
 };
 
 /**
