@@ -20,7 +20,7 @@ export default function Share() {
 
   const shareContent = {
     title: 'Canary Cards',
-    text: 'Friends listen to friends. Show them how easy it is to send a real postcard.',
+    text: 'Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.',
     url: referralUrl
   };
 

@@ -97,7 +97,7 @@ export function SuccessScreen() {
   };
 
   const shareViaText = () => {
-    const message = `I just sent a handwritten postcard to my representative! Join me in making our voices heard: ${inviteLink}`;
+    const message = `Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works. ${inviteLink}`;
     window.open(`sms:?body=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -108,7 +108,7 @@ export function SuccessScreen() {
 
   const shareViaEmail = () => {
     const subject = 'Join me in civic engagement!';
-    const message = `I just sent a handwritten postcard to my representative through this amazing platform. It only took 5 minutes and really helps our voices be heard in Washington.\n\nJoin me: ${inviteLink}\n\nTogether we can make a difference!`;
+    const message = `Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.\n\nJoin me: ${inviteLink}\n\nTogether we can make a difference!`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`, '_blank');
   };
 
