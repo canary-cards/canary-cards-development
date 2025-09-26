@@ -129,16 +129,27 @@ const truncateText = (text: string, maxLength: number = 200): string => {
 
 // Get the best content from source with fallback logic
 const getSourceContent = (source: Source): string => {
-  // Priority: summary > headline > description
-  if (source.summary && source.summary.trim()) {
-    return decodeHtmlEntities(source.summary.trim());
-  }
-  if (source.headline && source.headline.trim()) {
+  // Debug: log the source object to see what data we have
+  console.log('Source data:', {
+    summary: source.summary,
+    headline: source.headline,
+    outlet: source.outlet,
+    url: source.url
+  });
+  
+  // Priority: headline > summary (since headline is usually more descriptive)
+  if (source.headline && source.headline.trim() && source.headline.trim() !== 'Recent developments in this policy area.') {
     return decodeHtmlEntities(source.headline.trim());
   }
-  if (source.description && source.description.trim()) {
-    return decodeHtmlEntities(source.description.replace(/<[^>]*>/g, '').trim());
+  if (source.summary && source.summary.trim() && source.summary.trim() !== 'Recent developments in this policy area.') {
+    return decodeHtmlEntities(source.summary.trim());
   }
+  
+  // If outlet is available, use it as more informative fallback
+  if (source.outlet && source.outlet.trim()) {
+    return `Recent coverage from ${source.outlet}`;
+  }
+  
   return 'Recent developments in this policy area.';
 };
 

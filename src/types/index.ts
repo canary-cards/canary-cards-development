@@ -19,7 +19,6 @@ export interface UserInfo {
 }
 
 export interface Source {
-  description: string;
   url: string;
   outlet: string;
   headline: string;
