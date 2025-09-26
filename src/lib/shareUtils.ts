@@ -7,7 +7,7 @@ import { getFrontendUrl } from '@/lib/environment';
 
 // Standard share content
 export const SHARE_TEXT = 'Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.';
-export const SHARE_TITLE = 'Send a handwritten postcard to Congress';
+export const SHARE_TITLE = 'Send a handwritten postcard to Congress.';
 export const SHARE_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
 
 /**
