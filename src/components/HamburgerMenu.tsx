@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowLeft } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -8,7 +7,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
-type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy' | 'terms';
+type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms';
 
 // Content components for each section
 function AboutContent() {
@@ -143,7 +142,7 @@ function ContactContent() {
   );
 }
 
-function PrivacyContent({ onClose }: { onClose: () => void }) {
+function PrivacyTermsContent() {
   return (
     <div className="space-y-6 max-h-[70vh] overflow-y-auto">
       <div className="space-y-4">
@@ -155,6 +154,13 @@ function PrivacyContent({ onClose }: { onClose: () => void }) {
             <h4 className="eyebrow normal-case text-primary">Introduction</h4>
             <p className="body-text text-sm">
               Canary Cards makes it simple to send real, handwritten postcards to your elected officials. This document explains how we handle your information and the basic terms for using our service.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Who Can Use Canary Cards</h4>
+            <p className="body-text text-sm">
+              You must be 18 or older. Use our service only for lawful purposes — don't use it to harass, spam, or break election laws.
             </p>
           </div>
           
@@ -172,38 +178,8 @@ function PrivacyContent({ onClose }: { onClose: () => void }) {
             </p>
           </div>
           
-          <div className="pt-4">
-            <Link 
-              to="/privacy" 
-              className="text-primary underline decoration-primary hover-safe:no-underline text-sm"
-              onClick={onClose}
-            >
-              Read full Privacy & Terms →
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TermsContent({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Terms of Use</h3>
-        <p className="body-text text-sm text-secondary">Last updated: September 25, 2025</p>
-        
-        <div className="space-y-6">
           <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">Who Can Use Canary Cards</h4>
-            <p className="body-text text-sm">
-              You must be 18 or older. Use our service only for lawful purposes — don't use it to harass, spam, or break election laws.
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">Service Terms</h4>
+            <h4 className="eyebrow normal-case text-primary">Security</h4>
             <p className="body-text text-sm">
               We use industry-standard security measures to protect your data. By using Canary Cards, you agree to these basic terms for sending postcards to elected officials.
             </p>
@@ -215,16 +191,6 @@ function TermsContent({ onClose }: { onClose: () => void }) {
               Questions? Reach us at <strong>hello@canary.cards</strong>
             </p>
           </div>
-          
-          <div className="pt-4">
-            <Link 
-              to="/terms" 
-              className="text-primary underline decoration-primary hover-safe:no-underline text-sm"
-              onClick={onClose}
-            >
-              Read full Privacy & Terms →
-            </Link>
-          </div>
         </div>
       </div>
     </div>
@@ -234,7 +200,6 @@ function TermsContent({ onClose }: { onClose: () => void }) {
 export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   const [open, setOpen] = useState(false);
   const [currentView, setCurrentView] = useState<DrawerView>('main');
-  const location = useLocation();
 
   // Reset to main view when drawer closes
   useEffect(() => {
@@ -324,8 +289,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
       case 'about': return 'About Canary';
       case 'faq': return 'FAQ';
       case 'contact': return 'Contact Us';
-      case 'privacy': return 'Privacy';
-      case 'terms': return 'Terms';
+      case 'privacy-terms': return 'Privacy & Terms';
       default: return 'Canary Cards';
     }
   };
@@ -369,21 +333,20 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
               </Button>
             )}
             
-            {currentView === 'main' ? (
-               <Link 
-                 to="/" 
-                 onClick={() => setOpen(false)}
-                 className="block hover-safe:opacity-80 transition-opacity"
-               >
-                <h2 id="menu-title" className="display-title">
-                  {getViewTitle()}
-                </h2>
-              </Link>
-            ) : (
-              <h2 id="menu-title" className="display-title">
-                {getViewTitle()}
-              </h2>
-            )}
+             {currentView === 'main' ? (
+                <button
+                  onClick={() => setOpen(false)}
+                  className="block hover-safe:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)]"
+                >
+                 <h2 id="menu-title" className="display-title">
+                   {getViewTitle()}
+                 </h2>
+               </button>
+             ) : (
+               <h2 id="menu-title" className="display-title">
+                 {getViewTitle()}
+               </h2>
+             )}
           </div>
           
           {/* Content area with smooth transitions */}
@@ -417,31 +380,23 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                     <div className="text-primary">Contact Us</div>
                   </button>
                   
-                  <div className="border-b border-[#E8DECF] my-2"></div>
-                  
-                   <button
-                     onClick={() => handleNavigation('privacy')}
-                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
-                   >
-                    <div className="text-primary">Privacy</div>
-                  </button>
-                  
-                   <button
-                     onClick={() => handleNavigation('terms')}
-                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
-                   >
-                    <div className="text-primary">Terms</div>
-                  </button>
+                   <div className="border-b border-[#E8DECF] my-2"></div>
+                   
+                    <button
+                      onClick={() => handleNavigation('privacy-terms')}
+                      className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                    >
+                     <div className="text-primary">Privacy & Terms</div>
+                   </button>
                 </div>
               </nav>
             ) : (
               /* Content Views */
               <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
-                {currentView === 'about' && <AboutContent />}
-                {currentView === 'faq' && <FAQContent />}
-                {currentView === 'contact' && <ContactContent />}
-                {currentView === 'privacy' && <PrivacyContent onClose={() => setOpen(false)} />}
-                {currentView === 'terms' && <TermsContent onClose={() => setOpen(false)} />}
+                 {currentView === 'about' && <AboutContent />}
+                 {currentView === 'faq' && <FAQContent />}
+                 {currentView === 'contact' && <ContactContent />}
+                 {currentView === 'privacy-terms' && <PrivacyTermsContent />}
               </div>
             )}
           </div>
