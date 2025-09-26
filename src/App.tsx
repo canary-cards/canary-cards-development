@@ -11,6 +11,8 @@ import Onboarding from "./pages/Onboarding";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
 import ContactUs from "./pages/ContactUs";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentReturn from "./pages/PaymentReturn";
@@ -50,6 +52,8 @@ const PaymentLoadingDetector = () => {
       <Route path="/about" element={<About />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/contact" element={<ContactUs />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/share" element={<Share />} />
       <Route path="/share/:orderId" element={<Share />} />
       

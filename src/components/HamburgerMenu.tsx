@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
-type DrawerView = 'main' | 'about' | 'faq' | 'contact';
+type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy' | 'terms';
 
 // Content components for each section
 function AboutContent() {
@@ -143,6 +143,94 @@ function ContactContent() {
   );
 }
 
+function PrivacyContent({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Privacy & Terms</h3>
+        <p className="body-text text-sm text-secondary">Last updated: September 25, 2025</p>
+        
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Introduction</h4>
+            <p className="body-text text-sm">
+              Canary Cards makes it simple to send real, handwritten postcards to your elected officials. This document explains how we handle your information and the basic terms for using our service.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">What We Collect</h4>
+            <p className="body-text text-sm">
+              We collect your email, mailing address, postcard content, payment info (securely processed), and basic usage data to send your postcards and improve our service.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Your Privacy</h4>
+            <p className="body-text text-sm">
+              We don't sell your personal data. We share only what's necessary with trusted partners like IgnitePost, Supabase, and Stripe to deliver your postcards.
+            </p>
+          </div>
+          
+          <div className="pt-4">
+            <Link 
+              to="/privacy" 
+              className="text-primary underline decoration-primary hover-safe:no-underline text-sm"
+              onClick={onClose}
+            >
+              Read full Privacy & Terms →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsContent({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Terms of Use</h3>
+        <p className="body-text text-sm text-secondary">Last updated: September 25, 2025</p>
+        
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Who Can Use Canary Cards</h4>
+            <p className="body-text text-sm">
+              You must be 18 or older. Use our service only for lawful purposes — don't use it to harass, spam, or break election laws.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Service Terms</h4>
+            <p className="body-text text-sm">
+              We use industry-standard security measures to protect your data. By using Canary Cards, you agree to these basic terms for sending postcards to elected officials.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">Contact</h4>
+            <p className="body-text text-sm">
+              Questions? Reach us at <strong>hello@canary.cards</strong>
+            </p>
+          </div>
+          
+          <div className="pt-4">
+            <Link 
+              to="/terms" 
+              className="text-primary underline decoration-primary hover-safe:no-underline text-sm"
+              onClick={onClose}
+            >
+              Read full Privacy & Terms →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   const [open, setOpen] = useState(false);
   const [currentView, setCurrentView] = useState<DrawerView>('main');
@@ -236,6 +324,8 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
       case 'about': return 'About Canary';
       case 'faq': return 'FAQ';
       case 'contact': return 'Contact Us';
+      case 'privacy': return 'Privacy';
+      case 'terms': return 'Terms';
       default: return 'Canary Cards';
     }
   };
@@ -326,6 +416,22 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                    >
                     <div className="text-primary">Contact Us</div>
                   </button>
+                  
+                  <div className="border-b border-[#E8DECF] my-2"></div>
+                  
+                   <button
+                     onClick={() => handleNavigation('privacy')}
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                   >
+                    <div className="text-primary">Privacy</div>
+                  </button>
+                  
+                   <button
+                     onClick={() => handleNavigation('terms')}
+                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                   >
+                    <div className="text-primary">Terms</div>
+                  </button>
                 </div>
               </nav>
             ) : (
@@ -334,6 +440,8 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                 {currentView === 'about' && <AboutContent />}
                 {currentView === 'faq' && <FAQContent />}
                 {currentView === 'contact' && <ContactContent />}
+                {currentView === 'privacy' && <PrivacyContent onClose={() => setOpen(false)} />}
+                {currentView === 'terms' && <TermsContent onClose={() => setOpen(false)} />}
               </div>
             )}
           </div>
