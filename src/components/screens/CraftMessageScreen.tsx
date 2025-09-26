@@ -372,24 +372,39 @@ export function CraftMessageScreen() {
                 <div className="space-y-3">
                   <label className="field-label">How it affects me or my community:</label>
                   <div className="flex gap-3 items-stretch">
-                    <Textarea
-                      placeholder={personalImpact ? "" : "(Optional) I'm concerned about cuts to arts and science programs in our schools. I believe these cuts will harm our children's education and limit their future opportunities. Access to quality arts and science education is essential for developing critical thinking, creativity, and problem-solving skills that our community needs to thrive."}
-                      value={personalImpact}
-                      onChange={(e) => {
-                        setPersonalImpact(e.target.value);
-                        dispatch({ 
-                          type: 'UPDATE_POSTCARD_DATA', 
-                          payload: { 
-                            personalImpact: e.target.value,
-                            originalMessage: '',
-                            draftMessage: '',
-                            finalMessage: '',
-                            sources: []
-                          }
-                        });
-                      }}
-                      className="input-warm min-h-[70px] resize-none flex-1"
-                    />
+                    <div className="relative flex-1">
+                      <Textarea
+                        placeholder=""
+                        value={personalImpact}
+                        onChange={(e) => {
+                          setPersonalImpact(e.target.value);
+                          dispatch({ 
+                            type: 'UPDATE_POSTCARD_DATA', 
+                            payload: { 
+                              personalImpact: e.target.value,
+                              originalMessage: '',
+                              draftMessage: '',
+                              finalMessage: '',
+                              sources: []
+                            }
+                          });
+                        }}
+                        className="input-warm min-h-[70px] resize-none w-full"
+                      />
+
+                      {!personalImpact && (
+                        <div
+                          className="absolute inset-0 z-10 overflow-auto p-3 text-sm leading-relaxed text-muted-foreground"
+                          onMouseDown={(e) => {
+                            const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
+                            ta?.focus();
+                            e.preventDefault();
+                          }}
+                        >
+                          (Optional) I'm concerned about cuts to arts and science programs in our schools. I believe these cuts will harm our children's education and limit their future opportunities. Access to quality arts and science education is essential for developing critical thinking, creativity, and problem-solving skills that our community needs to thrive.
+                        </div>
+                      )}
+                    </div>
                     
                     <Button
                       type="button"
