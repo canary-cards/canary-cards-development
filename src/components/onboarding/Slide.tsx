@@ -1,5 +1,6 @@
 import React from 'react';
 import { DynamicSvg } from '../DynamicSvg';
+import { useIsMobile } from '../../hooks/use-mobile';
 
 interface SlideProps {
   title: string;
@@ -13,6 +14,8 @@ interface SlideProps {
 }
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="relative h-full">
       {/* Icon area - fixed position, always same spot */}
@@ -61,7 +64,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
       <div 
         className="absolute inset-x-0 px-4 sm:px-6 text-center"
         style={{
-          top: 'clamp(42%, calc(45% - 1rem), 55%)', // Larger gap on desktop (55%)
+          top: isMobile ? '42%' : '55%', // 42% on mobile, 55% on desktop
           bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
         }}
       >
