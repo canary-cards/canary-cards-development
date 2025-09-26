@@ -19,8 +19,8 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
       <div 
         className="absolute inset-x-0 flex items-center justify-center px-6"
         style={{
-          top: '10%',
-          height: '40%', // Fixed 40% height for icon area
+          top: '5%',
+          height: '40%', // Fixed 40% height for icon area, ends at 45%
         }}
       >
         <div 
@@ -57,11 +57,11 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Text area - fixed position, always same spot, starts after icon area */}
+      {/* Text area - fixed position, always same spot, starts at 50% */}
       <div 
         className="absolute inset-x-0 px-4 sm:px-6 text-center"
         style={{
-          top: '55%', // Starts after icon area (10% + 40% + 5% spacing)
+          top: '50%', // Starts at 50%
           bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
         }}
       >
