@@ -14,14 +14,20 @@ interface SlideProps {
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
-    <div className="h-full flex flex-col">
-      {/* Icon section - exactly 50% of screen height */}
-      <div className="h-1/2 flex items-center justify-center px-6">
+    <div className="relative h-full">
+      {/* Icon area - fixed position, always same spot */}
+      <div 
+        className="absolute inset-x-0 flex items-center justify-center px-6"
+        style={{
+          top: '10%',
+          height: '40%', // Fixed 40% height for icon area
+        }}
+      >
         <div 
-          className="flex items-center justify-center relative max-w-full max-h-full"
+          className="flex items-center justify-center relative"
           style={{
-            width: 'clamp(200px, min(40vw, 40vh), 280px)',
-            height: 'clamp(200px, min(40vw, 40vh), 280px)',
+            width: 'clamp(200px, min(40vw, 35vh), 280px)',
+            height: 'clamp(200px, min(40vw, 35vh), 280px)',
           }}
         >
           {/* Render all SVGs at once for smooth transitions */}
@@ -51,11 +57,14 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Small spacing between icon and text */}
-      <div className="h-4 flex-shrink-0" />
-
-      {/* Text section - remaining space, centered vertically */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 text-center pb-6">
+      {/* Text area - fixed position, always same spot, starts after icon area */}
+      <div 
+        className="absolute inset-x-0 px-4 sm:px-6 text-center"
+        style={{
+          top: '55%', // Starts after icon area (10% + 40% + 5% spacing)
+          bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
+        }}
+      >
         <div className="space-y-4">
           <h2 className="text-2xl display-title leading-tight">
             {title}
