@@ -115,7 +115,7 @@ export default function PaymentRefunded() {
               </div>
             </div>
             {displayRefundId && (
-              <div className="mt-3 pt-3 border-t border-border">
+              <div className="mt-3 pt-3 border-t border-border ml-7">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-medium">Refund ID:</span> {displayRefundId}
                 </p>
