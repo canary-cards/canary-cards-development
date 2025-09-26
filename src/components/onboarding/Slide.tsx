@@ -57,11 +57,11 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Text area - fixed position, starts immediately after icon area */}
+      {/* Text area - responsive spacing from icon */}
       <div 
         className="absolute inset-x-0 px-4 sm:px-6 text-center"
         style={{
-          top: '45%', // Starts immediately after icon area ends
+          top: 'clamp(42%, calc(45% - 1rem), 47%)', // Responsive gap that's smaller on mobile, larger on desktop
           bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
         }}
       >
