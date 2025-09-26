@@ -101,7 +101,7 @@ export default function PaymentRefunded() {
         </div>
 
         {/* Refund Card */}
-        <Card className="bg-green-50 border-green-200 mb-8">
+        <Card className="card-warm mb-8">
           <CardContent className="p-6">
             <div className="flex items-center justify-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
