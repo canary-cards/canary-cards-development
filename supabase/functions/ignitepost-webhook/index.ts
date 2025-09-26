@@ -233,14 +233,14 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error processing webhook:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: 'Failed to process webhook',
-        message: error.message 
+        message: error.message
       }), 
       {
         status: 500,

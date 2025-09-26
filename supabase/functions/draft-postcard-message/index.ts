@@ -303,7 +303,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
           .trim();
         return title.substring(0, 200);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.log('fetchPageTitle error:', targetUrl, err?.message || err);
     }
     return null;
@@ -351,7 +351,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
       }
       if (!headline) {
         const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const lines = before.split(/\n/).map(l => l.trim()).filter(Boolean);
+        const lines = before.split(/\n/).map((l: string) => l.trim()).filter(Boolean);
         const titleLine = [...lines].reverse().find(l => /(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|^TITLE:|^Title:)/i.test(l));
         if (titleLine) {
           const cleaned = titleLine.replace(/\*\*/g, '');
@@ -394,9 +394,9 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
         summary = summaryMatch[1].trim();
       } else {
         const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningful = contextSentences.filter(s => s.length > 30 && s.length < 300 &&
+        let meaningful = contextSentences.filter((s: string) => s.length > 30 && s.length < 300 &&
           !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
-        let best = meaningful.find(s => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+        let best = meaningful.find((s: string) => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
           themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
         if (!best && meaningful.length) best = meaningful[0];
         if (best) summary = best.trim();
@@ -784,12 +784,16 @@ serve(async (req) => {
       
       finalResult = {
         postcard: cleanedPostcard,
-        sources: appSources
+        sources: appSources.map(source => ({
+          description: source.description,
+          url: source.url,
+          dataPointCount: 0
+        }))
       };
       
       console.log(`✅ Generated postcard (${cleanedPostcard.length} chars) with ${result.sources.length} sources`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI generation error:', error);
       generationStatus = 'error';
       apiStatusCode = 500;
@@ -856,7 +860,7 @@ return new Response(JSON.stringify({
       }
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in function:', error);
     return new Response(JSON.stringify({
       error: `Generation failed: ${error.message}`
