@@ -270,16 +270,6 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   });
 
   const result = await response.json();
-  
-  // Log the full API response for debugging
-  console.log('🔍 Perplexity API response:', JSON.stringify(result, null, 2));
-  
-  // Check if the response has the expected structure
-  if (!result.choices || !Array.isArray(result.choices) || result.choices.length === 0) {
-    console.error('❌ Invalid Perplexity API response structure:', result);
-    throw new Error(`Perplexity API error: ${result.error?.message || 'Invalid response structure'}`);
-  }
-  
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
 
