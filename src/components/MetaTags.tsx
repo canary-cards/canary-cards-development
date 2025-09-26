@@ -9,7 +9,7 @@ interface MetaTagsProps {
 
 const DEFAULT_TITLE = 'Send a handwritten postcard to Congress.';
 const DEFAULT_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
-const DEFAULT_IMAGE = 'https://canary.cards/lovable-uploads/2948adc2-939c-491e-9cb1-fe66e5ce4920.png';
+const DEFAULT_IMAGE = 'https://canary.cards/lovable-uploads/14ace99a-2b02-4dfd-a08a-203288b1d028.png';
 const DEFAULT_URL = 'https://canary.cards';
 
 export const MetaTagsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (

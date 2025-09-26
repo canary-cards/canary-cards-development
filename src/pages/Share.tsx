@@ -40,7 +40,7 @@ export default function Share() {
       <MetaTags 
         title={SHARE_TITLE}
         description={SHARE_DESCRIPTION}
-        image="https://canary.cards/lovable-uploads/2948adc2-939c-491e-9cb1-fe66e5ce4920.png"
+        image="https://canary.cards/lovable-uploads/14ace99a-2b02-4dfd-a08a-203288b1d028.png"
         url={referralUrl}
       />
       <Header />
