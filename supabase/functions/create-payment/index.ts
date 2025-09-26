@@ -6,6 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const toMeta = (v: unknown) => {
+  try {
+    const s = typeof v === 'string' ? v : JSON.stringify(v);
+    return s.length > 495 ? s.slice(0, 495) : s;
+  } catch {
+    return '';
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -41,16 +50,16 @@ serve(async (req) => {
           : {};
 
         postcardMetadata = {
-          // Keep address basics for post-payment processing
-          postcard_userInfo: JSON.stringify(essentialUserInfo),
+          // Keep address basics for post-payment processing (trimmed for Stripe limits)
+          postcard_userInfo: toMeta(essentialUserInfo),
           // Message can be up to ~295 chars (postcard limit) – safe for Stripe
-          postcard_finalMessage: postcardData.finalMessage || "",
-          postcard_sendOption: postcardData.sendOption || sendOption,
-          postcard_email: postcardData.email || email,
-          postcard_draftId: postcardData.draftId || "",
-          // Include representative and senators data - essential for sending
-          postcard_representative: postcardData.representative ? JSON.stringify(postcardData.representative) : "",
-          postcard_senators: postcardData.senators ? JSON.stringify(postcardData.senators) : "[]",
+          postcard_finalMessage: toMeta(postcardData.finalMessage || ""),
+          postcard_sendOption: toMeta(postcardData.sendOption || sendOption),
+          postcard_email: toMeta(postcardData.email || email),
+          postcard_draftId: toMeta(postcardData.draftId || ""),
+          // Keep only minimal representative/senator info to avoid 500-char metadata limits
+          postcard_representative: toMeta(postcardData.representative ? { name: postcardData.representative.name } : ""),
+          postcard_senators: toMeta((postcardData.senators || []).slice(0, 2).map((s: any) => ({ name: s.name }))),
         };
         console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {
@@ -132,9 +141,12 @@ serve(async (req) => {
       metadata: finalCustomer.metadata 
     });
 
-    // Get the origin for the return URL
-    const origin = req.headers.get("origin");
-    let returnUrl = `${origin}/payment-return?session_id={CHECKOUT_SESSION_ID}`;
+    // Resolve base URL for return
+    const originHeader = req.headers.get("origin");
+    const refererHeader = req.headers.get("referer");
+    const configuredFrontend = Deno.env.get("FRONTEND_URL") || "";
+    const baseUrl = originHeader || (refererHeader ? new URL(refererHeader).origin : "") || configuredFrontend || "http://localhost:5173";
+    let returnUrl = `${baseUrl}/payment-return?session_id={CHECKOUT_SESSION_ID}`;
     
     // Add simulation flags to return URL if provided
     if (simulateFailure) {
@@ -145,7 +157,9 @@ serve(async (req) => {
     }
     
     console.log("Setting up Stripe session with return URL:", returnUrl);
-    console.log("Origin header:", origin);
+    console.log("Origin header:", originHeader);
+    console.log("Base URL resolved:", baseUrl);
+    console.log("Configured FRONTEND_URL:", configuredFrontend);
 
     // Create embedded checkout session with forced customer creation
     const session = await stripe.checkout.sessions.create({
@@ -175,8 +189,7 @@ serve(async (req) => {
         send_option: sendOption,
         user_email: email,
         user_full_name: fullName || "",
-        recipient_count: postcardData?.senators ? (sendOption === 'triple' ? postcardData.senators.length + 1 : 
-                                                    sendOption === 'double' ? Math.min(postcardData.senators.length + 1, 2) : 1) : 1,
+        recipient_count: String(postcardData?.senators ? (sendOption === 'triple' ? postcardData.senators.length + 1 : sendOption === 'double' ? Math.min(postcardData.senators.length + 1, 2) : 1) : 1),
         recipient_list: postcardData ? JSON.stringify([
           postcardData.representative?.name,
           ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
