@@ -155,6 +155,15 @@ All colors MUST be HSL.
     line-height: 1.25; /* Tighter line height for better mobile display */
   }
 
+  /* Dark mode overrides for title and main text */
+  .dark .display-title {
+    color: hsl(var(--foreground));
+  }
+
+  .dark .field-label {
+    color: hsl(var(--foreground));
+  }
+
   @media (min-width: 768px) {
     .display-title {
       font-size: 1.875rem; /* text-3xl */
