@@ -64,7 +64,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
       <div 
         className="absolute inset-x-0 px-4 sm:px-6 text-center"
         style={{
-          top: isMobile ? '42%' : '47%', // 42% on mobile, 47% on desktop
+          top: isMobile ? '48%' : '47%', // Increased mobile spacing from 42% to 48%
           bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
         }}
       >
