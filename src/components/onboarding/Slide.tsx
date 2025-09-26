@@ -14,13 +14,19 @@ interface SlideProps {
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
-    <div className="h-full flex flex-col">
-      {/* Top half - Icon placeholder */}
-      <div className="flex-1 flex items-center justify-center px-6 py-4">
+    <div className="relative h-full">
+      {/* Icon area - responsive height based on screen aspect ratio */}
+      <div 
+        className="absolute top-0 left-0 right-0 flex items-center justify-center px-6"
+        style={{
+          height: 'clamp(50%, calc(60% - 2rem), 70%)', // More flexible range
+        }}
+      >
         <div 
-          className="flex items-center justify-center relative aspect-square"
+          className="flex items-center justify-center relative"
           style={{
-            width: 'clamp(240px, 35vw, 400px)',
+            width: 'clamp(200px, min(50vw, 50vh), 300px)', // Better responsive sizing
+            height: 'clamp(200px, min(50vw, 50vh), 300px)',
           }}
         >
           {/* Render all SVGs at once for smooth transitions */}
@@ -50,9 +56,16 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Bottom half - Content */}
-      <div className="flex-1 flex flex-col justify-center px-6 pb-[max(env(safe-area-inset-bottom),2rem)]">
-        <div className="text-center space-y-4">
+      {/* Responsive text area */}
+      <div 
+        className="absolute left-0 right-0 px-4 sm:px-6 text-center"
+        style={{
+          top: 'clamp(40%, calc(50% - 2rem), 60%)', // Brought text closer to icon
+          bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
+          overflow: 'hidden', // Prevent text overflow
+        }}
+      >
+        <div className="space-y-4 max-h-full">
           <h2 className="text-2xl display-title leading-tight">
             {title}
           </h2>
@@ -60,7 +73,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             {subtitle}
           </h3>
           {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-6">
+            <p className="text-xs text-muted-foreground/70 mt-4 sm:mt-6">
               {finePrint}
             </p>
           )}

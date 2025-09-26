@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { DotLottiePlayer } from '@dotlottie/react-player';
 import { DynamicSvg } from '../DynamicSvg';
+import { DotLottiePlayer } from '@dotlottie/react-player';
 
 const draftingMessages = [
   "Polishing your message…",
@@ -19,23 +19,17 @@ export function DraftingScreen() {
   const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1); // What message is actually shown
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
-  const [lottieError, setLottieError] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [animationError, setAnimationError] = useState(false);
 
   useEffect(() => {
-    // Reset error if we re-enter the screen
-    setLottieError(false);
-
-    // Initial 1.5s delay before showing first message
-    const initialDelay = setTimeout(() => {
-      setCurrentMessageIndex(0);
-      setDisplayedMessageIndex(0);
-      setShowTypewriter(true);
-    }, 1500);
-
-    return () => clearTimeout(initialDelay);
+    // Start immediately with no delay
+    setCurrentMessageIndex(0);
+    setDisplayedMessageIndex(0);
+    setShowTypewriter(true);
   }, []);
 
-  // Rotate messages every 2 seconds after the initial delay
+  // Rotate messages every 1.5 seconds after the initial delay
   useEffect(() => {
     if (currentMessageIndex >= 0) {
       const interval = setInterval(() => {
@@ -47,12 +41,12 @@ export function DraftingScreen() {
             setTimeout(() => {
               setDisplayedMessageIndex(prev + 1);
               setShowTypewriter(true);
-            }, 300); // Half the transition duration for smooth crossfade
+            }, 200); // Faster crossfade for smoother transitions
             return prev + 1;
           }
           return prev; // Stay on last message
         });
-      }, 2000);
+      }, 1500);
 
       return () => clearInterval(interval);
     }
@@ -117,21 +111,27 @@ export function DraftingScreen() {
           console.log('🎯 DraftingScreen: Draft message:', data.draftMessage);
           console.log('🎯 DraftingScreen: Sources:', data.sources);
           
-          // Update the postcard data with the drafted message and draft ID
-          dispatch({
-            type: 'UPDATE_POSTCARD_DATA',
-            payload: {
-              originalMessage: `${concerns}\n\n${personalImpact}`,
-              draftMessage: data.draftMessage || '', // Empty if AI generation failed
-              sources: data.sources || [],
-              draftId: data.draftId // Store the draft ID for later updates
-            }
-          });
+          // Mark as completed to finish the progress animation
+          setIsCompleted(true);
+          
+          // Wait a brief moment for the animation to complete
+          setTimeout(() => {
+            // Update the postcard data with the drafted message and draft ID
+            dispatch({
+              type: 'UPDATE_POSTCARD_DATA',
+              payload: {
+                originalMessage: `${concerns}\n\n${personalImpact}`,
+                draftMessage: data.draftMessage || '', // Empty if AI generation failed
+                sources: data.sources || [],
+                draftId: data.draftId // Store the draft ID for later updates
+              }
+            });
 
-          console.log('🎯 DraftingScreen: Dispatched postcard data update');
+            console.log('🎯 DraftingScreen: Dispatched postcard data update');
 
-          // Navigate to review screen (step 3)
-          dispatch({ type: 'SET_STEP', payload: 3 });
+            // Navigate to review screen (step 3)
+            dispatch({ type: 'SET_STEP', payload: 3 });
+          }, 500);
         }, remainingTime);
 
       } catch (error) {
@@ -144,61 +144,59 @@ export function DraftingScreen() {
 
     // Set timeout for 45 seconds
     const timeout = setTimeout(() => {
-      // If still on this screen after 45 seconds, navigate to review
-      dispatch({ type: 'SET_STEP', payload: 3 });
+      // Mark as completed and navigate to review
+      setIsCompleted(true);
+      setTimeout(() => {
+        dispatch({ type: 'SET_STEP', payload: 3 });
+      }, 500);
     }, 45000);
 
     return () => clearTimeout(timeout);
   }, [state.postcardData, dispatch, startTime]);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-primary px-4">
-      <div className="text-center space-y-8 max-w-md mx-auto">
+    <div className="min-h-screen h-screen flex items-center justify-center bg-background px-4">
+      <div className="text-center space-y-6 max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center space-y-6">
-          {!lottieError ? (
-            <DotLottiePlayer
-              autoplay
-              loop
-              src="/assets/drafting-animation.lottie"
-              className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60"
-              onEvent={(event: any) => {
-                const type = typeof event === 'string' ? event : event?.type;
-                if (type === 'error') {
-                  console.error('DotLottie failed to load animation');
-                  setLottieError(true);
-                }
-              }}
-            />
-          ) : (
-            <DynamicSvg 
-              assetName="onboarding_icon_2.svg"
-              alt="Canary research process"
-              className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60 pen-nib-glow"
-            />
-          )}
-          <div className="flex items-center justify-center space-x-3">
-            {/* Progress writing bar synced with message timing */}
-            <div className="w-8 h-1 bg-background/20 rounded-full overflow-hidden">
-              <div 
-                key={currentMessageIndex} 
-                className="h-full bg-accent rounded-full writing-progress"
-              ></div>
-            </div>
-            <h1 className="text-2xl font-semibold text-background">
+          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-54 md:h-54 lg:w-60 lg:h-60">
+            {!animationError ? (
+              <Suspense fallback={
+                <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                  <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
+                </div>
+              }>
+                <DotLottiePlayer
+                  src="/assets/writing-animation.json"
+                  autoplay
+                  loop
+                  className="w-full h-full"
+                  onError={() => setAnimationError(true)}
+                />
+              </Suspense>
+            ) : (
+              <DynamicSvg 
+                assetName="onboarding_icon_2.svg"
+                alt="Canary research process"
+                className="w-full h-full"
+              />
+            )}
+          </div>
+          <div className="text-center space-y-3">
+            <h1 className="text-2xl display-title">
               Drafting your postcard
             </h1>
+            
+            {/* Typewriter message with smooth transition */}
+            <div className="h-6 flex items-center justify-center">
+              {displayedMessageIndex >= 0 && (
+                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
+                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+                }`}>
+                  {draftingMessages[displayedMessageIndex]}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-        
-        {/* Typewriter message with smooth transition */}
-        <div className="h-8 flex items-center justify-center">
-          {displayedMessageIndex >= 0 && (
-            <p className={`text-lg text-background/80 transition-all duration-300 ease-in-out ${
-              showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
-            }`}>
-              {draftingMessages[displayedMessageIndex]}
-            </p>
-          )}
         </div>
       </div>
     </div>

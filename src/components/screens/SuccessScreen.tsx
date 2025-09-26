@@ -81,24 +81,13 @@ export function SuccessScreen() {
   };
 
   const copyInviteLink = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      toast({
-        title: "Link copied!",
-        description: "Share this link with friends and family",
-      });
-    } catch (error) {
-      toast({
-        title: "Copy failed",
-        description: "Please copy the link manually",
-        variant: "destructive",
-      });
-    }
+    const { copyShareContent } = await import('@/lib/shareUtils');
+    await copyShareContent(inviteLink);
   };
 
-  const shareViaText = () => {
-    const message = `I just sent a handwritten postcard to my representative! Join me in making our voices heard: ${inviteLink}`;
-    window.open(`sms:?body=${encodeURIComponent(message)}`, '_blank');
+  const shareViaText = async () => {
+    const { shareViaSMS } = await import('@/lib/shareUtils');
+    shareViaSMS(inviteLink);
   };
 
   const handleSharePageNavigation = () => {
@@ -106,10 +95,9 @@ export function SuccessScreen() {
     navigate(`/share?ref=${uniqueId}&order=${uniqueId.slice(-8).toUpperCase()}`);
   };
 
-  const shareViaEmail = () => {
-    const subject = 'Join me in civic engagement!';
-    const message = `I just sent a handwritten postcard to my representative through this amazing platform. It only took 5 minutes and really helps our voices be heard in Washington.\n\nJoin me: ${inviteLink}\n\nTogether we can make a difference!`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`, '_blank');
+  const shareViaEmail = async () => {
+    const { shareViaEmail: shareEmailUtil } = await import('@/lib/shareUtils');
+    shareEmailUtil(inviteLink);
   };
 
   const handleGoogleAuth = () => {
@@ -138,7 +126,7 @@ export function SuccessScreen() {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             🎉 Congratulations!
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="subtitle text-base">
             You've taken meaningful action for your country!
           </p>
         </div>
@@ -190,7 +178,7 @@ export function SuccessScreen() {
               
               <Button
                 onClick={handleGoogleAuth}
-                className="w-full button-warm h-12"
+                className="w-full h-12"
                 variant="outline"
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -223,7 +211,7 @@ export function SuccessScreen() {
                 <Button
                   onClick={copyInviteLink}
                   variant="outline"
-                  className="button-warm"
+                  className=""
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -248,7 +236,7 @@ export function SuccessScreen() {
                 <Button
                   onClick={shareViaText}
                   variant="outline"
-                  className="flex-1 button-warm"
+                  className="flex-1"
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Text Message
@@ -256,7 +244,7 @@ export function SuccessScreen() {
                 <Button
                   onClick={shareViaEmail}
                   variant="outline"
-                  className="flex-1 button-warm"
+                  className="flex-1"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Email
@@ -275,7 +263,7 @@ export function SuccessScreen() {
             </p>
             <Button
               onClick={startNew}
-              className="button-warm"
+              className=""
             >
               <Share2 className="w-4 h-4 mr-2" />
               Create New Postcard

@@ -44,6 +44,7 @@ export function CheckoutScreen() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [validationError, setValidationError] = useState('');
+  const [confettiTriggered, setConfettiTriggered] = useState(false);
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
 
@@ -175,6 +176,12 @@ export function CheckoutScreen() {
   const handleSelectionChange = (newSelection: RecipientSelection) => {
     setSelection(newSelection);
     setValidationError('');
+    
+    // Trigger confetti when "all-three" is selected for the first time
+    if (newSelection === 'all-three' && !confettiTriggered) {
+      showCardConfetti();
+      setConfettiTriggered(true);
+    }
   };
   const handleCustomSelection = (recipient: keyof typeof customSelection, checked: boolean) => {
     setCustomSelection(prev => ({
@@ -210,6 +217,59 @@ export function CheckoutScreen() {
     if (selected.senator1 && senators[0]) result.push(senators[0]);
     if (selected.senator2 && senators[1]) result.push(senators[1]);
     return result;
+  };
+
+  const showCardConfetti = () => {
+    const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
+    
+    // Get the card element position
+    const cardElement = document.querySelector('[data-confetti-card]') as HTMLElement;
+    if (!cardElement) return;
+    
+    const cardRect = cardElement.getBoundingClientRect();
+    const cardLeft = cardRect.left;
+    const cardWidth = cardRect.width;
+    const cardTop = cardRect.top;
+    
+    for (let i = 0; i < 30; i++) {
+      createCardConfettiPiece(colors[Math.floor(Math.random() * colors.length)], cardLeft, cardWidth, cardTop);
+    }
+  };
+
+  const createCardConfettiPiece = (color: string, cardLeft: number, cardWidth: number, startY: number) => {
+    const confetti = document.createElement('div');
+    const randomX = cardLeft + (Math.random() * cardWidth); // Spread confetti across card width
+    
+    confetti.style.cssText = `
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: ${color};
+      left: ${randomX}px;
+      top: ${startY}px;
+      z-index: 1000;
+      border-radius: 50%;
+      animation: card-confetti-fall ${Math.random() * 2 + 1.5}s linear forwards;
+    `;
+    
+    document.body.appendChild(confetti);
+
+    // Add CSS animation if not already present
+    if (!document.querySelector('#card-confetti-style')) {
+      const style = document.createElement('style');
+      style.id = 'card-confetti-style';
+      style.textContent = `
+        @keyframes card-confetti-fall {
+          to {
+            transform: translateY(200px) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    setTimeout(() => confetti.remove(), 3000);
   };
   const handlePayment = async () => {
     const validation = validateEmailWithSuggestion(email);
@@ -323,286 +383,261 @@ export function CheckoutScreen() {
           </div>
 
           {/* Section 1 - Recipients Panel */}
-          <Card className="card-warm mb-6">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {/* Single Voice Card */}
-                <div className="space-y-3">
-                  <div className={`cursor-pointer rounded-lg border-2 p-4 transition-all relative ${selection === 'rep-only' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('rep-only')}>
-                    {/* Checkbox in top-right corner */}
-                    <div className="absolute top-4 right-4">
-                      <Checkbox 
-                        checked={selection === 'rep-only'} 
-                        onCheckedChange={(checked) => checked && handleSelectionChange('rep-only')}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-
-                    <div className="mb-2">
-                      <span className="display-title text-lg">Single Voice</span>
-                    </div>
-                    <div className="flex items-center justify-between mb-3 pr-8">
-                      <p className="text-sm text-muted-foreground">
-                        Send to Rep. {rep?.name.split(' ').pop() || 'Representative'} only
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        {rep?.photo ? (
-                          <img 
-                            src={rep.photo} 
-                            alt={`Photo of Rep. ${rep.name}`} 
-                            className="w-full h-full object-cover" 
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                            {rep?.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <span className="font-bold text-lg text-foreground">Total: $5</span>
-                    </div>
-                    
-                    
-                    
-                    <p className="text-sm text-muted-foreground">
-                      Quieter reach — one office hears you today.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Recommended - Maximum Impact Card */}
-                <div className="space-y-3">
-                  <div className={`cursor-pointer rounded-lg border-2 p-4 transition-all relative shadow-lg hover:shadow-xl ${selection === 'all-three' ? 'border-primary bg-primary/5 shadow-xl' : 'border-border hover:border-primary/50'}`} onClick={() => handleSelectionChange('all-three')}>
-                    {/* Save $3 Badge */}
-                    <div className="absolute -top-2 -left-2 z-10">
-                      <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
-                        Save $3
-                      </div>
-                    </div>
-                    
-                    {/* Checkbox in top-right corner */}
-                    <div className="absolute top-4 right-4">
-                      <Checkbox 
-                        checked={selection === 'all-three'} 
-                        onCheckedChange={(checked) => checked && handleSelectionChange('all-three')}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                    
-                    <div className="mb-2">
-                      <span className="display-title text-lg">Recommended – Maximum Impact</span>
-                    </div>
-                    <div className="flex items-center justify-between mb-3 pr-8">
-                      <p className="text-sm text-muted-foreground">
-                        Send to Rep. {rep?.name.split(' ').pop() || 'Representative'}{senators[0] ? `, Sen. ${senators[0].name.split(' ').pop()}` : ''}{senators[1] ? `, and Sen. ${senators[1].name.split(' ').pop()}` : ''}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        {rep?.photo ? (
-                          <img 
-                            src={rep.photo} 
-                            alt={`Photo of Rep. ${rep.name}`} 
-                            className="w-full h-full object-cover" 
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                            {rep?.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                        )}
-                      </div>
-                      {senators[0] && <>
-                          <span className="text-muted-foreground">·</span>
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                            {senators[0].photo ? (
-                              <img 
-                                src={senators[0].photo} 
-                                alt={`Photo of Sen. ${senators[0].name}`} 
-                                className="w-full h-full object-cover" 
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                                {senators[0].name.split(' ').map(n => n[0]).join('')}
-                              </div>
-                            )}
-                          </div>
-                        </>}
-                      {senators[1] && <>
-                          <span className="text-muted-foreground">·</span>
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                            {senators[1].photo ? (
-                              <img 
-                                src={senators[1].photo} 
-                                alt={`Photo of Sen. ${senators[1].name}`} 
-                                className="w-full h-full object-cover" 
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                                {senators[1].name.split(' ').map(n => n[0]).join('')}
-                              </div>
-                            )}
-                          </div>
-                        </>}
-                    </div>
-                    
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-lg text-foreground">Total:</span>
-                        <span className="font-bold text-lg text-muted-foreground line-through">$15</span>
-                        <span className="font-bold text-lg text-foreground">$12</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                      <Check className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>Auto-addressed with proper titles</span>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground">
-                      Your message lands on every federal office that represents you.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Mix & Match */}
-                <div className="space-y-1">
-                  <button 
-                    onClick={() => setShowMixMatch(true)} 
-                    className="w-full flex items-center justify-between text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-                  >
-                    <span>Mix and Match Recipients</span>
-                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                  </button>
-                  <p className="text-sm text-muted-foreground">
-                    $5 each. Choose any combination
-                  </p>
-                </div>
-
-                {/* Validation Error */}
-                {validationError && <p className="text-sm text-destructive">{validationError}</p>}
-
-                {/* Panel-level reassurance */}
-                <div className="text-left pt-4">
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Congressional addresses verified</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 flex-shrink-0" />
-                      <span>Representative names and titles</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Section 3 - Order Summary */}
-          <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
-            <div className={`rounded-lg border-2 p-4 transition-all mb-6 bg-white ${isOrderSummaryOpen ? 'border-primary' : 'border-border'}`}>
-              <CollapsibleTrigger className="w-full text-left">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <span className="display-title text-lg">
-                      Order summary — {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
-                    </span>
-                    <p className="text-sm text-muted-foreground">
-                      Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
-                    </p>
-                  </div>
-                  {isOrderSummaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="pt-4 space-y-2">
-                  {getSelectedRecipients().representative && (
-                    <div className="flex justify-between">
-                      <span>Rep. {rep?.name.split(' ').pop() || 'Representative'}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedRecipients().senator1 && senators[0] && (
-                    <div className="flex justify-between">
-                      <span>Sen. {senators[0].name.split(' ').pop()}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedRecipients().senator2 && senators[1] && (
-                    <div className="flex justify-between">
-                      <span>Sen. {senators[1].name.split(' ').pop()}</span>
-                      <span>$5.00</span>
-                    </div>
-                  )}
-                  {getSelectedCount() === 3 && (
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Bundle savings</span>
-                      <span>−$3.00</span>
-                    </div>
-                  )}
-                  <div className="border-t border-border pt-2 mt-2">
-                    <div className="flex justify-between text-lg font-bold text-foreground">
-                      <span>Total</span>
-                      <span>${getTotalPrice()}</span>
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
+          {/* Single Voice Card */}
+          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => handleSelectionChange('rep-only')}>
+            {/* Checkbox in top-right corner */}
+            <div className="absolute top-4 right-4">
+              <Checkbox 
+                checked={selection === 'rep-only'} 
+                onCheckedChange={(checked) => checked && handleSelectionChange('rep-only')}
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
-          </Collapsible>
 
-          {/* Section 4 - Email & Payments */}
-          <Card className="card-warm">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-primary">Your Email</Label>
-                  <div className="relative">
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="you@example.com" 
-                      value={email} 
-                      onChange={e => handleEmailChange(e.target.value)}
-                      onBlur={handleEmailBlur}
-                      className={`bg-white pr-10 ${
-                        emailError ? 'border-destructive focus-visible:border-destructive' : ''
-                      }`} 
-                    />
-                    {emailValid && (
-                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="mb-2">
+              <span className="display-title text-lg">Single Voice</span>
+            </div>
+            <div className="flex items-center justify-between mb-3 pr-8">
+              <p className="text-sm text-muted-foreground">
+                Send to Rep. {rep?.name.split(' ').pop() || 'Representative'} only
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                {rep?.photo ? (
+                  <img 
+                    src={rep.photo} 
+                    alt={`Photo of Rep. ${rep.name}`} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                    {rep?.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <span className="font-bold text-lg text-foreground">Total: $5</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Quieter reach — one office hears you today.
+            </p>
+          </div>
+
+          {/* Recommended - Maximum Impact Card */}
+          <div 
+            className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} 
+            onClick={() => handleSelectionChange('all-three')}
+            data-confetti-card
+          >
+            {/* Save $3 Badge */}
+            <div className="absolute -top-2 -left-2 z-10">
+              <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
+                Save $3
+              </div>
+            </div>
+            
+            {/* Checkbox in top-right corner */}
+            <div className="absolute top-4 right-4">
+              <Checkbox 
+                checked={selection === 'all-three'} 
+                onCheckedChange={(checked) => checked && handleSelectionChange('all-three')}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            
+            <div className="mb-2 pr-16">
+              <span className="display-title text-lg">Recommended – Maximum Impact</span>
+            </div>
+            <div className="flex items-center justify-between mb-3 pr-8">
+              <p className="text-sm text-muted-foreground">
+                Send to Rep. {rep?.name.split(' ').pop() || 'Representative'}{senators[0] ? `, Sen. ${senators[0].name.split(' ').pop()}` : ''}{senators[1] ? `, and Sen. ${senators[1].name.split(' ').pop()}` : ''}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                {rep?.photo ? (
+                  <img 
+                    src={rep.photo} 
+                    alt={`Photo of Rep. ${rep.name}`} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                    {rep?.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                )}
+              </div>
+              {senators[0] && <>
+                  <span className="text-muted-foreground">·</span>
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    {senators[0].photo ? (
+                      <img 
+                        src={senators[0].photo} 
+                        alt={`Photo of Sen. ${senators[0].name}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                        {senators[0].name.split(' ').map(n => n[0]).join('')}
+                      </div>
                     )}
                   </div>
-                  {emailError && (
-                    <div className="text-sm text-destructive">
-                      {emailError}
-                    </div>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    We'll send you an order confirmation here after checkout and when your card is mailed.
-                  </p>
-                </div>
-
-
-
-
-                {/* Navigation */}
-                <div className="flex gap-2 sm:gap-4 pt-4 border-t">
-                  <Button type="button" variant="secondary" onClick={goBack} className="button-warm flex-shrink-0 px-3 sm:px-4">
-                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
-                    <span className="text-sm sm:text-base">Back</span>
-                  </Button>
-                </div>
+                </>}
+              {senators[1] && <>
+                  <span className="text-muted-foreground">·</span>
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    {senators[1].photo ? (
+                      <img 
+                        src={senators[1].photo} 
+                        alt={`Photo of Sen. ${senators[1].name}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                        {senators[1].name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                    )}
+                  </div>
+                </>}
+            </div>
+            
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-lg text-foreground">Total:</span>
+                <span className="font-bold text-lg text-muted-foreground line-through">$15</span>
+                <span className="font-bold text-lg text-foreground">$12</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+              <Check className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Auto-addressed with proper titles</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Your message lands on every federal office that represents you.
+            </p>
+          </div>
+
+          {/* Mix & Match Card */}
+          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer ${selection === 'custom' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => setShowMixMatch(true)}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-medium text-muted-foreground">Optional: Mix and Match Recipients</span>
+              <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+            </div>
+            
+            <div>
+              <p className="text-sm text-muted-foreground">
+                $5 each. Choose any combination
+              </p>
+            </div>
+          </div>
+
+          {/* Validation Error */}
+          {validationError && <p className="text-sm text-destructive mb-4">{validationError}</p>}
+
+          {/* Section 3 - Combined Order Summary & Email */}
+          <div className="rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
+            <div className="space-y-6">
+              {/* Order Summary (Expandable) */}
+              <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
+                <CollapsibleTrigger className="w-full text-left">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-wrap items-center gap-x-1">
+                      <span className="display-title text-lg">Order summary -</span>
+                      <span className="display-title text-lg whitespace-nowrap">
+                        {getSelectedCount()} recipient{getSelectedCount() !== 1 ? 's' : ''} · ${getTotalPrice()}
+                      </span>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
+                  </p>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="pt-4 space-y-2">
+                    {getSelectedRecipients().representative && (
+                      <div className="flex justify-between">
+                        <span>Rep. {rep?.name.split(' ').pop() || 'Representative'}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedRecipients().senator1 && senators[0] && (
+                      <div className="flex justify-between">
+                        <span>Sen. {senators[0].name.split(' ').pop()}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedRecipients().senator2 && senators[1] && (
+                      <div className="flex justify-between">
+                        <span>Sen. {senators[1].name.split(' ').pop()}</span>
+                        <span>$5.00</span>
+                      </div>
+                    )}
+                    {getSelectedCount() === 3 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Bundle savings</span>
+                        <span>−$3.00</span>
+                      </div>
+                    )}
+                    <div className="border-t border-border pt-2 mt-2">
+                      <div className="flex justify-between text-lg font-bold text-foreground">
+                        <span>Total</span>
+                        <span>${getTotalPrice()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Divider */}
+              <div className="border-t border-border"></div>
+
+              {/* Email Input */}
+              <div className="space-y-2">
+                <span className="display-title text-lg">Your Email</span>
+                <div className="relative">
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    value={email} 
+                    onChange={e => handleEmailChange(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    className={`bg-white pr-10 ${
+                      emailError ? 'border-destructive focus-visible:border-destructive' : ''
+                    }`} 
+                  />
+                  {emailValid && (
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+                {emailError && (
+                  <div className="text-sm text-destructive">
+                    {emailError}
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  We'll send you an order confirmation here after checkout and when your card is mailed.
+                </p>
+              </div>
+
+              {/* Navigation */}
+              <div className="flex gap-2 sm:gap-4 pt-4 border-t">
+                <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4">
+                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="text-sm sm:text-base">Back</span>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Sticky CTA for Both Mobile and Desktop */}
@@ -632,7 +667,7 @@ export function CheckoutScreen() {
       <BottomSheet open={showMixMatch} onOpenChange={setShowMixMatch}>
         <BottomSheetContent>
           <BottomSheetHeader className="p-6 pb-4">
-            <BottomSheetTitle>Mix & match recipients</BottomSheetTitle>
+            <BottomSheetTitle className="text-base font-medium">Mix & match recipients</BottomSheetTitle>
             <p className="text-sm text-muted-foreground">$5 each. Choose any combination.</p>
           </BottomSheetHeader>
           

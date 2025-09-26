@@ -222,7 +222,7 @@ export function ReturnAddressScreen() {
               <h1 className="text-2xl display-title mb-2">
                 Return Address Information
               </h1>
-              <p className="body-text text-secondary">
+              <p className="subtitle text-base">
                 We need your return address for the postcard so your representative knows it came from a constituent.
               </p>
             </div>
@@ -267,7 +267,7 @@ export function ReturnAddressScreen() {
               <div className="space-y-2 relative">
                 <Label htmlFor="streetAddress">Street Address (for Return Address)*</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground z-10" />
+                  <MapPin className="absolute left-3 top-3 md:top-2.5 w-4 h-4 text-muted-foreground z-10" />
                   <Textarea
                     ref={textareaRef}
                     id="streetAddress"
@@ -288,7 +288,7 @@ export function ReturnAddressScreen() {
                 
                 {showSuggestions && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1">
-                    <Command className="rounded-xl border border-border shadow-lg bg-background">
+                    <Command className="rounded-xl border border-border shadow-lg bg-white">
                       <CommandList className="max-h-48">
                         {streetAddress.length < 3 ? (
                           <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
@@ -318,7 +318,7 @@ export function ReturnAddressScreen() {
                                   <CommandItem
                                     key={suggestion.place_id || index}
                                     onSelect={() => handleSuggestionClick(suggestion)}
-                                    className="cursor-pointer hover:bg-accent"
+                                    className="cursor-pointer hover:bg-primary/10 hover:text-primary data-[selected='true']:bg-primary/10 data-[selected=true]:text-primary"
                                   >
                                     <div className="flex items-start gap-2 w-full">
                                       <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -348,7 +348,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="ghost"
                   onClick={() => setShowApartmentField(true)}
-                  className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto font-normal"
+                  className="text-sm text-muted-foreground hover-safe:text-foreground hover-safe:bg-primary/10 hover-safe:pr-4 p-0 h-auto font-normal transition-all"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add apartment/unit (optional)
@@ -357,21 +357,20 @@ export function ReturnAddressScreen() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="apartmentUnit" className="text-sm">Apartment/Unit (Optional)</Label>
-                    <Button
+                    <span className="text-sm text-muted-foreground">—</span>
+                    <button
                       type="button"
-                      variant="ghost"
                       onClick={() => {
                         setShowApartmentField(false);
                         setApartmentUnit('');
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto font-normal"
+                      className="text-sm text-muted-foreground hover-safe:text-foreground hover-safe:bg-primary/10 hover-safe:px-2 hover-safe:py-1 hover-safe:rounded-xl font-normal transition-all"
                     >
-                      <Minus className="w-4 h-4 mr-1" />
                       Remove
-                    </Button>
+                    </button>
                   </div>
                   <div className="relative">
-                    <Home className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="apartmentUnit"
                       type="text"
@@ -389,7 +388,7 @@ export function ReturnAddressScreen() {
                   type="button"
                   variant="secondary"
                   onClick={goBack}
-                  className="button-warm h-12"
+                  className="h-12"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -397,7 +396,7 @@ export function ReturnAddressScreen() {
                 
                 <Button
                   type="submit"
-                  className="flex-1 button-warm h-12"
+                  className="flex-1 h-12"
                   disabled={!isFormComplete}
                 >
                   Continue

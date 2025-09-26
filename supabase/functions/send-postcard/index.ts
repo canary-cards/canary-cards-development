@@ -25,7 +25,20 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData, orderId } = await req.json();
+    const { postcardData, orderId, simulateFailure, simulatedFailed } = await req.json();
+    
+    // Check if we're on a lovable.app domain to enable simulation
+    const origin = req.headers.get('origin') || '';
+    const isLovableDomain = origin.includes('.lovable.app') || origin.includes('lovable.app');
+    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed > 0;
+    
+    console.log('Simulation check:', {
+      origin,
+      isLovableDomain,
+      simulateFailure,
+      simulatedFailed,
+      shouldSimulateFailure
+    });
     console.log('Received postcard data:', JSON.stringify(postcardData, null, 2));
 
     if (!postcardData || !orderId) {
@@ -128,57 +141,11 @@ serve(async (req) => {
 
     const senderAddress = parseAddress(userInfo.streetAddress);
 
-    // Function to fetch available letter templates from IgnitePost
-    const fetchAvailableTemplates = async () => {
-      try {
-        console.log('Fetching available letter templates from IgnitePost...');
-        const response = await fetch('https://dashboard.ignitepost.com/api/v1/letter_templates', {
-          method: 'GET',
-          headers: {
-            'X-TOKEN': apiKey,
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Template API request failed: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Template API response:', JSON.stringify(result, null, 2));
-
-        if (Array.isArray(result) && result.length > 0) {
-          // API returns templates directly as an array
-          const templateIds = result.map(template => template.id.toString());
-          console.log('Available template IDs:', templateIds);
-          return templateIds;
-        } else if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-          // Fallback for wrapped response format
-          const templateIds = result.data.map(template => template.id.toString());
-          console.log('Available template IDs:', templateIds);
-          return templateIds;
-        } else {
-          throw new Error('No templates found in API response');
-        }
-      } catch (error) {
-        console.error('Failed to fetch templates from API:', error);
-        return null;
-      }
-    };
-
-    // Function to select a random template ID
-    const selectRandomTemplate = async () => {
-      // First try to fetch templates dynamically
-      const availableTemplates = await fetchAvailableTemplates();
-      
-      let templateList;
-      if (availableTemplates && availableTemplates.length > 0) {
-        templateList = availableTemplates;
-        console.log('Using dynamically fetched templates:', templateList);
-      } else {
-        // Fallback to known template IDs
-        templateList = ['10428', '10420'];
-        console.log('Using fallback templates:', templateList);
-      }
+    // Function to select a random template ID from hardcoded list
+    const selectRandomTemplate = () => {
+      // Use only the two active templates as requested
+      const templateList = ['10420', '10428'];
+      console.log('Using hardcoded template list:', templateList);
 
       // Randomly select a template
       const randomIndex = Math.floor(Math.random() * templateList.length);
@@ -186,6 +153,15 @@ serve(async (req) => {
       console.log(`Selected template ID: ${selectedTemplate} (from ${templateList.length} available templates)`);
       
       return selectedTemplate;
+    };
+
+    // Function to select a random font key
+    const selectRandomFont = () => {
+      const approvedFonts = ['tracy', 'becca', 'dunn', 'kletzien', 'pea', 'sarah'];
+      const randomIndex = Math.floor(Math.random() * approvedFonts.length);
+      const selectedFont = approvedFonts[randomIndex];
+      console.log(`Selected font: ${selectedFont} (from ${approvedFonts.length} approved fonts)`);
+      return selectedFont;
     };
 
     // Simple helper to derive office address - use exact contact.address with standardized city/state
@@ -221,7 +197,7 @@ serve(async (req) => {
     };
 
     // Function to create a postcard order
-    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string) => {
+    const createPostcardOrder = async (recipient: any, message: string, recipientType: 'representative' | 'senator', templateId: string, fontKey: string, shouldFailOrder: boolean = false) => {
       const recipientName = recipientType === 'representative' 
         ? `Rep. ${recipient.name.split(' ').pop()}` 
         : `Sen. ${recipient.name.split(' ').pop()}`;
@@ -229,9 +205,49 @@ serve(async (req) => {
       // Get recipient address using the helper function
       const recipientAddress = deriveOfficeAddress(recipient, recipientType);
 
+      // First, create postcard record in database to get the postcard ID
+      const postcardRecord = {
+        order_id: orderId,
+        recipient_type: recipientType,
+        recipient_snapshot: recipient,
+        recipient_name: recipientName,
+        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
+        recipient_office_address: recipientAddress.address_one,
+        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
+        message_text: message,
+        ignitepost_template_id: templateId,
+        handwriting_font_key: fontKey,
+        sender_snapshot: {
+          fullName: userInfo.fullName,
+          streetAddress: senderAddress.streetAddress,
+          city: senderAddress.city,
+          state: senderAddress.state,
+          zipCode: senderAddress.zip
+        },
+        delivery_status: 'failed' // Will be updated on successful IgnitePost submission
+      };
+
+      const { data: insertedPostcard, error: postcardError } = await supabase
+        .from('postcards')
+        .insert(postcardRecord)
+        .select()
+        .single();
+
+      if (postcardError) {
+        console.error('Error creating postcard record:', postcardError);
+        throw new Error(`Failed to create postcard record: ${postcardError.message}`);
+      }
+
+      const postcardId = insertedPostcard.id;
+      console.log(`Created postcard record with ID: ${postcardId}`);
+
+      // Now use the postcard ID as the UID for IgnitePost
       const orderData = {
-        letter_template_id: templateId, // Use selected template instead of hardcoded font/image
+        letter_template_id: templateId,
+        font: fontKey,
         message: message,
+        // Only include image parameter if not simulating failure
+        ...(shouldFailOrder ? {} : { image: 'white' }), // Remove image parameter for failure simulation
         recipient_name: recipientName,
         recipient_address_one: recipientAddress.address_one,
         recipient_city: recipientAddress.city,
@@ -242,14 +258,16 @@ serve(async (req) => {
         sender_city: senderAddress.city,
         sender_state: senderAddress.state,
         sender_zip: senderAddress.zip,
-        uid: orderId,
+        uid: postcardId, // Use postcard ID instead of order ID
         'metadata[recipient_type]': recipientType,
         'metadata[representative_id]': recipient.id || 'unknown',
         'metadata[template_id]': templateId,
-        'metadata[order_id]': orderId
+        'metadata[font_key]': fontKey,
+        'metadata[order_id]': orderId,
+        'metadata[postcard_id]': postcardId
       };
 
-      console.log(`Creating ${recipientType} postcard order:`, JSON.stringify(orderData, null, 2));
+      console.log(`Creating ${recipientType} postcard order${shouldFailOrder ? ' (SIMULATING FAILURE)' : ''} with UID ${postcardId}:`, JSON.stringify(orderData, null, 2));
 
       let ignitepostResult = null;
       let deliveryStatus = 'failed';
@@ -279,39 +297,25 @@ serve(async (req) => {
         console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
-      // Create postcard record in database
-      const postcardRecord = {
-        order_id: orderId,
-        recipient_type: recipientType,
-        recipient_snapshot: recipient,
-        recipient_name: recipientName,
-        recipient_title: recipientType === 'representative' ? 'Representative' : 'Senator',
-        recipient_office_address: recipientAddress.address_one,
-        recipient_district_info: recipient.district || `${recipient.state} ${recipientType}`,
-        message_text: message,
-        ignitepost_template_id: templateId,
-        ignitepost_order_id: ignitepostResult?.id || null,
-        ignitepost_send_on: ignitepostResult?.send_on || null,
-        ignitepost_created_at: ignitepostResult?.created_at ? new Date(ignitepostResult.created_at).toISOString() : null,
-        ignitepost_error: ignitepostError,
-        sender_snapshot: {
-          fullName: userInfo.fullName,
-          streetAddress: senderAddress.streetAddress,
-          city: senderAddress.city,
-          state: senderAddress.state,
-          zipCode: senderAddress.zip
-        },
-        delivery_status: deliveryStatus
+      // Update postcard record with IgnitePost response
+      const updateData: any = {
+        delivery_status: deliveryStatus,
+        ignitepost_error: ignitepostError
       };
 
-      const { data: insertedPostcard, error: postcardError } = await supabase
-        .from('postcards')
-        .insert(postcardRecord)
-        .select()
-        .single();
+      if (ignitepostResult) {
+        updateData.ignitepost_order_id = ignitepostResult.id;
+        updateData.ignitepost_send_on = ignitepostResult.send_on;
+        updateData.ignitepost_created_at = ignitepostResult.created_at ? new Date(ignitepostResult.created_at).toISOString() : null;
+      }
 
-      if (postcardError) {
-        console.error('Error creating postcard record:', postcardError);
+      const { error: updateError } = await supabase
+        .from('postcards')
+        .update(updateData)
+        .eq('id', postcardId);
+
+      if (updateError) {
+        console.error('Error updating postcard record:', updateError);
       }
 
       if (deliveryStatus === 'failed') {
@@ -320,12 +324,13 @@ serve(async (req) => {
 
       return { 
         ...ignitepostResult, 
-        postcard_id: insertedPostcard?.id,
+        postcard_id: postcardId,
         delivery_status: deliveryStatus 
       };
     };
 
     const results = [];
+    let failureCounter = 0; // Track how many failures to simulate
 
     // Helper function to replace user placeholders
     const replaceUserPlaceholders = (message: string) => {
@@ -335,13 +340,15 @@ serve(async (req) => {
       const city = senderAddress.city || userInfo.city || '';
       
       return message
+        .replace(/\[name\]/g, userInfo.fullName)
         .replace(/\[First Name\]/g, firstName)
         .replace(/\[Last Name\]/g, lastName)
         .replace(/\[City\]/g, city);
     };
 
-    // Select a random template for all postcards in this batch
-    const selectedTemplateId = await selectRandomTemplate();
+    // Select a random template and font for all postcards in this batch
+    const selectedTemplateId = selectRandomTemplate();
+    const selectedFontKey = selectRandomFont();
 
     // Send to representative
     try {
@@ -353,7 +360,11 @@ serve(async (req) => {
       // Replace user placeholders
       repMessage = replaceUserPlaceholders(repMessage);
       
-      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId);
+      // Determine if this postcard should fail (representative is first, so fails if any failure requested)
+      const shouldFailThisOrder = shouldSimulateFailure && failureCounter < simulatedFailed;
+      if (shouldFailThisOrder) failureCounter++;
+      
+      const repResult = await createPostcardOrder(representative, repMessage, 'representative', selectedTemplateId, selectedFontKey, shouldFailThisOrder);
       results.push({
         type: 'representative',
         recipient: representative.name,
@@ -387,7 +398,11 @@ serve(async (req) => {
           // Replace user placeholders
           senMessage = replaceUserPlaceholders(senMessage);
           
-          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId);
+          // Determine if this postcard should fail (continue failure counter from representative)
+          const shouldFailThisOrder = shouldSimulateFailure && failureCounter < simulatedFailed;
+          if (shouldFailThisOrder) failureCounter++;
+          
+          const senResult = await createPostcardOrder(senator, senMessage, 'senator', selectedTemplateId, selectedFontKey, shouldFailThisOrder);
           results.push({
             type: 'senator',
             recipient: senator.name,

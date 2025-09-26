@@ -124,58 +124,60 @@ serve(async (req) => {
     if (sent_at) {
       console.log('📮 DELIVERY notification detected - postcard has been sent to mail!');
       
-      // Update postcard record in database
-      const { data: updatedPostcard, error: updateError } = await supabase
-        .from('postcards')
-        .update({
-          delivery_status: 'mailed',
-          mailed_at: new Date(sent_at).toISOString(),
-          webhook_received_at: new Date().toISOString(),
-          delivery_metadata: {
-            sent_at_unix,
-            ignitepost_id: postcardId,
-            webhook_received: true
-          }
-        })
-        .eq('ignitepost_order_id', postcardId)
-        .select();
-
-      if (updateError) {
-        console.error('Error updating postcard delivery status:', updateError);
-      } else {
-        console.log('Updated postcard delivery status:', updatedPostcard);
-      }
-      
-      // Extract user info from our database using the UID (order ID)
+      // Use the UID (which is now the postcard ID) to find and update the postcard
       let userEmail = null;
       let recipientType = null;
       let representativeId = null;
       
       if (uid) {
-        console.log('Looking up order using UID (order ID):', uid);
+        console.log('Looking up postcard using UID (postcard ID):', uid);
         
-        // Look up the order in our database to get user email
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('email_for_receipt')
-          .eq('id', uid)
+        // Update postcard record using the UID (postcard ID)
+        const { data: updatedPostcard, error: updateError } = await supabase
+          .from('postcards')
+          .update({
+            delivery_status: 'mailed',
+            mailed_at: new Date(sent_at).toISOString(),
+            webhook_received_at: new Date().toISOString(),
+            delivery_metadata: {
+              sent_at_unix,
+              ignitepost_id: postcardId,
+              webhook_received: true
+            }
+          })
+          .eq('id', uid) // Use postcard ID directly
+          .select('order_id, recipient_type')
           .single();
-          
-        if (orderError) {
-          console.error('Error looking up order:', orderError);
-          console.warn('⚠️ Could not find order - delivery notification cannot be sent');
-        } else if (orderData) {
-          userEmail = orderData.email_for_receipt;
-          console.log('User email from our database:', userEmail);
+
+        if (updateError) {
+          console.error('Error updating postcard delivery status:', updateError);
+          console.warn('⚠️ Could not find postcard - delivery notification cannot be sent');
         } else {
-          console.warn('⚠️ Order not found - delivery notification cannot be sent');
+          console.log('Updated postcard delivery status:', updatedPostcard);
+          
+          // Get user email from the order through the postcard's order_id
+          if (updatedPostcard?.order_id) {
+            const { data: orderData, error: orderError } = await supabase
+              .from('orders')
+              .select('email_for_receipt')
+              .eq('id', updatedPostcard.order_id)
+              .single();
+              
+            if (orderError) {
+              console.error('Error looking up order:', orderError);
+              console.warn('⚠️ Could not find order - delivery notification cannot be sent');
+            } else if (orderData) {
+              userEmail = orderData.email_for_receipt;
+              console.log('User email from our database:', userEmail);
+            }
+          }
+          
+          recipientType = updatedPostcard?.recipient_type;
         }
         
-        // Get recipient type and ID for context from metadata
+        // Get recipient ID from metadata
         if (metadata) {
-          recipientType = metadata.recipient_type;
           representativeId = metadata.representative_id;
-          console.log('Recipient type:', recipientType);
           console.log('Representative ID:', representativeId);
         }
       } else {

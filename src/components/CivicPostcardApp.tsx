@@ -26,7 +26,7 @@ export function CivicPostcardApp() {
   // Handle body background for drafting screen
   useEffect(() => {
     if (state.currentStep === 7) {
-      document.body.style.backgroundColor = 'hsl(var(--primary))';
+      document.body.style.backgroundColor = 'hsl(var(--background))';
     } else {
       document.body.style.backgroundColor = '';
     }
@@ -61,19 +61,21 @@ export function CivicPostcardApp() {
   };
 
   return (
-    <div className={`civic-postcard-app ${state.currentStep === 7 ? 'bg-primary' : ''}`}>
-      {/* Header - show on all pages */}
-      <Header isDark={state.currentStep === 7} />
+    <div className={`civic-postcard-app ${state.currentStep === 7 ? 'bg-background' : ''}`}>
+      {/* Header - hide on drafting screen and when payment is loading */}
+      {state.currentStep !== 7 && !state.isPaymentLoading && (
+        <Header isDark={state.currentStep === 7} />
+      )}
       
       {/* Standard spacing after header */}
-      <div className={state.currentStep === 7 ? 'bg-primary' : ''}>
+      <div className={state.currentStep === 7 ? 'bg-background' : ''}>
         {/* Step dots - show on all screens after onboarding, except drafting screen */}
         {state.currentStep !== 7 && (
           <StepDots currentStep={state.currentStep} totalSteps={7} />
         )}
         
         {/* Content */}
-        <div className={state.currentStep === 7 ? 'bg-primary' : ''}>
+        <div className={state.currentStep === 7 ? 'bg-background' : ''}>
           {renderCurrentScreen()}
         </div>
       </div>

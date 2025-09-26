@@ -168,7 +168,7 @@ export function LandingScreen() {
                   </p>}
               </div>
               
-              <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isSearching || !zipCode}>
+              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode}>
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     Finding Your Rep...
@@ -186,7 +186,7 @@ export function LandingScreen() {
         </Card>
 
         {/* Proof Card */}
-        <Card className="mb-6 bg-card border-2 border-border/60">
+        <Card className="mb-6 bg-card border-border">
           <CardContent className="p-6 text-center">
             <p className="text-sm font-semibold text-secondary mb-3 tracking-wide uppercase">
               The Research

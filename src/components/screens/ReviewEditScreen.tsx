@@ -174,7 +174,7 @@ ${userInfo?.fullName}`;
               <h1 className="display-title mb-2">
                 Review Your Postcard
               </h1>
-              <h3 className="subtitle">Finalize the message you want to send to your locally elected official</h3>
+              <h3 className="subtitle text-base">Finalize the message you want to send to your locally elected official</h3>
             </div>
 
             <div className="space-y-6">
@@ -195,7 +195,14 @@ ${userInfo?.fullName}`;
                   />
                   <button 
                     onClick={handleEditClick}
-                    className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation"
+                    className="absolute bottom-3 right-3 bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation"
+                    style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '50%',
+                      minWidth: '40px',
+                      minHeight: '40px'
+                    }}
                     aria-label="Edit message"
                   >
                     <Edit3 className="w-6 h-6 text-accent" />
@@ -209,11 +216,16 @@ ${userInfo?.fullName}`;
               )}
 
               <div className="space-y-3 pt-4">
-                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || isUpdating} className="w-full button-warm h-12 text-base">
+                <Button 
+                  onClick={handleContinue} 
+                  disabled={!editedMessage.trim() || charCount > maxChars}
+                  className={`w-full h-12 text-base ${isUpdating ? 'bg-[hsl(var(--primary-pressed))] hover-safe:bg-[hsl(var(--primary-pressed))] active:bg-[hsl(var(--primary-pressed))]' : ''}`}
+                  style={isUpdating ? { pointerEvents: 'none' } : undefined}
+                >
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
-                <Button type="button" variant="secondary" onClick={goBack} className="w-full button-warm h-12 text-base">
+                <Button type="button" variant="secondary" onClick={goBack} className="w-full h-12 text-base">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Back</span>
                 </Button>

@@ -20,6 +20,8 @@ All colors MUST be HSL.
 
     --primary: 212 29% 26%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 212 29% 22%;
+    --primary-pressed: 212 29% 18%;
 
     --secondary: 7 45% 42%;
     --secondary-foreground: 7 42% 49%;
@@ -32,6 +34,8 @@ All colors MUST be HSL.
 
     --accent: 46 100% 65%;
     --accent-foreground: 212 29% 26%;
+    --accent-hover: 46 100% 61%;
+    --accent-pressed: 46 100% 57%;
 
     --destructive: 3 50% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -88,6 +92,8 @@ All colors MUST be HSL.
 
     --accent: 46 100% 65%; /* Keep Canary Yellow, ensure proper framing */
     --accent-foreground: 212 29% 26%; /* Ink Blue text on yellow */
+    --accent-hover: 46 100% 61%;
+    --accent-pressed: 46 100% 57%;
 
     --destructive: 3 60% 55%; /* Slightly brighter red for dark mode */
     --destructive-foreground: 0 0% 100%;
@@ -145,8 +151,8 @@ All colors MUST be HSL.
     font-family: Spectral, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     font-weight: 700;
     color: hsl(var(--primary));
-    font-size: 1.5rem; /* text-2xl */
-    line-height: 2rem;
+    font-size: 1.75rem; /* Larger on mobile */
+    line-height: 1.25; /* Tighter line height for better mobile display */
   }
 
   @media (min-width: 768px) {
@@ -192,13 +198,10 @@ All colors MUST be HSL.
 
   /* Warmer, friendlier styling */
   .card-warm {
-    @apply bg-card border border-border/60 shadow-lg shadow-primary/5;
+    @apply bg-card border border-border shadow-lg shadow-primary/5;
     border-radius: 1.25rem;
   }
 
-  .button-warm {
-    @apply rounded-xl shadow-md hover:shadow-lg transition-all duration-200;
-  }
 
   .input-warm {
     @apply rounded-xl border-2 border-border/60 focus:border-primary/40 transition-colors;
@@ -305,9 +308,40 @@ All colors MUST be HSL.
     }
   }
 
+  /* Interactive hover states for consistent appearance across backgrounds */
+  .hover-blue-standard {
+    @apply transition-colors;
+  }
+  
+  @media (hover: hover) {
+    .hover-blue-standard:hover {
+      /* Exact color match for white component hover state */
+      background-color: #E6E3DD;
+    }
+  }
+
   /* Mobile-first touch targets */
   button, input[type="button"], input[type="submit"] {
     min-height: 44px;
+  }
+
+  /* Mobile viewport safe area handling for sheet overlays */
+  [data-radix-dialog-overlay] {
+    /* Ensure overlay covers full mobile viewport including safe areas */
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  /* Ensure sheet content also respects mobile viewport */
+  [data-radix-dialog-content] {
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
   }
 
   /* Voice recording animations */
@@ -339,15 +373,34 @@ All colors MUST be HSL.
     }
   }
 
-  /* Writing progress bar animation - synced with 2s message timing */
-  .writing-progress {
-    animation: writing-fill 2s ease-out forwards;
+  /* Text fill animation for drafting screen - overall progress */
+  .text-fill-yellow-progress {
+    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--accent)) 50%, hsl(var(--primary)) 50%, hsl(var(--primary)) 100%);
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: text-fill-overall-progress 15s linear forwards;
   }
 
-  @keyframes writing-fill {
-    0% { width: 0%; }
-    90% { width: 85%; }
-    100% { width: 100%; }
+  .text-fill-yellow-progress.completed {
+    animation: text-fill-complete 0.5s ease-out forwards;
+  }
+
+  @keyframes text-fill-overall-progress {
+    0% { 
+      background-position: 100% 0;
+    }
+    100% { 
+      background-position: 0% 0;
+    }
+  }
+
+  @keyframes text-fill-complete {
+    to { 
+      background-position: 0% 0;
+    }
   }
 
   /* Scale-in animation for messages */
@@ -410,5 +463,138 @@ All colors MUST be HSL.
   }
   50% {
     transform: scale(1.05);
+  }
+}
+
+/* Hover-safe utilities - only apply hover states on devices that can hover */
+@layer utilities {
+  /* Hover-safe modifier that can be used like hover-safe:bg-primary */
+  @media (hover: hover) {
+    .hover-safe\:bg-primary:hover {
+      background-color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:bg-primary\/10:hover {
+      background-color: hsl(var(--primary) / 0.1);
+    }
+    
+    .hover-safe\:bg-primary\/20:hover {
+      background-color: hsl(var(--primary) / 0.2);
+    }
+    
+    /* High-priority primary tint for overriding other hover backgrounds */
+    .hover-primary-tint:hover {
+      background-color: hsl(var(--primary) / 0.1) !important;
+    }
+    .hover-primary-text:hover {
+      color: hsl(var(--primary)) !important;
+    }
+    
+    .hover-safe\:bg-accent:hover {
+      background-color: hsl(var(--accent));
+    }
+    
+    .hover-safe\:text-primary-foreground:hover {
+      color: hsl(var(--primary-foreground));
+    }
+    
+    .hover-safe\:text-accent-foreground:hover {
+      color: hsl(var(--accent-foreground));
+    }
+    
+    .hover-safe\:text-primary:hover {
+      color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:text-foreground:hover {
+      color: hsl(var(--foreground));
+    }
+    
+    .hover-safe\:pr-4:hover {
+      padding-right: 1rem;
+    }
+    
+    .hover-safe\:px-2:hover {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    .hover-safe\:py-1:hover {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+    
+    .hover-safe\:rounded-xl:hover {
+      border-radius: 0.75rem;
+    }
+    
+    .hover-safe\:border-primary:hover {
+      border-color: hsl(var(--primary));
+    }
+    
+    .hover-safe\:shadow-md:hover {
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:shadow-lg:hover {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:shadow-sm:hover {
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    
+    .hover-safe\:shadow-xl:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    
+    .hover-safe\:underline:hover {
+      text-decoration-line: underline;
+    }
+    
+    .hover-safe\:no-underline:hover {
+      text-decoration-line: none;
+    }
+    
+    .hover-safe\:decoration-2:hover {
+      text-decoration-thickness: 2px;
+    }
+    
+    .hover-safe\:opacity-80:hover {
+      opacity: 0.8;
+    }
+    
+    .hover-safe\:scale-105:hover {
+      transform: scale(1.05);
+    }
+    
+    .hover-safe\:bg-muted\/50:hover {
+      background-color: hsl(var(--muted) / 0.5);
+    }
+    
+    .hover-safe\:bg-muted\/30:hover {
+      background-color: hsl(var(--muted) / 0.3);
+    }
+    
+    /* Specific color combinations for backward compatibility */
+    .hover-safe\:bg-\[hsl\(212_29\%_22\%\)\]:hover {
+      background-color: hsl(212 29% 22%);
+    }
+    
+    .hover-safe\:bg-\[hsl\(46_100\%_61\%\)\]:hover {
+      background-color: hsl(46 100% 61%);
+    }
+    
+    .hover-safe\:bg-\[hsl\(3_58\%_46\%\)\]:hover {
+      background-color: hsl(3 58% 46%);
+    }
+    
+    .hover-safe\:bg-\[hsl\(var\(--primary-hover\)\)\]:hover {
+      background-color: hsl(var(--primary-hover));
+    }
+    
+    .hover-safe\:bg-\[hsl\(var\(--accent-hover\)\)\]:hover {
+      background-color: hsl(var(--accent-hover));
+    }
   }
 }

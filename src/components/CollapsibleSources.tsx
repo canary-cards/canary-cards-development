@@ -120,13 +120,7 @@ const truncateTitle = (title: string, maxWords: number = 8): string => {
 };
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Debounce toggle to prevent rapid clicking
-  const debouncedToggle = useCallback(() => {
-    setIsOpen(prev => !prev);
-  }, []);
   
   // Simulate loading state (in real app this would depend on data fetching)
   useEffect(() => {
@@ -146,99 +140,36 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   // Sort all sources by priority (government > news agencies > newspapers)
   const prioritizedSources = sources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
-  
-  // Get unique domains with their highest priority source
-  const uniqueDomains = prioritizedSources.reduce((acc, source) => {
-    const domain = new URL(source.url).hostname;
-    if (!acc.find(s => new URL(s.url).hostname === domain)) {
-      acc.push(source);
-    }
-    return acc;
-  }, [] as Source[]);
-  
-  // For preview, show up to 3 unique publications
-  const previewSources = uniqueDomains.slice(0, 3);
-  
-  // Count additional unique publications (not articles)
-  const additionalCount = Math.max(0, uniqueDomains.length - previewSources.length);
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">
-      <Collapsible open={isOpen} onOpenChange={debouncedToggle}>
-        <CollapsibleTrigger asChild>
-          <button 
-            className="w-full min-h-[44px] bg-white hover:bg-muted/50 border border-primary rounded-xl p-3 sm:p-4 transition-all duration-200 focus:outline-none"
-            aria-expanded={isOpen}
-            aria-label={`${isOpen ? 'Collapse' : 'Expand'} sources (${uniqueDomains.length} sources available)`}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <ChevronRight 
-                className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                  isOpen ? 'rotate-90' : ''
-                }`} 
-              />
-              <span className="eyebrow-lowercase text-muted-foreground text-sm">
-                Sources from:
-              </span>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    {previewSources.map((source, index) => (
-                      <div key={`${new URL(source.url).hostname}-${index}`} className="flex-shrink-0">
-                        <SourceIcon url={source.url} size={24} />
-                      </div>
-                    ))}
-                </div>
-                {additionalCount > 0 && (
-                  <span className="body-text text-muted-foreground text-sm whitespace-nowrap">
-                    +{additionalCount} more
-                  </span>
-                )}
+      <h3 className="field-label">Sources</h3>
+      
+      <div className="space-y-4">
+        {prioritizedSources.map((source, index) => {
+          const domain = new URL(source.url).hostname;
+          const summaryText = source.headline 
+            ? source.headline.trim()
+            : source.description.replace(/<[^>]*>/g, '').trim();
+          
+          return (
+            <div key={index} className="space-y-2">
+              <div className="body-text text-sm leading-relaxed">
+                {summaryText}{' '}
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                  aria-label={`Read source from ${domain} (opens in new tab)`}
+                >
+                  {domain}
+                </a>
               </div>
             </div>
-          </button>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent className="bg-white border border-t-0 border-primary rounded-b-xl p-3 sm:p-4 space-y-3 overflow-hidden">
-          {prioritizedSources.map((source, index) => {
-            // Extract and clean article title
-            const cleanDescription = source.description.replace(/<[^>]*>/g, '');
-            const rawTitle = cleanDescription.split('.')[0] || cleanDescription.substring(0, 100);
-            const title = truncateTitle(rawTitle.trim());
-            
-            return (
-              <div 
-                key={index} 
-                className={`group flex items-start gap-3 pb-3 min-h-[44px] hover:bg-muted/30 rounded-lg p-2 -m-2 transition-all duration-200 ${
-                  index < prioritizedSources.length - 1 ? 'border-b border-border/50 mb-3' : ''
-                }`}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                  animation: isOpen ? 'fade-in 0.3s ease-out forwards' : undefined
-                }}
-              >
-                <div className="flex-shrink-0 mt-1">
-                  <SourceIcon url={source.url} size={24} />
-                </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <a 
-                    href={source.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="group/link flex items-center gap-1.5 body-text text-foreground text-sm font-medium leading-tight hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-sm underline decoration-1 underline-offset-2 hover:decoration-2"
-                    aria-label={`Read article: ${title} (opens in new tab)`}
-                  >
-                    <span className="flex-1">{title}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors flex-shrink-0" />
-                  </a>
-                  <div className="text-xs text-muted-foreground/80 font-medium">
-                    {getSourceDisplayName(source.url)}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CollapsibleContent>
-      </Collapsible>
+          );
+        })}
+      </div>
     </div>
   );
 }

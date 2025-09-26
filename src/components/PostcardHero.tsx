@@ -274,7 +274,7 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
           <h1 className="text-2xl font-bold text-primary mb-2 font-display">
             Here's how your postcard will look.
           </h1>
-          <p className="text-secondary font-inter">
+          <p className="subtitle text-base">
             This is an example — your message will be written with a ballpoint pen on a real postcard we mail for you
           </p>
         </div>
@@ -376,8 +376,8 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
                 e.stopPropagation();
                 performFlip();
               }}
-              className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover:shadow-xl transition-all p-0 min-w-0 ${
-                isFlipping ? 'scale-110 rotate-180' : 'hover:scale-105'
+               className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${
+                 isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'
               }`}
               aria-label="Flip postcard"
               disabled={isFlipping}

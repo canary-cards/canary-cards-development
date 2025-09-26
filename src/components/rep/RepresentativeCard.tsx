@@ -22,36 +22,41 @@ export function RepresentativeCard({
   
   return (
     <Card 
-      className={`cursor-pointer transition-all duration-200 bg-card border border-border shadow-sm relative ${
+      className={`cursor-pointer transition-all duration-200 bg-card border shadow-sm relative ${
         isSelected 
-          ? 'ring-2 ring-primary bg-card border-primary shadow-md' 
-          : 'hover:shadow-md border-border/60'
+          ? 'border-2 border-primary shadow-md' 
+          : 'border-border hover:shadow-md hover:border-primary/50'
       } ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onClick}
     >
-      {showBadge && isSelected && (
-        <Badge variant="accent" className="absolute top-2 right-2 text-xs whitespace-nowrap shadow-sm">
-          My Rep
-        </Badge>
-      )}
-      <CardContent className={`flex items-center ${isCompact ? 'p-3' : 'p-6'}`}>
-        <div className={`${isCompact ? 'w-14 h-14' : 'w-20 h-20'} rounded-lg bg-muted mr-3 md:mr-4 flex-shrink-0 overflow-hidden`}>
-          <img 
-            src={representative.photo} 
-            alt={representative.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder.svg';
-            }}
-          />
-        </div>
-        <div className="flex-grow min-w-0">
-          <h3 className={`text-primary font-semibold ${isCompact ? 'text-xs' : 'text-sm md:text-base'} truncate`}>
-            {representative.name}
-          </h3>
-          <p className={`text-muted-foreground ${isCompact ? 'text-xs' : 'text-xs md:text-sm'} truncate`}>
-            {representative.district} • {representative.city}, {representative.state}
-          </p>
+      <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
+        <div className="space-y-3">
+          <div className="flex items-start gap-4">
+            <div className="relative w-[100px] h-[100px] rounded-lg bg-muted flex-shrink-0">
+              <img 
+                src={representative.photo} 
+                alt={representative.name}
+                className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.svg';
+                }}
+              />
+            </div>
+            <div className="flex-grow min-w-0">
+              <h3 className="text-primary font-semibold text-lg mb-1">
+                {representative.name}
+              </h3>
+              <p className="text-muted-foreground text-sm mb-2 leading-tight">
+                {representative.district} • {representative.city}, {representative.state}
+              </p>
+              {showBadge && isSelected && (
+                <Badge variant="default" className="text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
+                  My Rep
+                </Badge>
+              )}
+            </div>
+          </div>
+          
         </div>
       </CardContent>
     </Card>

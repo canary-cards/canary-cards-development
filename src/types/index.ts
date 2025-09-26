@@ -21,7 +21,9 @@ export interface UserInfo {
 export interface Source {
   description: string;
   url: string;
-  dataPointCount: number;
+  outlet: string;
+  headline: string;
+  summary: string;
 }
 
 export interface PostcardData {

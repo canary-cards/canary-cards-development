@@ -1,11 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 interface GeocodioResponse {
   input: {
     address_components: {
@@ -39,6 +34,11 @@ interface GeocodioResponse {
       }>;
     };
   }>;
+}
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
@@ -116,9 +116,10 @@ serve(async (req) => {
     
     // Extract all legislators (representatives and senators)
     if (result.fields?.congressional_districts) {
-      result.fields.congressional_districts.forEach((cd) => {
-        cd.current_legislators.forEach((legislator, index) => {
-          allLegislators.push({
+      for (const cd of result.fields.congressional_districts) {
+        // Process all legislators in this district
+        const legislators = cd.current_legislators.map((legislator, index) => {
+          const legislatorData = {
             id: `${legislator.type}-${cd.district_number || result.address_components.state}-${index}`,
             name: `${legislator.bio.first_name} ${legislator.bio.last_name}`,
             district: legislator.type === 'representative' ? 
@@ -130,9 +131,14 @@ serve(async (req) => {
             party: legislator.bio.party,
             type: legislator.type,
             address: legislator.contact?.address
-          });
+          };
+
+          console.log(`Adding legislator: ${JSON.stringify(legislatorData)}`);
+          return legislatorData;
         });
-      });
+
+        allLegislators.push(...legislators);
+      }
     }
     
     if (includeSenatorsAndReps) {

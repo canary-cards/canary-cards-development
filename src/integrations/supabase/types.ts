@@ -278,6 +278,7 @@ export type Database = {
           created_at: string
           delivery_metadata: Json | null
           delivery_status: Database["public"]["Enums"]["delivery_status"]
+          handwriting_font_key: string | null
           id: string
           ignitepost_created_at: string | null
           ignitepost_error: string | null
@@ -301,6 +302,7 @@ export type Database = {
           created_at?: string
           delivery_metadata?: Json | null
           delivery_status?: Database["public"]["Enums"]["delivery_status"]
+          handwriting_font_key?: string | null
           id?: string
           ignitepost_created_at?: string | null
           ignitepost_error?: string | null
@@ -324,6 +326,7 @@ export type Database = {
           created_at?: string
           delivery_metadata?: Json | null
           delivery_status?: Database["public"]["Enums"]["delivery_status"]
+          handwriting_font_key?: string | null
           id?: string
           ignitepost_created_at?: string | null
           ignitepost_error?: string | null

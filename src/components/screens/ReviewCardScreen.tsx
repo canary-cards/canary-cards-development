@@ -19,6 +19,7 @@ export function ReviewCardScreen() {
     if (!message || !userInfo) return message;
     
     return message
+      .replace(/\[name\]/g, userInfo.fullName || '')
       .replace(/\[Your Name\]/g, userInfo.fullName || '')
       .replace(/\[Your City\]/g, userInfo.city || '')
       .replace(/\[Your State\]/g, userInfo.state || '')
@@ -37,7 +38,7 @@ export function ReviewCardScreen() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pb-32 max-w-2xl">
+      <div className="container mx-auto px-4 pb-20 max-w-2xl">
         
         {/* Hero Visual Carousel */}
         <PostcardHero className="mb-8" />
@@ -77,11 +78,11 @@ export function ReviewCardScreen() {
         </Card>
 
         {/* User's Message (Progressive Disclosure) */}
-        <Card className="bg-white shadow-sm mb-8">
+        <Card className="bg-white shadow-sm mb-6">
           <CardContent className="p-0">
             <Collapsible open={isMessageExpanded} onOpenChange={setIsMessageExpanded}>
               <CollapsibleTrigger asChild>
-                <button className="w-full p-6 text-left hover:bg-muted/50 transition-colors flex items-center justify-between">
+                <button className="w-full p-6 text-left hover-blue-standard flex items-center justify-between rounded-xl">
                   <span className="text-primary font-medium">See your message (optional)</span>
                   {isMessageExpanded ? 
                     <ChevronUp className="w-4 h-4 text-muted-foreground" /> : 

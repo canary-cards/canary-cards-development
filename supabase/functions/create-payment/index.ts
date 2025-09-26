@@ -28,17 +28,31 @@ serve(async (req) => {
     let postcardMetadata = {};
     if (postcardData) {
       try {
-        // Store essential postcard data in metadata (Stripe has size limits)
+        // Stripe metadata has a hard 500 char limit per value.
+        // Only include truly essential, compact fields.
+        const essentialUserInfo = postcardData.userInfo
+          ? {
+              fullName: postcardData.userInfo.fullName,
+              streetAddress: postcardData.userInfo.streetAddress,
+              city: postcardData.userInfo.city,
+              state: postcardData.userInfo.state,
+              zipCode: postcardData.userInfo.zipCode,
+            }
+          : {};
+
         postcardMetadata = {
-          postcard_userInfo: JSON.stringify(postcardData.userInfo || {}),
-          postcard_representative: JSON.stringify(postcardData.representative || {}),
-          postcard_senators: JSON.stringify(postcardData.senators || []),
+          // Keep address basics for post-payment processing
+          postcard_userInfo: JSON.stringify(essentialUserInfo),
+          // Message can be up to ~295 chars (postcard limit) – safe for Stripe
           postcard_finalMessage: postcardData.finalMessage || "",
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
-          postcard_draftId: postcardData.draftId || ""
+          postcard_draftId: postcardData.draftId || "",
+          // Include representative and senators data - essential for sending
+          postcard_representative: postcardData.representative ? JSON.stringify(postcardData.representative) : "",
+          postcard_senators: postcardData.senators ? JSON.stringify(postcardData.senators) : "[]",
         };
-        console.log("Prepared postcard metadata for session");
+        console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {
         console.error("Error preparing postcard metadata:", error);
         postcardMetadata = {}; // Fallback to empty metadata
@@ -165,6 +179,9 @@ serve(async (req) => {
           postcardData.representative?.name,
           ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map(s => s.name)
         ].filter(Boolean)) : "[]",
+        // Add simulation parameters for testing
+        simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
+        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0", 
         ...postcardMetadata // Include all postcard data in session metadata
       }
     });
