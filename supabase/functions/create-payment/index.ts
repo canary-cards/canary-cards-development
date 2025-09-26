@@ -179,7 +179,7 @@ serve(async (req) => {
                                                     sendOption === 'double' ? Math.min(postcardData.senators.length + 1, 2) : 1) : 1,
         recipient_list: postcardData ? JSON.stringify([
           postcardData.representative?.name,
-          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map(s => s.name)
+          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
         ].filter(Boolean)) : "[]",
         // Add simulation parameters for testing
         simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
@@ -203,7 +203,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Payment creation error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

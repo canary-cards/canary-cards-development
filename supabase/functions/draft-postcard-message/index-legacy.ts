@@ -1182,7 +1182,7 @@ serve(async (req) => {
       });
     }
 
-    let finalResult = { postcard: '', sources: [] };
+    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}> };
     let apiStatusCode = 200;
     let apiStatusMessage = 'Success';
     let generationStatus = 'success';
@@ -1232,7 +1232,7 @@ serve(async (req) => {
       console.error('AI generation error:', error);
       generationStatus = 'error';
       apiStatusCode = 500;
-      apiStatusMessage = error.message || 'AI generation failed';
+      apiStatusMessage = (error as Error).message || 'AI generation failed';
       // finalResult remains empty but we continue to save the record
     }
 
@@ -1297,7 +1297,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in function:', error);
     return new Response(JSON.stringify({
-      error: `Generation failed: ${error.message}`
+      error: `Generation failed: ${(error as Error).message}`
     }), {
       status: 500,
       headers: {

@@ -304,7 +304,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
         return title.substring(0, 200);
       }
     } catch (err) {
-      console.log('fetchPageTitle error:', targetUrl, err?.message || err);
+      console.log('fetchPageTitle error:', targetUrl, (err as Error)?.message || err);
     }
     return null;
   };
@@ -351,7 +351,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
       }
       if (!headline) {
         const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const lines = before.split(/\n/).map(l => l.trim()).filter(Boolean);
+        const lines = before.split(/\n/).map((l: string) => l.trim()).filter(Boolean);
         const titleLine = [...lines].reverse().find(l => /(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|^TITLE:|^Title:)/i.test(l));
         if (titleLine) {
           const cleaned = titleLine.replace(/\*\*/g, '');
@@ -394,9 +394,9 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
         summary = summaryMatch[1].trim();
       } else {
         const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningful = contextSentences.filter(s => s.length > 30 && s.length < 300 &&
+        let meaningful = contextSentences.filter((s: string) => s.length > 30 && s.length < 300 &&
           !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
-        let best = meaningful.find(s => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
+        let best = meaningful.find((s: string) => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
           themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
         if (!best && meaningful.length) best = meaningful[0];
         if (best) summary = best.trim();
@@ -774,9 +774,7 @@ serve(async (req) => {
       const appSources = result.sources.map((source) => ({
         description: source.headline || source.summary,
         url: source.url,
-        outlet: source.outlet,
-        headline: source.headline,
-        summary: source.summary
+        dataPointCount: 1
       }));
       
       // Final validation: ensure postcard doesn't contain character count info
@@ -793,7 +791,7 @@ serve(async (req) => {
       console.error('AI generation error:', error);
       generationStatus = 'error';
       apiStatusCode = 500;
-      apiStatusMessage = error.message || 'AI generation failed';
+      apiStatusMessage = (error as Error).message || 'AI generation failed';
       // finalResult remains empty but we continue to save the record
     }
 
@@ -859,7 +857,7 @@ return new Response(JSON.stringify({
   } catch (error) {
     console.error('Error in function:', error);
     return new Response(JSON.stringify({
-      error: `Generation failed: ${error.message}`
+      error: `Generation failed: ${(error as Error).message}`
     }), {
       status: 500,
       headers: {
