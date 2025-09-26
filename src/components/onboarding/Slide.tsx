@@ -15,8 +15,8 @@ interface SlideProps {
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   return (
     <div className="h-full flex flex-col">
-      {/* Icon section - flexible but with minimum space */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-6 py-4">
+      {/* Icon section - exactly 50% of screen height */}
+      <div className="h-1/2 flex items-center justify-center px-6">
         <div 
           className="flex items-center justify-center relative max-w-full max-h-full"
           style={{
@@ -51,11 +51,11 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Guaranteed spacing between icon and text */}
-      <div className="h-8 sm:h-12 flex-shrink-0" />
+      {/* Small spacing between icon and text */}
+      <div className="h-4 flex-shrink-0" />
 
-      {/* Text section - takes remaining space with minimum height */}
-      <div className="flex-shrink-0 px-4 sm:px-6 text-center pb-6">
+      {/* Text section - remaining space, centered vertically */}
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 text-center pb-6">
         <div className="space-y-4">
           <h2 className="text-2xl display-title leading-tight">
             {title}
