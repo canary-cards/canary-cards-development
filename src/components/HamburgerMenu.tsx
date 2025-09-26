@@ -151,13 +151,6 @@ function PrivacyTermsContent() {
         
         <div className="space-y-6">
           <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">Introduction</h4>
-            <p className="body-text text-sm">
-              Canary Cards makes it simple to send real, handwritten postcards to your elected officials. This document explains how we handle your information and the basic terms for using our service.
-            </p>
-          </div>
-          
-          <div className="space-y-3">
             <h4 className="eyebrow normal-case text-primary">Who Can Use Canary Cards</h4>
             <p className="body-text text-sm">
               You must be 18 or older. Use our service only for lawful purposes — don't use it to harass, spam, or break election laws.
