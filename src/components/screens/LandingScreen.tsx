@@ -177,10 +177,6 @@ export function LandingScreen() {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>}
               </Button>
-              
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                We only use your zip to find your rep.
-              </p>
             </form>
           </CardContent>
         </Card>
