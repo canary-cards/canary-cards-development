@@ -195,7 +195,7 @@ function PrivacyTermsContent() {
           <div className="space-y-3">
             <h4 className="eyebrow normal-case text-primary">Your Privacy</h4>
             <p className="body-text text-sm">
-              We don't sell your personal data. We share only what's necessary with trusted partners like IgnitePost, Supabase, and Stripe to deliver your postcards.
+              We don't sell your personal data (names, addresses, emails, or individual postcard content). We share only what's necessary with trusted partners like IgnitePost, Supabase, and Stripe to deliver your postcards. We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
             </p>
           </div>
           
