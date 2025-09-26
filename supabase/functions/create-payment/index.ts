@@ -152,7 +152,6 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      automatic_payment_methods: { enabled: true },
       line_items: [
         {
           price_data: {
