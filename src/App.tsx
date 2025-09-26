@@ -75,7 +75,7 @@ const AppContent = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="civic-postcard-theme">
+    <ThemeProvider defaultTheme="light" storageKey="civic-postcard-theme">
       <TooltipProvider>
         <AppErrorBoundary>
           <Toaster />

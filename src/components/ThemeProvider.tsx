@@ -23,37 +23,25 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (safeStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  // Force light theme - ignore stored preferences
+  const [theme, setTheme] = useState<Theme>("light")
 
   useEffect(() => {
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
-  }, [theme])
+    // Always force light mode
+    root.classList.add("light")
+  }, [])
 
   const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      safeStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    theme: "light" as Theme,
+    setTheme: () => {
+      // Prevent theme changes - always stay in light mode
+      console.warn("Theme switching is disabled - app is locked to light mode")
     },
   }
 
