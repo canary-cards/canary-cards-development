@@ -152,7 +152,9 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      payment_method_types: ['card', 'link', 'apple_pay', 'google_pay'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
       line_items: [
         {
           price_data: {
