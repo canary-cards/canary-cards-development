@@ -205,7 +205,6 @@ export default function PaymentSuccess() {
       <MetaTags 
         title={SHARE_TITLE}
         description={SHARE_DESCRIPTION}
-        url={shareableUrl}
       />
       <Header />
 

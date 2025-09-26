@@ -40,7 +40,6 @@ export default function Share() {
       <MetaTags 
         title={SHARE_TITLE}
         description={SHARE_DESCRIPTION}
-        url={referralUrl}
       />
       <Header />
       
