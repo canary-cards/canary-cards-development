@@ -185,19 +185,8 @@ export default function PaymentSuccess() {
 
   const copyShareableLink = async () => {
     if (shareableLink) {
-      try {
-        await navigator.clipboard.writeText(shareableLink);
-        toast({
-          title: "Link copied!",
-          description: "Share this link with friends and family."
-        });
-      } catch (err) {
-        toast({
-          title: "Failed to copy",
-          description: "Please copy the link manually.",
-          variant: "destructive"
-        });
-      }
+      const { copyShareContent } = await import('@/lib/shareUtils');
+      await copyShareContent(shareableLink);
     }
   };
 
@@ -321,17 +310,9 @@ export default function PaymentSuccess() {
                 variant="spotlight" 
                 size="lg"
                 className="w-full"
-                onClick={() => {
-                  const shareText = "I just sent a real postcard to my representative with Canary Cards. In 2 minutes, you can add your voice where it counts — on their desk in D.C.: https://canary.cards/";
-                  if (navigator.share) {
-                    navigator.share({
-                      title: 'Canary Cards — Real postcards to D.C., mailed for you',
-                      text: shareText,
-                      url: shareableLink
-                    });
-                  } else {
-                    copyShareableLink();
-                  }
+                onClick={async () => {
+                  const { shareContent } = await import('@/lib/shareUtils');
+                  await shareContent(shareableLink);
                 }}
               >
                 <Share className="w-4 h-4 mr-2" />

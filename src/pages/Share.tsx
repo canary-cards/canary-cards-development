@@ -18,44 +18,18 @@ export default function Share() {
   const baseUrl = window.location.origin;
   const referralUrl = `${baseUrl}${ref ? `?ref=${ref}` : ''}`;
 
-  const shareContent = {
-    title: 'Canary Cards',
-    text: 'Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.',
-    url: referralUrl
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast({
-        title: "Link copied!",
-        description: "Share link copied to clipboard",
-      });
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
   const handleShare = async () => {
-    if (navigator.share && isNativeShareAvailable) {
-      try {
-        await navigator.share(shareContent);
-      } catch (error) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          // Fallback to clipboard if share fails (but not if user cancelled)
-          await copyToClipboard(referralUrl);
-        }
-      }
-    } else {
-      // Fallback to clipboard
-      await copyToClipboard(referralUrl);
-    }
+    const { shareContent: shareUtils } = await import('@/lib/shareUtils');
+    await shareUtils(referralUrl);
   };
 
   useEffect(() => {
     // Check if native sharing is available
-    const isNativeAvailable = 'share' in navigator && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    setIsNativeShareAvailable(isNativeAvailable);
+    const checkAvailability = async () => {
+      const { isNativeShareAvailable: checkNativeShare } = await import('@/lib/shareUtils');
+      setIsNativeShareAvailable(checkNativeShare());
+    };
+    checkAvailability();
   }, []);
 
   console.log('Share page rendering with:', { ref, orderNumber, isNativeShareAvailable });

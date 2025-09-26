@@ -81,24 +81,13 @@ export function SuccessScreen() {
   };
 
   const copyInviteLink = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      toast({
-        title: "Link copied!",
-        description: "Share this link with friends and family",
-      });
-    } catch (error) {
-      toast({
-        title: "Copy failed",
-        description: "Please copy the link manually",
-        variant: "destructive",
-      });
-    }
+    const { copyShareContent } = await import('@/lib/shareUtils');
+    await copyShareContent(inviteLink);
   };
 
-  const shareViaText = () => {
-    const message = `Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works. ${inviteLink}`;
-    window.open(`sms:?body=${encodeURIComponent(message)}`, '_blank');
+  const shareViaText = async () => {
+    const { shareViaSMS } = await import('@/lib/shareUtils');
+    shareViaSMS(inviteLink);
   };
 
   const handleSharePageNavigation = () => {
@@ -106,10 +95,9 @@ export function SuccessScreen() {
     navigate(`/share?ref=${uniqueId}&order=${uniqueId.slice(-8).toUpperCase()}`);
   };
 
-  const shareViaEmail = () => {
-    const subject = 'Join me in civic engagement!';
-    const message = `Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.\n\nJoin me: ${inviteLink}\n\nTogether we can make a difference!`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`, '_blank');
+  const shareViaEmail = async () => {
+    const { shareViaEmail: shareEmailUtil } = await import('@/lib/shareUtils');
+    shareEmailUtil(inviteLink);
   };
 
   const handleGoogleAuth = () => {
