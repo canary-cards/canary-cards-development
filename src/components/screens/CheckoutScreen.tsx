@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { useAppContext } from '../../context/AppContext';
-import { EmbeddedCheckout } from '../EmbeddedCheckout';
+import { PaymentOptionsScreen } from '../PaymentOptionsScreen';
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, ChevronRight, Check, MapPin, IdCard, CheckCircle } from 'lucide-react';
 import { lookupRepresentativesAndSenators } from '@/services/geocodio';
 import { Representative } from '@/types';
@@ -364,13 +364,16 @@ export function CheckoutScreen() {
     }
   }, [showCheckout, clientSecret]);
 
-  // Show embedded checkout on separate screen if client secret is available
+  // Show payment options screen if client secret is available
   if (showCheckout && clientSecret) {
-    return <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 pb-8 max-w-2xl">
-          <EmbeddedCheckout clientSecret={clientSecret} onBack={handleBackFromCheckout} sendOption={getSendOption()} amount={getTotalPrice()} />
-        </div>
-      </div>;
+    return (
+      <PaymentOptionsScreen 
+        clientSecret={clientSecret} 
+        onBack={handleBackFromCheckout} 
+        sendOption={getSendOption()} 
+        amount={getTotalPrice()} 
+      />
+    );
   }
   
   return <>
