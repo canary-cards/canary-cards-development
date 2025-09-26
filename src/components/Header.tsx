@@ -38,7 +38,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
            aria-label="Go to home"
          >
           <Logo className="h-10" />
-          <div className="hidden md:flex flex-col text-left">
+          <div className="hidden">
             <span className={`font-patrick-hand text-3xl text-left ${isDark ? 'text-background' : 'text-primary'}`}>
               Canary Cards
             </span>
