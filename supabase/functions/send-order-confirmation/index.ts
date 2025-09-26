@@ -156,7 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
       postcardMessagesSection = representativesToShow.map((rep, index) => {
         const nameParts = rep.name.split(' ');
         const lastName = nameParts[nameParts.length - 1];
-        const shortTitle = rep.type === 'representative' ? 'Rep.' : 'Sen.';
+        const shortTitle = 'Rep.'; // Default since we don't have type info
         
         return `
         <div style="background-color: #ffffff; padding: 1.5rem; border-radius: 12px; border: 1px solid #E8DECF; margin-bottom: 1rem;">

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -106,7 +106,16 @@ serve(async (req) => {
       });
     }
 
-  } catch (error) {
+    // This shouldn't be reached due to the conditions above
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: "Invalid action" 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+
+  } catch (error: any) {
     console.error("Postcard draft error:", error);
     return new Response(JSON.stringify({ 
       success: false,
