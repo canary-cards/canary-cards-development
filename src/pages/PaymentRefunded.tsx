@@ -105,9 +105,9 @@ export default function PaymentRefunded() {
           <CardContent className="p-6">
             <div className="flex items-center justify-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <p className="text-sm font-medium text-green-800">
+              <h3 className="font-semibold text-green-800">
                 Refund issued: ${displayRefundAmount}
-              </p>
+              </h3>
             </div>
             <p className="text-sm text-green-600 text-center">
               Expected in 5–10 business days
