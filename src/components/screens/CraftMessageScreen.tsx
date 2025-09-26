@@ -373,7 +373,7 @@ export function CraftMessageScreen() {
                   <label className="field-label">How it affects me or my community:</label>
                   <div className="flex gap-3 items-stretch">
                     <Textarea
-                      placeholder="(Optional) I'm concerned about cuts to arts and science programs in our schools"
+                      placeholder={personalImpact ? "" : "(Optional) I'm concerned about cuts to arts and science programs in our schools. I believe these cuts will harm our children's education and limit their future opportunities. Access to quality arts and science education is essential for developing critical thinking, creativity, and problem-solving skills that our community needs to thrive."}
                       value={personalImpact}
                       onChange={(e) => {
                         setPersonalImpact(e.target.value);
