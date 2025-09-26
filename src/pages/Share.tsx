@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Share as ShareIcon } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { MetaTags } from '@/components/MetaTags';
+import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
 
 export default function Share() {
   const [searchParams] = useSearchParams();
@@ -14,9 +16,8 @@ export default function Share() {
   const ref = searchParams.get('ref') || 'direct';
   const orderNumber = searchParams.get('order') || '';
 
-  // Build referral URL
-  const baseUrl = window.location.origin;
-  const referralUrl = `${baseUrl}${ref ? `?ref=${ref}` : ''}`;
+  // Build referral URL using centralized utilities
+  const referralUrl = generateReferralUrl(ref);
 
   const handleShare = async () => {
     const { shareContent: shareUtils } = await import('@/lib/shareUtils');
@@ -36,6 +37,11 @@ export default function Share() {
 
   return (
     <div className="min-h-screen bg-background">
+      <MetaTags 
+        title={SHARE_TITLE}
+        description={SHARE_DESCRIPTION}
+        url={referralUrl}
+      />
       <Header />
       
       {/* Content Container */}

@@ -5,6 +5,7 @@ import '@fontsource/patrick-hand/400.css'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
 import { getPostHogKey, getPostHogHost, isProduction } from './lib/environment'
+import { MetaTagsProvider } from './components/MetaTags'
 
 // Only initialize PostHog in production
 if (isProduction()) {
@@ -30,9 +31,13 @@ if (isProduction()) {
 createRoot(document.getElementById("root")!).render(
   isProduction() ? (
     <PostHogProvider client={posthog}>
-      <App />
+      <MetaTagsProvider>
+        <App />
+      </MetaTagsProvider>
     </PostHogProvider>
   ) : (
-    <App />
+    <MetaTagsProvider>
+      <App />
+    </MetaTagsProvider>
   )
 );

@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/Header';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DynamicSvg } from '@/components/DynamicSvg';
+import { MetaTags } from '@/components/MetaTags';
+import { generateReferralUrl, copyShareContent, shareContent, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
 
 
 export default function PaymentSuccess() {
@@ -33,13 +35,8 @@ export default function PaymentSuccess() {
     return null;
   };
 
-  // Get app URL for sharing
-  const getAppUrl = () => {
-    if (window.location.origin.includes('lovable.app') && window.location.pathname.includes('/edit/')) {
-      return null;
-    }
-    return window.location.origin;
-  };
+  // Get shareable URL using centralized utilities
+  const shareableUrl = generateReferralUrl('success');
 
   // Calculate delivery date (3-5 business days)
   const getDeliveryDate = () => {
@@ -137,12 +134,9 @@ export default function PaymentSuccess() {
     // Show confetti animation
     showConfetti();
     
-    // Generate shareable link
-    const appUrl = getAppUrl();
-    if (appUrl) {
-      setShareableLink(appUrl);
-    }
-  }, []);
+    // Set shareable link
+    setShareableLink(shareableUrl);
+  }, [shareableUrl]);
 
   const showConfetti = () => {
     const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
@@ -184,9 +178,8 @@ export default function PaymentSuccess() {
   };
 
   const copyShareableLink = async () => {
-    if (shareableLink) {
-      const { copyShareContent } = await import('@/lib/shareUtils');
-      await copyShareContent(shareableLink);
+    if (shareableUrl) {
+      await copyShareContent(shareableUrl);
     }
   };
 
@@ -209,6 +202,11 @@ export default function PaymentSuccess() {
 
   return (
     <div className="min-h-screen bg-background">
+      <MetaTags 
+        title={SHARE_TITLE}
+        description={SHARE_DESCRIPTION}
+        url={shareableUrl}
+      />
       <Header />
 
       {/* Main Content */}
@@ -310,10 +308,7 @@ export default function PaymentSuccess() {
                 variant="spotlight" 
                 size="lg"
                 className="w-full"
-                onClick={async () => {
-                  const { shareContent } = await import('@/lib/shareUtils');
-                  await shareContent(shareableLink);
-                }}
+                onClick={() => shareContent(shareableUrl)}
               >
                 <Share className="w-4 h-4 mr-2" />
                 Invite Others to Take Action
