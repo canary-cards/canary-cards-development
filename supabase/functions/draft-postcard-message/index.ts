@@ -216,54 +216,26 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'sonar',
+      model: 'llama-3.1-sonar-large-128k-online',
       messages: [
         {
           role: 'system',
-          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
-
-**ARTICLE TITLE:** [The exact headline from the original article]
-**OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
-**SUMMARY:** [Key points in 1-2 sentences]
-
-CONTENT TYPE REQUIREMENTS:
-- ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
-- STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
-- PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
-
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
+          content: `You are a news research assistant. For each source you find, provide a brief summary of the key information relevant to the topic. Focus on extracting the most important facts and developments from each article.`
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+          content: `Find recent news about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state. 
 
-SOURCE DIVERSITY REQUIREMENT:
-- MAXIMUM 1 article per publication/outlet
-- Select from DIFFERENT publications to ensure varied perspectives
-- Avoid multiple articles from the same news organization
+For each source, provide:
+1. The main facts and developments
+2. How it specifically impacts ${location.state} or ${location.city}
+3. Any policy implications or government actions mentioned
 
-PRIORITIZATION ORDER (search in this order):
-1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
-2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. REGIONAL: Regional publications covering ${location.state}
-4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
-
-REQUIRED CONTENT TYPES:
-- News articles from established publications
-- Government reports and official announcements
-- Policy analysis pieces
-- Legislative updates
-
-For each source you cite, provide:
-**ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
-**OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
-
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
+Focus on local, state, and relevant national news from the past 30 days.`
         }
       ],
-      max_tokens: 800,
-      temperature: 0.1,
+      max_tokens: 1000,
+      temperature: 0.2,
       return_citations: true,
       search_recency_filter: 'month'
     })
@@ -272,6 +244,9 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const result = await response.json();
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
+  
+  console.log('Perplexity response content:', searchContent);
+  console.log('Citations found:', citations.length);
 
   // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
@@ -310,6 +285,8 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   };
 
   const sources: Source[] = [];
+
+  console.log(`Processing ${citations.length} citations for source extraction`);
 
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
@@ -386,23 +363,71 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
 
     // Summary extraction near URL
     let summary = '';
-    if (urlIndex !== -1) {
-      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
-      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 500));
-      const summaryMatch = (beforeUrl + afterUrl).match(/\*\*SUMMARY:\*\*\s*([^*\n]+)/i);
-      if (summaryMatch) {
-        summary = summaryMatch[1].trim();
-      } else {
-        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningful = contextSentences.filter(s => s.length > 30 && s.length < 300 &&
-          !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
-        let best = meaningful.find(s => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
-        if (!best && meaningful.length) best = meaningful[0];
-        if (best) summary = best.trim();
+    
+    // First, try to extract summaries from the content using improved logic
+    if (searchContent) {
+      // Look for paragraphs or sentences that mention the URL's domain or are contextually relevant
+      const urlDomain = new URL(url).hostname.replace('www.', '');
+      const sentences = searchContent.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 20);
+      
+      // Find sentences that might be related to this specific source
+      let relevantSentences = sentences.filter(sentence => {
+        const lowerSentence = sentence.toLowerCase();
+        const lowerTheme = themeAnalysis.primaryTheme.toLowerCase();
+        
+        // Include sentences that mention the theme and are substantial
+        return lowerSentence.includes(lowerTheme) && 
+               sentence.length > 40 && 
+               sentence.length < 300 &&
+               !/here are|i found|according to|search results/i.test(sentence);
+      });
+      
+      // If we have theme-related sentences, use the best one
+      if (relevantSentences.length > 0) {
+        // Prefer sentences that also mention urgency keywords or local terms
+        const bestSentence = relevantSentences.find(s => 
+          themeAnalysis.urgencyKeywords.some(keyword => 
+            s.toLowerCase().includes(keyword.toLowerCase())
+          ) || s.toLowerCase().includes(location.state.toLowerCase())
+        ) || relevantSentences[0];
+        
+        summary = bestSentence.trim();
+        console.log(`Extracted summary for ${urlDomain}:`, summary);
+      }
+      
+      // Fallback: look for any contextual information around the URL in the text
+      if (!summary) {
+        const urlIndex = searchContent.indexOf(url);
+        if (urlIndex !== -1) {
+          const contextWindow = 300;
+          const beforeUrl = searchContent.substring(Math.max(0, urlIndex - contextWindow), urlIndex);
+          const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + contextWindow));
+          const context = (beforeUrl + afterUrl).replace(url, '').trim();
+          
+          // Extract meaningful context
+          const contextSentences = context.split(/[.!?]+/).map(s => s.trim()).filter(s => 
+            s.length > 30 && 
+            s.length < 200 &&
+            !/^https?:\/\/|^\w+\.\w+/.test(s) // Filter out URLs
+          );
+          
+          if (contextSentences.length > 0) {
+            summary = contextSentences[0];
+            console.log(`Extracted context summary for ${urlDomain}:`, summary);
+          }
+        }
       }
     }
-    if (!summary) summary = 'Recent developments in this policy area.';
+    
+    // Final fallback: create a more specific fallback based on outlet
+    if (!summary) {
+      if (outlet && outlet.toLowerCase() !== 'unknown') {
+        summary = `Recent ${themeAnalysis.primaryTheme} coverage from ${outlet}`;
+      } else {
+        summary = 'Recent developments in this policy area.';
+      }
+      console.log(`Using fallback summary for ${new URL(url).hostname}:`, summary);
+    }
 
     sources.push({
       url,
