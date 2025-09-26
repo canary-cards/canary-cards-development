@@ -15,6 +15,17 @@ const toMeta = (v: unknown) => {
   }
 };
 
+const errorDetails = (err: unknown) => {
+  const e = err as Record<string, unknown> | undefined;
+  return {
+    message: (e?.message as string) || 'Unknown error',
+    type: (e?.type as string) || undefined,
+    code: (e?.code as string) || undefined,
+    param: (e?.param as string) || undefined,
+    doc_url: (e?.doc_url as string) || undefined,
+  };
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -166,8 +177,8 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      automatic_payment_methods: {
-        enabled: true,
+      payment_intent_data: {
+        automatic_payment_methods: { enabled: true },
       },
       line_items: [
         {
@@ -215,8 +226,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Payment creation error:", error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    const details = errorDetails(error);
+    console.error("Payment creation error:", details, error);
+    return new Response(JSON.stringify({ error: details.message, details }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
