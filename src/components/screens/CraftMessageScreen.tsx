@@ -304,7 +304,7 @@ export function CraftMessageScreen() {
                   <label className="field-label">I'm most concerned about:</label>
                   <div className="flex gap-3 items-stretch">
                     <Textarea
-                      placeholder="Immigration..."
+                      placeholder="Education"
                       value={concerns}
                       onChange={(e) => {
                         setConcerns(e.target.value);
@@ -373,7 +373,7 @@ export function CraftMessageScreen() {
                   <label className="field-label">How it affects me or my community:</label>
                   <div className="flex gap-3 items-stretch">
                     <Textarea
-                      placeholder="I am a parent of two children in public schools..."
+                      placeholder="I am a parent of two children in public schools and I am concerned that funding for music, art, and science is being cut"
                       value={personalImpact}
                       onChange={(e) => {
                         setPersonalImpact(e.target.value);
