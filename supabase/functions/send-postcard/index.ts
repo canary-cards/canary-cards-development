@@ -434,14 +434,32 @@ serve(async (req) => {
       shouldSendEmail: successCount > 0 && userEmail
     });
 
-    // Send confirmation email if any postcards succeeded and email is provided
-    if (successCount > 0 && userEmail) {
+    // Send confirmation email for all scenarios (success, partial failure, complete failure)
+    if (userEmail) {
       try {
-        console.log('Triggering order confirmation email...');
+        console.log('Triggering order confirmation email for all scenarios...');
         
-        // Calculate amount based on successful postcards only
-        const unitPrice = 5.00;
-        const amount = successCount === 2 ? 10.00 : successCount >= 3 ? 12.00 : unitPrice;
+        // Calculate refund information if there are failures
+        let refundInfo = undefined;
+        if (errorCount > 0) {
+          const unitPrice = 500; // $5.00 in cents
+          const totalPrice = results.length === 1 ? 500 : results.length === 2 ? 1000 : 1200;
+          let refundAmountCents: number;
+          
+          if (errorCount === results.length) {
+            // All failed - full refund
+            refundAmountCents = totalPrice;
+          } else {
+            // Partial failure - refund per failed postcard
+            refundAmountCents = errorCount * unitPrice;
+          }
+          
+          refundInfo = {
+            refundAmountCents,
+            refundId: 'PENDING', // Will be updated when actual refund is processed
+            totalAmountCents: totalPrice
+          };
+        }
         
         // Extract actual mailing date from first successful postcard
         let actualMailingDate = null;
@@ -481,15 +499,21 @@ serve(async (req) => {
             representative,
             senators,
             sendOption,
-            orderResults: results.filter(r => r.status === 'success').map(r => ({
-              ...r,
-              orderId: orderId // Use database order ID instead of IgnitePost ID
+            orderResults: results.map(r => ({
+              type: r.type,
+              recipient: r.recipient,
+              orderId: r.status === 'success' ? orderId : undefined, // Only include orderId for successful ones
+              status: r.status,
+              error: r.error
             })),
-            amount,
-            orderId,
-            paymentMethod: 'card',
             finalMessage,
-            actualMailingDate: actualMailingDate
+            actualMailingDate: actualMailingDate,
+            refundInfo: refundInfo,
+            summary: {
+              totalSent: successCount,
+              totalFailed: errorCount,
+              total: results.length
+            }
           }
         });
         
