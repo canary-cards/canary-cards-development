@@ -275,7 +275,7 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced from 6000ms to 3000ms
       const res = await fetch(targetUrl, {
         signal: controller.signal,
         redirect: 'follow',
@@ -307,8 +307,10 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     return null;
   };
 
-  const sources: Source[] = [];
-
+  // First, filter valid URLs and collect them for concurrent processing
+  const validUrls: string[] = [];
+  const urlIndexMap: Map<string, number> = new Map();
+  
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
     
@@ -333,10 +335,29 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
       continue;
     }
     
-    const urlIndex = searchContent.indexOf(url);
+    validUrls.push(url);
+    urlIndexMap.set(url, searchContent.indexOf(url));
+  }
 
-    // 1) Try to fetch the real page title directly (most reliable)
-    let headline = (await fetchPageTitle(url)) || '';
+  // Fetch all page titles concurrently
+  console.log(`Fetching ${validUrls.length} page titles concurrently...`);
+  const titlePromises = validUrls.map(url => fetchPageTitle(url));
+  const fetchedTitles = await Promise.all(titlePromises);
+  
+  // Create title lookup map
+  const titleMap: Map<string, string | null> = new Map();
+  validUrls.forEach((url, index) => {
+    titleMap.set(url, fetchedTitles[index]);
+  });
+
+  const sources: Source[] = [];
+
+  // Process each valid URL with its pre-fetched title
+  for (const url of validUrls) {
+    const urlIndex = urlIndexMap.get(url) || -1;
+    
+    // 1) Use the pre-fetched page title
+    let headline = titleMap.get(url) || '';
 
     // 2) If unavailable, try to parse from Perplexity text near the URL
     if (!headline && urlIndex !== -1) {
