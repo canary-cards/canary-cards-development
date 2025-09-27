@@ -622,7 +622,7 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   concerns: string,
   personalImpact: string,
   representative: any
-}): Promise<{ postcard: string, sources: Source[] }> {
+}): Promise<{ postcard: string, sources: Source[], isFallbackPlaceholder?: boolean }> {
   try {
     console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
     
@@ -664,7 +664,8 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     
     return { 
       postcard: fallbackMessage, 
-      sources: []
+      sources: [],
+      isFallbackPlaceholder: true
     };
   }
 }
@@ -721,7 +722,7 @@ serve(async (req) => {
       });
     }
 
-    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}> };
+    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}>, isFallbackPlaceholder: undefined as boolean | undefined };
     let apiStatusCode = 200;
     let apiStatusMessage = 'Success';
     let generationStatus = 'success';
@@ -755,7 +756,8 @@ serve(async (req) => {
           description: source.description,
           url: source.url,
           dataPointCount: 0
-        }))
+        })),
+        isFallbackPlaceholder: result.isFallbackPlaceholder || false
       };
       
       console.log(`✅ Generated postcard (${cleanedPostcard.length} chars) with ${result.sources.length} sources`);
@@ -768,7 +770,8 @@ serve(async (req) => {
       // Set friendly fallback message instead of leaving empty
       finalResult = {
         postcard: "Canary just returned from a long flight and is resting, please draft the postcard yourself. Our robots will be happy to write it and send it on your behalf. Sorry for the inconvenience!",
-        sources: []
+        sources: [],
+        isFallbackPlaceholder: true
       };
     }
 

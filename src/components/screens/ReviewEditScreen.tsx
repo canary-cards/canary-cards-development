@@ -18,7 +18,12 @@ export function ReviewEditScreen() {
   console.log('🎯 ReviewEditScreen: DraftMessage:', state.postcardData.draftMessage);
   console.log('🎯 ReviewEditScreen: Sources:', state.postcardData.sources);
   
-  const [editedMessage, setEditedMessage] = useState(state.postcardData.draftMessage || '');
+  // Check if the draft message is a fallback placeholder
+  const isFallbackPlaceholder = state.postcardData.isFallbackPlaceholder;
+  const initialMessage = isFallbackPlaceholder ? '' : (state.postcardData.draftMessage || '');
+  const placeholderText = isFallbackPlaceholder ? state.postcardData.draftMessage : undefined;
+  
+  const [editedMessage, setEditedMessage] = useState(initialMessage);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -191,7 +196,8 @@ ${userInfo?.fullName}`;
                     value={editedMessage} 
                     onChange={e => setEditedMessage(e.target.value)} 
                     className="input-warm min-h-[300px] resize-none pr-12" 
-                    maxLength={maxChars} 
+                    maxLength={maxChars}
+                    placeholder={placeholderText}
                   />
                   <button 
                     onClick={handleEditClick}
