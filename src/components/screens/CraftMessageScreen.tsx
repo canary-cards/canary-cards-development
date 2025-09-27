@@ -319,7 +319,7 @@ export function CraftMessageScreen() {
                           }
                         });
                       }}
-                      className="input-warm min-h-[70px] resize-none flex-1"
+                      className="input-warm min-h-[70px] resize-none flex-1 placeholder:text-sm placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed"
                     />
                     
                     <Button
@@ -394,14 +394,14 @@ export function CraftMessageScreen() {
 
                       {!personalImpact && (
                         <div
-                          className="absolute inset-0 z-10 overflow-auto p-3 text-sm leading-relaxed text-muted-foreground"
+                          className="absolute inset-0 z-10 overflow-auto p-3 text-sm font-medium leading-relaxed text-muted-foreground/70"
                           onMouseDown={(e) => {
                             const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
                             ta?.focus();
                             e.preventDefault();
                           }}
                         >
-                          (Optional) I have young children in school and worry about cuts to art and music programs
+                          (Optional) Cuts to arts and science programs at my kids school
                         </div>
                       )}
                     </div>
