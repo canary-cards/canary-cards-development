@@ -551,7 +551,25 @@ function smartTruncate(text: string, maxLength: number = 300): string {
 }
 
 async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, location: { state: string; city: string; region: string }, representative: any): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
+  // Shortening API keys for better rate limit handling
+  const shorteningKeys = ['ANTHROPIC_SHORTENING_KEY_1', 'ANTHROPIC_SHORTENING_KEY_2', 'ANTHROPIC_SHORTENING_KEY_3'];
+  let apiKey: string | null = null;
+  
+  // Try each shortening key until we find one that works
+  for (const keyName of shorteningKeys) {
+    const key = getApiKey(keyName);
+    if (key) {
+      apiKey = key;
+      console.log(`Using shortening key: ${keyName}`);
+      break;
+    }
+  }
+  
+  // Fallback to main key if no shortening keys available
+  if (!apiKey) {
+    console.log('No dedicated shortening keys found, falling back to main anthropickey');
+    apiKey = getApiKey('anthropickey');
+  }
   
   // Extract greeting from original postcard to maintain consistency
   const repLastName = extractRepresentativeLastName(representative.name);
@@ -606,32 +624,54 @@ ${contentToShorten}
 
 Write the shortened version that focuses on the most compelling point:`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      temperature: 0.1,
-      system: SHORTENING_PROMPT,
-      messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
-    })
-  });
+  try {
+    console.log(`Attempting to shorten postcard from ${originalPostcard.length} to under 300 characters`);
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        temperature: 0.1,
+        system: SHORTENING_PROMPT,
+        messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
+      })
+    });
 
-  const result = await response.json();
-  const rawShortenedText = result.content[0]?.text?.trim() || '';
-  
-  // Clean the AI response to remove any character count debugging info
-  const shortenedText = cleanAIResponse(rawShortenedText);
-  
-  // Prepend the greeting to the shortened content
-  const finalShortened = greeting + shortenedText;
-  
-  return finalShortened;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Shortening API error (${response.status}): ${errorText}`);
+      throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    const rawShortenedText = result.content?.[0]?.text?.trim() || '';
+    
+    if (!rawShortenedText) {
+      console.error('Shortening API returned empty response');
+      throw new Error('Empty response from shortening API');
+    }
+    
+    // Clean the AI response to remove any character count debugging info
+    const shortenedText = cleanAIResponse(rawShortenedText);
+    
+    // Prepend the greeting to the shortened content
+    const finalShortened = greeting + shortenedText;
+    
+    console.log(`✅ Successfully shortened postcard: ${originalPostcard.length} → ${finalShortened.length} characters`);
+    return finalShortened;
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Shortening API failed: ${errorMessage}`);
+    // Return original postcard - caller will handle fallback
+    throw error;
+  }
 }
 
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
@@ -659,20 +699,30 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     let postcard = await draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
-    // Step 4: Shorten if needed
-    if (postcard.length > 300) {
-      console.log(`Postcard too long (${postcard.length} chars), shortening...`);
-      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
-      console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+    // Step 4: Shorten if needed (only attempt if significantly over limit)
+    if (postcard.length > 320) {
+      console.log(`Postcard significantly over limit (${postcard.length} chars), attempting shortening...`);
       
-      // Use shortened version if it's actually shorter and under limit
-      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
-        postcard = shortenedPostcard;
-      } else {
-        // If shortening failed, try smart truncation as last resort
+      try {
+        const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
+        console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+        
+        // Use shortened version if it's actually shorter and under limit
+        if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
+          postcard = shortenedPostcard;
+          console.log(`✅ Shortening successful, using shortened version`);
+        } else {
+          console.log(`Shortening didn't improve length sufficiently, using smart truncation`);
+          postcard = smartTruncate(postcard);
+        }
+      } catch (error) {
+        // If shortening failed, try smart truncation as fallback
         console.log('Shortening API failed, using smart truncation fallback');
         postcard = smartTruncate(postcard);
       }
+    } else if (postcard.length > 300) {
+      console.log(`Postcard slightly over limit (${postcard.length} chars), using smart truncation directly`);
+      postcard = smartTruncate(postcard);
     }
     
     return { postcard, sources };
