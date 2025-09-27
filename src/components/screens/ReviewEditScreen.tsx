@@ -195,7 +195,7 @@ ${userInfo?.fullName}`;
                     ref={textareaRef}
                     value={editedMessage} 
                     onChange={e => setEditedMessage(e.target.value)} 
-                    className="input-warm min-h-[300px] resize-none pr-12" 
+                    className="input-warm h-[120px] md:h-[150px] resize-none pr-12 overflow-y-auto" 
                     maxLength={maxChars}
                     placeholder={placeholderText}
                   />
