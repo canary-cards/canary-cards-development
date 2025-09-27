@@ -583,46 +583,59 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   const contentMaxLength = 300 - greetingLength;
   
-  const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
+  const SHORTENING_PROMPT = `🚨 CRITICAL CHARACTER LIMIT WARNING 🚨
+You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard content to under ${contentMaxLength} characters while keeping it excellent.
+⚠️ MANDATORY TECHNICAL CONSTRAINT ⚠️
+The postcard content ABSOLUTELY MUST BE UNDER ${contentMaxLength} characters. This is a HARD SYSTEM LIMIT - not a suggestion!
 
-STRATEGY:
-- If the postcard makes multiple points, choose the STRONGEST one and focus on it
-- Remove secondary arguments - don't try to cram everything in
-- Keep the personal connection and emotional impact
-- Maintain the authentic voice and conversational tone
-- Include a call to action 
-- NO salutation or signature - the greeting "Rep. ${repLastName}," will be added automatically
+💀 CONSEQUENCES OF EXCEEDING LIMIT:
+- Postcards over ${contentMaxLength} characters will be AUTOMATICALLY TRUNCATED
+- This DESTROYS the message and makes it unreadable
+- The postcard will be CUT OFF mid-sentence without warning
+- THERE IS NO RECOVERY if you exceed this limit
 
-FORMAT REQUIREMENTS:
-- DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
-- Start directly with your message content  
-- DO NOT end with "Sincerely, [name]" or any signature line
-- Keep the message focused and direct
+🎯 YOUR MISSION: Shorten this postcard content to WELL UNDER ${contentMaxLength} characters while keeping it excellent.
 
-⚠️ CRITICAL OUTPUT RULE:
-- DO NOT include "[Character count: X]" or any character counting information in your response
-- DO NOT include "(X characters)" or similar meta-information  
-- Character limits are for internal validation only - never output them
-- Your response should ONLY contain the shortened postcard message content
+STRATEGY (IN ORDER OF IMPORTANCE):
+1. 🔥 PICK ONE STRONG POINT - Don't try to include everything
+2. 🗑️ RUTHLESSLY CUT secondary arguments 
+3. ❤️ Keep the personal connection and emotional impact
+4. 🗣️ Maintain authentic, conversational voice
+5. 📢 Include ONE clear call to action
+6. ⛔ NO salutation/signature - "Rep. ${repLastName}," is added automatically
+
+FORMAT REQUIREMENTS - NON-NEGOTIABLE:
+- ⛔ DO NOT include "Rep. Name," or "Dear Rep." - added automatically
+- ✅ Start DIRECTLY with your message content  
+- ⛔ DO NOT end with "Sincerely, [name]" or any signature
+- 🎯 Keep focused and direct
+
+🚨 CRITICAL OUTPUT RULES - ZERO TOLERANCE:
+- ⛔ DO NOT include "[Character count: X]" or counting info in response
+- ⛔ DO NOT include "(X characters)" or meta-information  
+- ⛔ Character limits are internal only - NEVER output them
+- ✅ Response should ONLY contain the shortened message content
+- 🔢 FINAL LENGTH MUST BE UNDER ${contentMaxLength} characters INCLUDING newlines
 
 QUALITY STANDARDS:
-- The shortened version should be a complete, compelling postcard on its own
-- Better to make one point well than multiple points poorly
-- Keep contractions and natural language
-- Don't sacrifice authenticity for brevity
+- 💯 Shortened version must be complete and compelling standalone
+- 🎯 One strong point beats multiple weak points
+- 💬 Keep contractions and natural language
+- 🚫 NEVER sacrifice authenticity for brevity
 
-ABSOLUTE REQUIREMENTS:
-- Must be under ${contentMaxLength} characters for content (including newlines)
-- No salutation, no signature - just direct message content
-- Must sound like a real person, not a form letter
-- The greeting "Rep. ${repLastName}," will be automatically added (${greetingLength} chars)
+🚨 ABSOLUTE NON-NEGOTIABLE REQUIREMENTS 🚨
+- ✅ MUST be WELL UNDER ${contentMaxLength} characters (aim for ${Math.max(200, contentMaxLength - 20)})
+- ⛔ No salutation, no signature - just message content
+- 💭 Must sound like a real person, not a form letter
+- 📏 Total with greeting "Rep. ${repLastName}," (${greetingLength} chars) CANNOT exceed 300 chars
+- ⚠️ IF IN DOUBT, MAKE IT SHORTER - truncation is worse than brevity
 
 Original postcard content to shorten:
 ${contentToShorten}
 
-Write the shortened version that focuses on the most compelling point:`;
+🎯 WRITE THE SHORTENED VERSION - FOCUS ON THE MOST COMPELLING POINT:
+⚠️ REMEMBER: MUST BE WELL UNDER ${contentMaxLength} CHARACTERS OR IT WILL BE DESTROYED BY TRUNCATION ⚠️`;
 
   try {
     console.log(`Attempting to shorten postcard from ${originalPostcard.length} to under 300 characters`);
