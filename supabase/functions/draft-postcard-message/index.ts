@@ -659,45 +659,12 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   } catch (error) {
     console.error("Error generating postcard:", error);
     
-    // Fallback simple postcard with greeting
-    const { state } = await getLocationFromZip(zipCode);
-    const repLastName = extractRepresentativeLastName(representative.name);
-    const greeting = `Rep. ${repLastName},\n`;
-    let fallbackContent = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
+    // Friendly fallback message
+    const fallbackMessage = "Canary just returned from a long flight and is resting, please draft the postcard yourself. Our robots will be happy to write it and send it on your behalf. Sorry for the inconvenience!";
     
-    // Clean the fallback content as well in case it contains debugging info
-    fallbackContent = cleanAIResponse(fallbackContent);
-    let fallbackPostcard = greeting + fallbackContent;
-
-    // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 300) {
-      console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
-      try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode, representative);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 300) {
-          fallbackPostcard = shortenedFallback;
-          console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
-        } else {
-          // Smart truncation as last resort
-          fallbackPostcard = smartTruncate(fallbackPostcard);
-          console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-        }
-      } catch (shorteningError) {
-        console.error("Fallback shortening failed:", shorteningError);
-        // Smart truncation as last resort
-        fallbackPostcard = smartTruncate(fallbackPostcard);
-        console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-      }
-    }
-
     return { 
-      postcard: fallbackPostcard, 
-      sources: [{ 
-        url: "https://congress.gov", 
-        outlet: "Congress.gov", 
-        summary: "Congressional information", 
-        headline: "Congressional Information" 
-      }] 
+      postcard: fallbackMessage, 
+      sources: []
     };
   }
 }
@@ -798,7 +765,11 @@ serve(async (req) => {
       generationStatus = 'error';
       apiStatusCode = 500;
       apiStatusMessage = error.message || 'AI generation failed';
-      // finalResult remains empty but we continue to save the record
+      // Set friendly fallback message instead of leaving empty
+      finalResult = {
+        postcard: "Canary just returned from a long flight and is resting, please draft the postcard yourself. Our robots will be happy to write it and send it on your behalf. Sorry for the inconvenience!",
+        sources: []
+      };
     }
 
     // Update the postcard draft with results (success or failure)
