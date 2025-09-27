@@ -699,9 +699,9 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     let postcard = await draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
-    // Step 4: Shorten if needed (only attempt if significantly over limit)
-    if (postcard.length > 320) {
-      console.log(`Postcard significantly over limit (${postcard.length} chars), attempting shortening...`);
+    // Step 4: Shorten if needed (hard limit at 300 characters)
+    if (postcard.length > 300) {
+      console.log(`Postcard over 300 character limit (${postcard.length} chars), attempting shortening...`);
       
       try {
         const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
@@ -720,9 +720,6 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
         console.log('Shortening API failed, using smart truncation fallback');
         postcard = smartTruncate(postcard);
       }
-    } else if (postcard.length > 300) {
-      console.log(`Postcard slightly over limit (${postcard.length} chars), using smart truncation directly`);
-      postcard = smartTruncate(postcard);
     }
     
     return { postcard, sources };
