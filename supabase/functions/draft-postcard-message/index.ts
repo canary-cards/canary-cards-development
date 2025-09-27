@@ -903,11 +903,14 @@ serve(async (req) => {
     }
     
     // Return in app's expected format with draft ID (even if AI generation failed)
+    console.log(`✅ Generated postcard (${finalResult.postcard?.length || 0} chars) with ${finalResult.sources?.length || 0} sources${finalResult.isFallbackPlaceholder ? ' [FALLBACK]' : ''}`);
+    
 return new Response(JSON.stringify({ 
       draftMessage: finalResult.postcard,
       postcard: finalResult.postcard,
       sources: finalResult.sources,
-      draftId: postcardDraft.id
+      draftId: postcardDraft.id,
+      isFallbackPlaceholder: finalResult.isFallbackPlaceholder || false
     }), {
       headers: {
         ...corsHeaders,

@@ -117,13 +117,15 @@ export function DraftingScreen() {
           // Wait a brief moment for the animation to complete
           setTimeout(() => {
             // Update the postcard data with the drafted message and draft ID
+            console.log('🎯 DraftingScreen: isFallbackPlaceholder flag:', data.isFallbackPlaceholder);
             dispatch({
               type: 'UPDATE_POSTCARD_DATA',
               payload: {
                 originalMessage: `${concerns}\n\n${personalImpact}`,
                 draftMessage: data.draftMessage || '', // Empty if AI generation failed
                 sources: data.sources || [],
-                draftId: data.draftId // Store the draft ID for later updates
+                draftId: data.draftId, // Store the draft ID for later updates
+                isFallbackPlaceholder: data.isFallbackPlaceholder || false // Flag for fallback messages
               }
             });
 

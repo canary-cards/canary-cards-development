@@ -29,6 +29,15 @@ export function ReviewEditScreen() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const charCount = editedMessage.length;
   const maxChars = 300;
+  
+  // Log fallback state for debugging  
+  console.log('🎯 ReviewEditScreen: isFallbackPlaceholder:', isFallbackPlaceholder);
+  console.log('🎯 ReviewEditScreen: placeholderText:', placeholderText);
+  
+  // Safety check for unexpectedly empty messages
+  if (!initialMessage && !isFallbackPlaceholder && !isRegenerating) {
+    console.warn('⚠️ ReviewEditScreen: Message is empty but no fallback flag detected - potential error state');
+  }
   const handleRegenerate = async () => {
     setIsRegenerating(true);
 
