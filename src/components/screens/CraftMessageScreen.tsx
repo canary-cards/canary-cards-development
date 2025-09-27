@@ -401,7 +401,7 @@ export function CraftMessageScreen() {
                             e.preventDefault();
                           }}
                         >
-                          (Optional) I'm concerned about cuts to arts and science programs in our schools. I believe these cuts will harm our children's education and limit their future opportunities. Access to quality arts and science education is essential for developing critical thinking, creativity, and problem-solving skills that our community needs to thrive.
+                          (Optional) I have young children in school and worry about cuts to art and music programs
                         </div>
                       )}
                     </div>
