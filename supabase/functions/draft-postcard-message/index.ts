@@ -141,13 +141,12 @@ async function getLocationFromZip(zipCode: string): Promise<{ state: string; cit
   }
 }
 
-async function analyzeTheme({ concerns, personalImpact, zipCode }: {
+async function analyzeTheme({ concerns, personalImpact, location }: {
   concerns: string,
   personalImpact: string,
-  zipCode: string
+  location: { state: string; city: string; region: string }
 }): Promise<ThemeAnalysis> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -205,9 +204,8 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
   return JSON.parse(jsonMatch[0]);
 }
 
-async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
+async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: string; city: string; region: string }): Promise<Source[]> {
   const apiKey = getApiKey('perplexitykey');
-  const location = await getLocationFromZip(zipCode);
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -415,16 +413,15 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   return sources.slice(0, 4); // Return top 4 sources
 }
 
-async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative }: {
+async function draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative }: {
   concerns: string,
   personalImpact: string,
-  zipCode: string,
+  location: { state: string; city: string; region: string },
   themeAnalysis: ThemeAnalysis,
   sources: Source[],
   representative: any
 }): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
   
   const repLastName = extractRepresentativeLastName(representative.name);
   const greeting = `Rep. ${repLastName},\n`;
@@ -532,9 +529,8 @@ function smartTruncate(text: string, maxLength: number = 300): string {
   return text.substring(0, maxLength - 50) + '...';
 }
 
-async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string, representative: any): Promise<string> {
+async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, location: { state: string; city: string; region: string }, representative: any): Promise<string> {
   const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
   
   // Extract greeting from original postcard to maintain consistency
   const repLastName = extractRepresentativeLastName(representative.name);
@@ -626,22 +622,26 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   try {
     console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
     
+    // Cache location lookup to avoid multiple API calls
+    const location = await getLocationFromZip(zipCode);
+    console.log(`Location resolved: ${location.city}, ${location.state}`);
+    
     // Step 1: Analyze theme
-    const themeAnalysis = await analyzeTheme({ concerns, personalImpact, zipCode });
+    const themeAnalysis = await analyzeTheme({ concerns, personalImpact, location });
     console.log(`Theme identified: ${themeAnalysis.primaryTheme}`);
     
     // Step 2: Discover sources (Perplexity API search)
-    const sources = await discoverSources(themeAnalysis, zipCode);
+    const sources = await discoverSources(themeAnalysis, location);
     console.log(`Found ${sources.length} sources`);
     
     // Step 3: Draft postcard
-    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative });
+    let postcard = await draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
     // Step 4: Shorten if needed
     if (postcard.length > 300) {
       console.log(`Postcard too long (${postcard.length} chars), shortening...`);
-      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode, representative);
+      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
       console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
       
       // Use shortened version if it's actually shorter and under limit
