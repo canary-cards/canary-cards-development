@@ -26,7 +26,7 @@ const slides = [
   },
   {
     title: "Your words, written in real ink with a real pen.",
-    subtitle: "Written by a robot holding a blue ballpoint, indistinguishable from human handwriting. Authentic and personal.",
+    subtitle: "Written by a robot holding a blue ballpoint, indistinguishable from human handwriting.",
     iconPlaceholder: "ICON / REAL INK HANDWRITING",
     assetName: "onboarding_icon_3.svg",
     imageAlt: "Real handwriting with ink and pen"
