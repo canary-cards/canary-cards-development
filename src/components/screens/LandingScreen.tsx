@@ -188,10 +188,10 @@ export function LandingScreen() {
               The Research
             </p>
             <p className="text-base font-normal text-foreground leading-relaxed">
-              Just 50 personalized postcards can influence a congresspersons vote.
+              96% of Capitol Hill staff say personalized letters influence undecided congressional votes
             </p>
             <p className="text-sm text-muted-foreground mt-3">
-              — 2019 Congressional Management Foundation Study
+              — Abernathy, C.E. (2015). Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Dissertation
             </p>
           </CardContent>
         </Card>
