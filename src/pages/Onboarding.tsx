@@ -11,8 +11,8 @@ const TOTAL_SLIDES = 4;
 const slides = [
   {
     title: "Handwritten postcards are the gold standard in D.C.",
-    subtitle: "15× more likely to have influence than form emails*.",
-    finePrint: "* 2019 Congressional Management Foundation study",
+    subtitle: "96% of Capitol Hill staff say personalized letters influence undecided congressional votes.",
+    finePrint: "— Abernathy, C.E. (2015). Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Dissertation",
     iconPlaceholder: "ICON / WHY POSTCARDS",
     assetName: "onboarding_icon_1.svg",
     imageAlt: "Why postcards are effective in D.C."
