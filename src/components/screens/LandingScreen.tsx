@@ -184,8 +184,8 @@ export function LandingScreen() {
         {/* Proof Card */}
         <Card className="mb-6 bg-card border-border">
           <CardContent className="p-6 text-center">
-            <p className="text-sm font-semibold text-secondary mb-3 tracking-wide uppercase">
-              The Research
+            <p className="text-sm font-semibold text-secondary mb-3 tracking-wide">
+              Why Personalized, Handwritten Postcards Work
             </p>
             <p className="text-base font-normal text-foreground leading-relaxed">
               96% of Capitol Hill staff say personalized letters influence undecided congressional votes
