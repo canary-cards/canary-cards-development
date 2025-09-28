@@ -146,7 +146,8 @@ async function analyzeTheme({ concerns, personalImpact, location }: {
   personalImpact: string,
   location: { state: string; city: string; region: string }
 }): Promise<ThemeAnalysis> {
-  const apiKey = getApiKey('ANTHROPIC_KEY');
+  // Use dedicated theme analysis key with fallback to main key
+  const apiKey = getApiKey('ANTHROPIC_THEME_KEY') || getApiKey('ANTHROPIC_KEY');
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.

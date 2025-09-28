@@ -37,6 +37,7 @@ serve(async (req) => {
         ANTHROPIC_API_KEY_4: Deno.env.get("ANTHROPIC_API_KEY_4") ? "✓ Present" : "✗ Missing",
         ANTHROPIC_API_KEY_5: Deno.env.get("ANTHROPIC_API_KEY_5") ? "✓ Present" : "✗ Missing",
         ANTHROPIC_KEY: Deno.env.get("ANTHROPIC_KEY") ? "✓ Present" : "✗ Missing",
+        ANTHROPIC_THEME_KEY: Deno.env.get("ANTHROPIC_THEME_KEY") ? "✓ Present" : "✗ Missing",
         anthropickey: Deno.env.get("anthropickey") ? "✓ Present (legacy)" : "✗ Missing (legacy)",
         
         // Perplexity
