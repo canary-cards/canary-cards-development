@@ -146,7 +146,7 @@ async function analyzeTheme({ concerns, personalImpact, location }: {
   personalImpact: string,
   location: { state: string; city: string; region: string }
 }): Promise<ThemeAnalysis> {
-  const apiKey = getApiKey('anthropickey');
+  const apiKey = getApiKey('ANTHROPIC_KEY');
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -205,7 +205,7 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
 }
 
 async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: string; city: string; region: string }): Promise<Source[]> {
-  const apiKey = getApiKey('perplexitykey');
+  const apiKey = getApiKey('PERPLEXITY_KEY');
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -442,7 +442,7 @@ async function draftPostcard({ concerns, personalImpact, location, themeAnalysis
   sources: Source[],
   representative: any
 }): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
+  const apiKey = getApiKey('ANTHROPIC_KEY');
   
   const repLastName = extractRepresentativeLastName(representative.name);
   const greeting = `Rep. ${repLastName},\n`;
@@ -567,8 +567,8 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   // Fallback to main key if no shortening keys available
   if (!apiKey) {
-    console.log('No dedicated shortening keys found, falling back to main anthropickey');
-    apiKey = getApiKey('anthropickey');
+    console.log('No dedicated shortening keys found, falling back to main ANTHROPIC_KEY');
+    apiKey = getApiKey('ANTHROPIC_KEY');
   }
   
   // Extract greeting from original postcard to maintain consistency

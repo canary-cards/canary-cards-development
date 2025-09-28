@@ -46,7 +46,8 @@ class ApiKeyManager {
       'ANTHROPIC_SHORTENING_KEY_2', 
       'ANTHROPIC_SHORTENING_KEY_3',
     ] : [
-      'anthropickey', // This appears to be the actual secret name in your Supabase
+      'ANTHROPIC_KEY', // Primary key (uppercase format)
+      'anthropickey', // Legacy support
       'ANTHROPIC_API_KEY_1',
       'ANTHROPIC_API_KEY_2', 
       'ANTHROPIC_API_KEY_3',
