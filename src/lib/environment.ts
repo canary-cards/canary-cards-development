@@ -18,7 +18,7 @@ const environments: Record<string, EnvironmentConfig> = {
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3c2d5eGx2eG50Z3BvY2hvbndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0ODI4MDEsImV4cCI6MjA2OTA1ODgwMX0.o-Jx0nWkjnOj-61kIaZ5s7UW2gcZa6CFQYUeeqjank8',
     frontendUrl: 'https://canary.cards',
     isProduction: true,
-    stripePublishableKey: 'pk_test_51S4aRnHvk7miVCYFTA0NQpJRcr7vBCv1CSqgPsQb0mvDqJZOw72giVsuEeDKRUhLAocHFc1rGJKHk9hhB4ycyCBI00QaFopFqh',
+    stripePublishableKey: 'pk_live_51S4aRdQX6QIMqDRf2YJ8fwt9me0xtvFZ3v4MggSGq9r2nPn5Br1u4iOrOi6IYIfPfd7YneXRg7ecuFLQKvXSYxbN00lj0VRx6O',
     posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
     posthogHost: 'https://us.i.posthog.com',
   },
@@ -27,7 +27,7 @@ const environments: Record<string, EnvironmentConfig> = {
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3c2d5eGx2eG50Z3BvY2hvbndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0ODI4MDEsImV4cCI6MjA2OTA1ODgwMX0.o-Jx0nWkjnOj-61kIaZ5s7UW2gcZa6CFQYUeeqjank8',
     frontendUrl: 'https://canary.cards',
     isProduction: true,
-    stripePublishableKey: 'pk_test_51S4aRnHvk7miVCYFTA0NQpJRcr7vBCv1CSqgPsQb0mvDqJZOw72giVsuEeDKRUhLAocHFc1rGJKHk9hhB4ycyCBI00QaFopFqh',
+    stripePublishableKey: 'pk_live_51S4aRdQX6QIMqDRf2YJ8fwt9me0xtvFZ3v4MggSGq9r2nPn5Br1u4iOrOi6IYIfPfd7YneXRg7ecuFLQKvXSYxbN00lj0VRx6O',
     posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
     posthogHost: 'https://us.i.posthog.com',
   },
@@ -37,7 +37,7 @@ const environments: Record<string, EnvironmentConfig> = {
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1Z25qZ3ZkaXNkYmRrYm9md3JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxOTM0NzYsImV4cCI6MjA3Mjc2OTQ3Nn0.mCDDS4hIeIatRTlDiGCKnPgdCNFxn6LFK1nkREGMo3s',
     frontendUrl: 'https://staging.canary.cards',
     isProduction: false,
-    stripePublishableKey: 'pk_test_51S4aRnHvk7miVCYFTA0NQpJRcr7vBCv1CSqgPsQb0mvDqJZOw72giVsuEeDKRUhLAocHFc1rGJKHk9hhB4ycyCBI00QaFopFqh',
+    stripePublishableKey: 'pk_live_51S4aRdQX6QIMqDRf2YJ8fwt9me0xtvFZ3v4MggSGq9r2nPn5Br1u4iOrOi6IYIfPfd7YneXRg7ecuFLQKvXSYxbN00lj0VRx6O',
     posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
     posthogHost: 'https://us.i.posthog.com',
   },
@@ -47,7 +47,7 @@ const environments: Record<string, EnvironmentConfig> = {
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1Z25qZ3ZkaXNkYmRrYm9md3JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxOTM0NzYsImV4cCI6MjA3Mjc2OTQ3Nn0.mCDDS4hIeIatRTlDiGCKnPgdCNFxn6LFK1nkREGMo3s',
     frontendUrl: 'https://lovable.app',
     isProduction: false,
-    stripePublishableKey: 'pk_test_51S4aRnHvk7miVCYFTA0NQpJRcr7vBCv1CSqgPsQb0mvDqJZOw72giVsuEeDKRUhLAocHFc1rGJKHk9hhB4ycyCBI00QaFopFqh', // Staging Stripe publishable key
+    stripePublishableKey: 'pk_live_51S4aRdQX6QIMqDRf2YJ8fwt9me0xtvFZ3v4MggSGq9r2nPn5Br1u4iOrOi6IYIfPfd7YneXRg7ecuFLQKvXSYxbN00lj0VRx6O', // Live Stripe publishable key
     posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
     posthogHost: 'https://us.i.posthog.com',
   },
@@ -57,7 +57,7 @@ const environments: Record<string, EnvironmentConfig> = {
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1Z25qZ3ZkaXNkYmRrYm9md3JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxOTM0NzYsImV4cCI6MjA3Mjc2OTQ3Nn0.mCDDS4hIeIatRTlDiGCKnPgdCNFxn6LFK1nkREGMo3s',
     frontendUrl: 'https://lovable.app',
     isProduction: false,
-    stripePublishableKey: 'pk_test_51S4aRnHvk7miVCYFTA0NQpJRcr7vBCv1CSqgPsQb0mvDqJZOw72giVsuEeDKRUhLAocHFc1rGJKHk9hhB4ycyCBI00QaFopFqh', // Staging Stripe publishable key
+    stripePublishableKey: 'pk_live_51S4aRdQX6QIMqDRf2YJ8fwt9me0xtvFZ3v4MggSGq9r2nPn5Br1u4iOrOi6IYIfPfd7YneXRg7ecuFLQKvXSYxbN00lj0VRx6O', // Live Stripe publishable key
     posthogKey: 'phc_x6BOmmW7UQdIPHSk1Sdd6sSz9ZaDxwgsKTxXLhXhLH9',
     posthogHost: 'https://us.i.posthog.com',
   }
