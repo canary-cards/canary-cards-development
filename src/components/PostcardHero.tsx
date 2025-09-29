@@ -334,7 +334,7 @@ export function PostcardHero({
 
         {/* Instructions for mobile */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>Double tap to zoom in.</p>
+          <p>Double tap to zoom in</p>
         </div>
       </Card>
     </div>;
