@@ -284,13 +284,9 @@ export function CraftMessageScreen() {
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
-              <h1 className="text-2xl display-title mb-2">
-                Make It Personal
-              </h1>
+              <h1 className="text-2xl display-title mb-2">What's on your mind?</h1>
               
-              <h3 className="subtitle text-base mb-4">
-                Provide a few details to start. You'll review and edit the draft next.
-              </h3>
+              <h3 className="subtitle text-base mb-4">Share what's on your mind, you'll review and edit the draft next</h3>
             </div>
 
             {/* External voice button approach with onboarding */}
