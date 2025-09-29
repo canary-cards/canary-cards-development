@@ -233,6 +233,17 @@ export function LandingScreen() {
                 Send a postcard. Be heard.
               </p>
             </div>
+
+            {/* Sources */}
+            <div className="pt-4 border-t border-muted/50">
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Sources:</p>
+              <div className="space-y-1 text-xs text-muted-foreground leading-relaxed">
+                <p>Abernathy, C.E. (2025). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.</p>
+                <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
+                <p>Congressional Management Foundation. Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill (2011).</p>
+                <p>Congressional Management Foundation. Communicating with Congress: How Citizen Advocacy Is Changing Mail Operations on Capitol Hill (2011).</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
