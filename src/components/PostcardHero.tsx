@@ -30,7 +30,7 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
 
   const images = [
     { src: '/lovable-uploads/923b18b9-bce0-4521-a280-f38eaec3e09c.png', alt: 'Postcard back with handwritten message' },
-    { src: '/postcard_front.png', alt: 'Postcard front with Yosemite scenery' }
+    { src: '/postcard_front.jpg', alt: 'Postcard front with Yosemite scenery' }
   ];
 
   // Preload images aggressively for instant loading
