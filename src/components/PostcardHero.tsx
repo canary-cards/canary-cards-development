@@ -272,9 +272,7 @@ export function PostcardHero({
         {/* Hero text */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-primary mb-2 font-display">Here's how your postcard will look</h1>
-          <p className="subtitle text-base">
-            This is an example — your message will be written with a ballpoint pen on a real postcard we mail for you
-          </p>
+          <p className="subtitle text-base">Written with real ballpoint pen on premium cardstock</p>
         </div>
 
         {/* Caption */}
