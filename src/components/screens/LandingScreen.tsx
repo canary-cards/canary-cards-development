@@ -199,11 +199,18 @@ export function LandingScreen() {
                 Congressional offices consistently state that nothing has more sway on undecided votes than personalized communication from real constituents—not mass petitions, not form letters, not even most calls. In fact, 90% of Capitol Hill staff say that personalized letters specifically influence how their bosses vote, especially when the issue is undecided. The Congressional Management Foundation's research has found that messages which include personal stories, details about how an issue affects the sender, and some sign of genuine effort—like writing by hand—get more attention and are far more likely to be passed directly to the Member.
               </p>
               
-              {/* Chart placeholder */}
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-muted">
-                <p className="text-xs text-muted-foreground text-center">
-                  Chart: Impact of Communication Methods (Coming Soon)
-                </p>
+              {/* Responsive Chart */}
+              <div className="w-full mt-4">
+                <img 
+                  src="/src/assets/constituent-importance-mobile.svg" 
+                  alt="Chart showing constituent importance rankings - mobile view"
+                  className="w-full h-auto md:hidden"
+                />
+                <img 
+                  src="/src/assets/constituent-importance-desktop.svg" 
+                  alt="Chart showing constituent importance rankings - desktop view"
+                  className="hidden md:block w-full h-auto"
+                />
               </div>
             </div>
 
