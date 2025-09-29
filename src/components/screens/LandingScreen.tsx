@@ -16,13 +16,11 @@ import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target } from 'lucide-r
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
-
 export function LandingScreen() {
   const {
     state,
     dispatch
   } = useAppContext();
-  
   const [zipCode, setZipCode] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -125,20 +123,14 @@ export function LandingScreen() {
             <h1 className="text-2xl md:text-3xl display-title leading-tight mb-4">
               Send a Real Postcard to Your Representative
             </h1>
-            <h2 className="subtitle text-base mb-0 leading-relaxed">
-              Handwritten postcards get noticed. Emails don't.
-            </h2>
+            <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards get noticed, emails don't</h2>
           </div>
         </div>
 
         {/* Icon between title and form */}
         <div className="flex justify-center mb-2">
           <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 flex items-center justify-center">
-            <DynamicSvg 
-              assetName="zip_code_page_icon.svg"
-              alt="Enter your zip code"
-              className="w-full h-full object-contain"
-            />
+            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -153,14 +145,14 @@ export function LandingScreen() {
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                    <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="12345" value={zipCode} onChange={e => {
-                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-                     setZipCode(value);
-                     setSearchError('');
-                   }} className="pl-10 pr-10 h-12 text-center text-lg md:text-base focus:ring-accent focus:border-accent border-2" style={{
-                     textAlign: 'center',
-                     paddingLeft: '2.5rem',
-                     paddingRight: '2.5rem'
-                   }} maxLength={5} />
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                    setZipCode(value);
+                    setSearchError('');
+                  }} className="pl-10 pr-10 h-12 text-center text-lg md:text-base focus:ring-accent focus:border-accent border-2" style={{
+                    textAlign: 'center',
+                    paddingLeft: '2.5rem',
+                    paddingRight: '2.5rem'
+                  }} maxLength={5} />
                 </div>
                 {searchError && <p className="text-sm text-destructive">
                     {searchError}
@@ -201,16 +193,8 @@ export function LandingScreen() {
               
               {/* Responsive Chart */}
               <div className="w-full mt-4">
-                <DynamicSvg 
-                  assetName="constituent-importance-mobile.svg"
-                  alt="Chart showing constituent importance rankings - mobile view"
-                  className="w-full h-auto md:hidden"
-                />
-                <DynamicSvg 
-                  assetName="constituent-importance-desktop.svg"
-                  alt="Chart showing constituent importance rankings - desktop view"
-                  className="hidden md:block w-full h-auto"
-                />
+                <DynamicSvg assetName="constituent-importance-mobile.svg" alt="Chart showing constituent importance rankings - mobile view" className="w-full h-auto md:hidden" />
+                <DynamicSvg assetName="constituent-importance-desktop.svg" alt="Chart showing constituent importance rankings - desktop view" className="hidden md:block w-full h-auto" />
               </div>
               <p className="text-xs text-muted-foreground mt-2 italic">
                 Data source: CMF 2011 Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill
