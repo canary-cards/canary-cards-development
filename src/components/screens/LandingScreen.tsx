@@ -223,7 +223,7 @@ export function LandingScreen() {
                 3. Physical mail cuts through.
               </h3>
               <p className="text-sm text-foreground leading-relaxed">
-                We use AI to help write the postcards, but our postcards are AI proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be opened, sorted, and handled by a real person, guaranteeing your message breaks through the digital wall.
+                We use AI to help write the postcards, but our postcards are AI proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
               </p>
             </div>
 
