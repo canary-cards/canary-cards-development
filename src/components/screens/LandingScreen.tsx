@@ -223,7 +223,7 @@ export function LandingScreen() {
                 2. Generative AI has changed the email game.
               </h3>
               <p className="text-sm text-foreground leading-relaxed">
-                Mass AI-generated emails can now mimic personalization. According to the Congressional Management Foundation (CMF), many congressional offices are increasingly aware of this and are treating many digital messages—no matter how "personal"—like form emails, discounting their impact.
+                Mass AI-generated emails can now mimic personalization. According to CMF, many congressional offices are increasingly aware of this and are treating many digital messages—no matter how "personal"—like form emails, discounting their impact.
               </p>
             </div>
 
