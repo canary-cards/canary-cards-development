@@ -29,7 +29,7 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
   const rafIdRef = useRef<number>(0);
 
   const images = [
-    { src: '/lovable-uploads/923b18b9-bce0-4521-a280-f38eaec3e09c.png', alt: 'Postcard back with handwritten message' },
+    { src: '/lovable-uploads/923b18b9-bce0-4521-a280-f38eaec3e09c.jpg', alt: 'Postcard back with handwritten message' },
     { src: '/postcard_front.jpg', alt: 'Postcard front with Yosemite scenery' }
   ];
 
