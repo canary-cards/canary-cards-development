@@ -9,10 +9,14 @@ import { Mic, Square, ArrowLeft, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { safeStorage } from '@/lib/safeStorage';
-
 export function CraftMessageScreen() {
-  const { state, dispatch } = useAppContext();
-  const { toast } = useToast();
+  const {
+    state,
+    dispatch
+  } = useAppContext();
+  const {
+    toast
+  } = useToast();
   const [concerns, setConcerns] = useState(state.postcardData.concerns || '');
   const [personalImpact, setPersonalImpact] = useState(state.postcardData.personalImpact || '');
   const [isRecording, setIsRecording] = useState(false);
@@ -33,55 +37,50 @@ export function CraftMessageScreen() {
     onboardingTimeoutRef.current = setTimeout(() => {
       setShowOnboarding(false);
     }, 3000);
-
     return () => {
       if (onboardingTimeoutRef.current) {
         clearTimeout(onboardingTimeoutRef.current);
       }
     };
   }, []);
-
   const startRecording = async (field: 'concerns' | 'impact') => {
     try {
       if (isRecording) {
         // Stop any ongoing recording before starting a new one
         stopRecording();
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       setRecordingField(field);
-      
       const audioChunks: Blob[] = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = event => {
         audioChunks.push(event.data);
       };
-      
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunks, {
+          type: 'audio/wav'
+        });
         await transcribeAudio(audioBlob, field);
         stream.getTracks().forEach(track => track.stop());
       };
-      
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-      
     } catch (error) {
       console.error('Error accessing microphone:', error);
       toast({
         title: 'Microphone access denied',
         description: 'Please allow microphone permissions and try again.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -93,104 +92,98 @@ export function CraftMessageScreen() {
     setRecordingTime(0);
     setRecordingField(null);
   };
-
   const transcribeAudio = async (audioBlob: Blob, field: 'concerns' | 'impact') => {
     setTranscribingField(field);
-    
     try {
       // Convert audio blob to base64
       const arrayBuffer = await audioBlob.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
       let binary = '';
       const chunkSize = 0x8000;
-      
       for (let i = 0; i < bytes.length; i += chunkSize) {
         const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
         binary += String.fromCharCode.apply(null, Array.from(chunk));
       }
-      
       const base64Audio = btoa(binary);
 
       // Call Supabase edge function
-      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audio: base64Audio }
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('transcribe-audio', {
+        body: {
+          audio: base64Audio
+        }
       });
-
       if (error) {
         throw error;
       }
-
       if (data?.text) {
         const transcribedText = data.text.trim();
         if (field === 'concerns') {
           const newValue = concerns ? `${concerns.trim()} ${transcribedText}` : transcribedText;
           setConcerns(newValue);
-          dispatch({ 
-            type: 'UPDATE_POSTCARD_DATA', 
-            payload: { concerns: newValue }
+          dispatch({
+            type: 'UPDATE_POSTCARD_DATA',
+            payload: {
+              concerns: newValue
+            }
           });
         } else {
           const newValue = personalImpact ? `${personalImpact.trim()} ${transcribedText}` : transcribedText;
           setPersonalImpact(newValue);
-          dispatch({ 
-            type: 'UPDATE_POSTCARD_DATA', 
-            payload: { personalImpact: newValue }
+          dispatch({
+            type: 'UPDATE_POSTCARD_DATA',
+            payload: {
+              personalImpact: newValue
+            }
           });
         }
       } else {
         throw new Error('No transcription received');
       }
-
     } catch (error) {
       console.error('Transcription error:', error);
       toast({
         title: "Transcription failed",
         description: "Please try recording again or use the text input instead.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setTranscribingField(null);
     }
   };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
   const convertListToSentence = (input: string): string => {
     // Check if input looks like a list (comma-separated, bullet points, or line breaks)
-    const isListLike = input.includes(',') || input.includes('•') || input.includes('-') || 
-                       input.includes('\n') || input.match(/^\d+\./) || input.includes(';');
-    
+    const isListLike = input.includes(',') || input.includes('•') || input.includes('-') || input.includes('\n') || input.match(/^\d+\./) || input.includes(';');
     if (!isListLike) {
       return input; // Return as-is if it's already a sentence
     }
-    
+
     // Clean up the input and convert to sentence format
-    let cleanedInput = input
-      .replace(/[•\-*]/g, '') // Remove bullet points
-      .replace(/^\d+\.\s*/gm, '') // Remove numbered list markers
-      .replace(/\n+/g, ', ') // Replace line breaks with commas
-      .replace(/[,;]+/g, ', ') // Normalize multiple commas/semicolons
-      .replace(/,\s*,/g, ',') // Remove duplicate commas
-      .trim();
-    
+    let cleanedInput = input.replace(/[•\-*]/g, '') // Remove bullet points
+    .replace(/^\d+\.\s*/gm, '') // Remove numbered list markers
+    .replace(/\n+/g, ', ') // Replace line breaks with commas
+    .replace(/[,;]+/g, ', ') // Normalize multiple commas/semicolons
+    .replace(/,\s*,/g, ',') // Remove duplicate commas
+    .trim();
+
     // Remove trailing comma if present
     cleanedInput = cleanedInput.replace(/,\s*$/, '');
-    
+
     // If it doesn't end with punctuation, add a period
     if (!cleanedInput.match(/[.!?]$/)) {
       cleanedInput += '.';
     }
-    
     return cleanedInput;
   };
-
   const handleDraftMessage = async () => {
     const combinedMessage = [concerns, personalImpact].filter(Boolean).join('. ');
-    
     if (!combinedMessage.trim()) {
       alert('Please enter your concerns first');
       return;
@@ -210,43 +203,44 @@ export function CraftMessageScreen() {
     });
 
     // Navigate to the drafting screen (step 7)
-    dispatch({ type: 'SET_STEP', payload: 7 });
+    dispatch({
+      type: 'SET_STEP',
+      payload: 7
+    });
   };
-
-
   const handleSkipAI = async () => {
     setIsSkipping(true);
-    
     try {
       // Convert list-style inputs to sentences first
       const processedConcerns = convertListToSentence(concerns);
       const processedPersonalImpact = convertListToSentence(personalImpact);
       const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
-      
       try {
         // Create a manual draft in the database
-        const { data, error } = await supabase.functions.invoke('postcard-draft', {
+        const {
+          data,
+          error
+        } = await supabase.functions.invoke('postcard-draft', {
           body: {
             action: 'create',
             zipCode: state.postcardData.zipCode,
             concerns: processedConcerns,
-            personalImpact: processedPersonalImpact,
-          },
+            personalImpact: processedPersonalImpact
+          }
         });
-
         if (error) {
           console.error('Failed to create manual draft:', error);
           toast({
             title: "Error creating draft",
             description: "Please try again or continue without saving.",
-            variant: "destructive",
+            variant: "destructive"
           });
         }
 
         // Update state with processed data and draftId
-        dispatch({ 
-          type: 'UPDATE_POSTCARD_DATA', 
-          payload: { 
+        dispatch({
+          type: 'UPDATE_POSTCARD_DATA',
+          payload: {
             concerns: processedConcerns,
             personalImpact: processedPersonalImpact,
             originalMessage: combinedMessage,
@@ -255,13 +249,12 @@ export function CraftMessageScreen() {
             draftId: data?.draftId || null
           }
         });
-        
       } catch (error) {
         console.error('Error creating manual draft:', error);
         // Continue anyway with just state updates
-        dispatch({ 
-          type: 'UPDATE_POSTCARD_DATA', 
-          payload: { 
+        dispatch({
+          type: 'UPDATE_POSTCARD_DATA',
+          payload: {
             concerns: processedConcerns,
             personalImpact: processedPersonalImpact,
             originalMessage: combinedMessage,
@@ -270,20 +263,23 @@ export function CraftMessageScreen() {
           }
         });
       }
-      
+
       // Navigate directly to the review screen
-      dispatch({ type: 'SET_STEP', payload: 3 });
+      dispatch({
+        type: 'SET_STEP',
+        payload: 3
+      });
     } finally {
       setIsSkipping(false);
     }
   };
-
   const goBack = () => {
-    dispatch({ type: 'SET_STEP', payload: 1 });
+    dispatch({
+      type: 'SET_STEP',
+      payload: 1
+    });
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 pb-4 max-w-2xl">
         <Card className="card-warm">
           <CardContent className="p-6">
@@ -303,183 +299,113 @@ export function CraftMessageScreen() {
                 <div className="space-y-3">
                   <label className="field-label">I'm most concerned about:</label>
                   <div className="flex gap-3 items-stretch">
-                    <Textarea
-                      placeholder="Education"
-                      value={concerns}
-                      onChange={(e) => {
-                        setConcerns(e.target.value);
-                        dispatch({ 
-                          type: 'UPDATE_POSTCARD_DATA', 
-                          payload: { 
-                            concerns: e.target.value,
-                            originalMessage: '',
-                            draftMessage: '',
-                            finalMessage: '',
-                            sources: []
-                          }
-                        });
-                      }}
-                      className="input-warm min-h-[70px] resize-none flex-1 placeholder:text-sm placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed"
-                    />
+                    <Textarea placeholder="Education" value={concerns} onChange={e => {
+                    setConcerns(e.target.value);
+                    dispatch({
+                      type: 'UPDATE_POSTCARD_DATA',
+                      payload: {
+                        concerns: e.target.value,
+                        originalMessage: '',
+                        draftMessage: '',
+                        finalMessage: '',
+                        sources: []
+                      }
+                    });
+                  }} className="input-warm min-h-[70px] resize-none flex-1 placeholder:text-sm placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed" />
                     
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'}
-                      aria-pressed={isRecording && recordingField === 'concerns'}
-                      onClick={() => {
-                        if (isRecording && recordingField === 'concerns') {
-                          stopRecording();
-                        } else {
-                          startRecording('concerns');
-                          // Hide onboarding when user interacts
-                          if (showOnboarding) {
-                            setShowOnboarding(false);
-                          }
-                        }
-                      }}
-      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${
-        showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''
-      } ${
-        isRecording && recordingField === 'concerns'
-          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-          : 'bg-primary text-white hover:bg-primary/90'
-      }`}
-                    >
-                      {isRecording && recordingField === 'concerns' ? (
-                        <>
+                    <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'} aria-pressed={isRecording && recordingField === 'concerns'} onClick={() => {
+                    if (isRecording && recordingField === 'concerns') {
+                      stopRecording();
+                    } else {
+                      startRecording('concerns');
+                      // Hide onboarding when user interacts
+                      if (showOnboarding) {
+                        setShowOnboarding(false);
+                      }
+                    }
+                  }} className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${showOnboarding && recordingField !== 'concerns' ? 'pulse-subtle' : ''} ${isRecording && recordingField === 'concerns' ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                      {isRecording && recordingField === 'concerns' ? <>
                           <Square className="w-5 h-5 sm:mr-2" />
                           <span className="hidden sm:inline">Stop</span>
-                        </>
-                      ) : (
-                        <>
+                        </> : <>
                           <Mic className="w-5 h-5 sm:mr-2" />
                           <span className="hidden sm:inline">Speak</span>
-                        </>
-                      )}
+                        </>}
                     </Button>
                   </div>
                   
                   
-                  {transcribingField === 'concerns' && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  {transcribingField === 'concerns' && <p className="text-sm text-muted-foreground flex items-center gap-2">
                       <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       Transcribing your voice...
-                    </p>
-                  )}
+                    </p>}
                 </div>
 
                 <div className="space-y-3">
-                  <label className="field-label">How it affects me (optional):</label>
+                  <label className="field-label">How it affects my community (optional):</label>
                   <div className="flex gap-3 items-stretch">
                     <div className="relative flex-1">
-                      <Textarea
-                        placeholder=""
-                        value={personalImpact}
-                        onChange={(e) => {
-                          setPersonalImpact(e.target.value);
-                          dispatch({ 
-                            type: 'UPDATE_POSTCARD_DATA', 
-                            payload: { 
-                              personalImpact: e.target.value,
-                              originalMessage: '',
-                              draftMessage: '',
-                              finalMessage: '',
-                              sources: []
-                            }
-                          });
-                        }}
-                        className="input-warm min-h-[70px] resize-none w-full"
-                      />
+                      <Textarea placeholder="" value={personalImpact} onChange={e => {
+                      setPersonalImpact(e.target.value);
+                      dispatch({
+                        type: 'UPDATE_POSTCARD_DATA',
+                        payload: {
+                          personalImpact: e.target.value,
+                          originalMessage: '',
+                          draftMessage: '',
+                          finalMessage: '',
+                          sources: []
+                        }
+                      });
+                    }} className="input-warm min-h-[70px] resize-none w-full" />
 
-                      {!personalImpact && (
-                        <div
-                          className="absolute inset-0 z-10 overflow-auto p-3 text-sm font-medium leading-relaxed text-muted-foreground/70"
-                          onMouseDown={(e) => {
-                            const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
-                            ta?.focus();
-                            e.preventDefault();
-                          }}
-                        >
+                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-sm font-medium leading-relaxed text-muted-foreground/70" onMouseDown={e => {
+                      const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
+                      ta?.focus();
+                      e.preventDefault();
+                    }}>
                           Cuts to arts programs at my kids' school
-                        </div>
-                      )}
+                        </div>}
                     </div>
                     
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'}
-                      aria-pressed={isRecording && recordingField === 'impact'}
-                      onClick={() => (isRecording && recordingField === 'impact') ? stopRecording() : startRecording('impact')}
-      className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${
-        isRecording && recordingField === 'impact'
-          ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse'
-          : 'bg-primary text-white hover:bg-primary/90'
-      }`}
-                    >
-                      {isRecording && recordingField === 'impact' ? (
-                        <>
+                    <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'} aria-pressed={isRecording && recordingField === 'impact'} onClick={() => isRecording && recordingField === 'impact' ? stopRecording() : startRecording('impact')} className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${isRecording && recordingField === 'impact' ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                      {isRecording && recordingField === 'impact' ? <>
                           <Square className="w-5 h-5 sm:mr-2" />
                           <span className="hidden sm:inline">Stop</span>
-                        </>
-                      ) : (
-                        <>
+                        </> : <>
                           <Mic className="w-5 h-5 sm:mr-2" />
                           <span className="hidden sm:inline">Speak</span>
-                        </>
-                      )}
+                        </>}
                     </Button>
                   </div>
                   
                   
-                  {transcribingField === 'impact' && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  {transcribingField === 'impact' && <p className="text-sm text-muted-foreground flex items-center gap-2">
                       <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       Transcribing your voice...
-                    </p>
-                  )}
+                    </p>}
                 </div>
               </div>
             </TooltipProvider>
 
             <div className="space-y-4 pt-4">
-              <Button
-                variant="spotlight"
-                onClick={handleDraftMessage}
-                disabled={(!concerns.trim() && !personalImpact.trim()) || isDrafting}
-                className="w-full h-10"
-              >
-                {isDrafting ? (
-                  <>
+              <Button variant="spotlight" onClick={handleDraftMessage} disabled={!concerns.trim() && !personalImpact.trim() || isDrafting} className="w-full h-10">
+                {isDrafting ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     AI is thinking...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Wand2 className="w-4 h-4 mr-2" />
                     Draft My Postcard With Canary
-                  </>
-                )}
+                  </>}
               </Button>
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={goBack}
-                  className="flex-1 h-10"
-                >
+                <Button type="button" variant="secondary" onClick={goBack} className="flex-1 h-10">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>
 
-                <Button
-                  variant="secondary"
-                  onClick={handleSkipAI}
-                  disabled={isSkipping}
-                  className="flex-1 h-10"
-                >
+                <Button variant="secondary" onClick={handleSkipAI} disabled={isSkipping} className="flex-1 h-10">
                   <span>{isSkipping ? 'Saving...' : 'Write it myself'}</span>
                 </Button>
               </div>
@@ -487,6 +413,5 @@ export function CraftMessageScreen() {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 }
