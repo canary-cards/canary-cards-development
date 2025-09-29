@@ -226,7 +226,7 @@ export function EmbeddedCheckout({
       <Card className="card-warm">
         <CardContent className="p-6">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold mb-2">Complete your payment</h2>
+            <h1 className="text-xl font-semibold mb-2">Complete your payment</h1>
             <p className="text-muted-foreground mb-4">
               {sendOption === 'single' ? 'Single postcard package' : sendOption === 'double' ? 'Double postcard package' : 'Triple postcard package'} - ${amount}
             </p>
