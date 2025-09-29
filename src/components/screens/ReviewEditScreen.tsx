@@ -185,7 +185,7 @@ ${userInfo?.fullName}`;
           <CardContent className="p-8">
             <div className="text-center mb-6">
               <h1 className="display-title mb-2">Perfect your postcard</h1>
-              <h3 className="subtitle text-base">Edit the message you want to send to your locally elected official</h3>
+              <h3 className="subtitle text-base">Add finishing touches to your message</h3>
             </div>
 
             <div className="space-y-6">
