@@ -212,6 +212,9 @@ export function LandingScreen() {
                   className="hidden md:block w-full h-auto"
                 />
               </div>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Source: CMF 2011 Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill
+              </p>
             </div>
 
             {/* Section 2: AI impact */}
