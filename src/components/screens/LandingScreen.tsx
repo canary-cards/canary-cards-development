@@ -201,13 +201,13 @@ export function LandingScreen() {
               
               {/* Responsive Chart */}
               <div className="w-full mt-4">
-                <img 
-                  src="/src/assets/constituent-importance-mobile.svg" 
+                <DynamicSvg 
+                  assetName="constituent-importance-mobile.svg"
                   alt="Chart showing constituent importance rankings - mobile view"
                   className="w-full h-auto md:hidden"
                 />
-                <img 
-                  src="/src/assets/constituent-importance-desktop.svg" 
+                <DynamicSvg 
+                  assetName="constituent-importance-desktop.svg"
                   alt="Chart showing constituent importance rankings - desktop view"
                   className="hidden md:block w-full h-auto"
                 />
