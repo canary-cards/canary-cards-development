@@ -78,7 +78,6 @@ export function CheckoutScreen() {
   }, []);
   const validateEmailField = (value: string) => {
     const validation = validateEmailWithSuggestion(value);
-    
     if (!validation.isValid) {
       setEmailError(validation.error || 'Invalid email address');
       setEmailValid(false);
@@ -88,10 +87,9 @@ export function CheckoutScreen() {
     }
     setEmailSuggestion(''); // Always clear suggestions
   };
-
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    
+
     // Clear existing timeout
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
@@ -101,7 +99,6 @@ export function CheckoutScreen() {
     setEmailError('');
     setEmailSuggestion('');
     setEmailValid(false);
-
     if (!value.trim()) {
       setHasBeenValidated(false);
       return;
@@ -119,7 +116,6 @@ export function CheckoutScreen() {
       }, 1000);
     }
   };
-
   const handleEmailBlur = () => {
     // Clear timeout if user leaves field
     if (validationTimeoutRef.current) {
@@ -132,7 +128,6 @@ export function CheckoutScreen() {
       setHasBeenValidated(true);
     }
   };
-  
   const applySuggestion = () => {
     // No longer used since we're removing suggestions
     if (emailSuggestion) {
@@ -176,7 +171,7 @@ export function CheckoutScreen() {
   const handleSelectionChange = (newSelection: RecipientSelection) => {
     setSelection(newSelection);
     setValidationError('');
-    
+
     // Trigger confetti when "all-three" is selected for the first time
     if (newSelection === 'all-three' && !confettiTriggered) {
       showCardConfetti();
@@ -198,11 +193,9 @@ export function CheckoutScreen() {
     setValidationError('');
     return true;
   };
-
   const getCheckoutButtonText = (): string => {
     const count = getSelectedCount();
     const total = getTotalPrice();
-    
     if (selection === 'rep-only') {
       return `Send my postcard — $${total}`;
     } else if (selection === 'all-three') {
@@ -218,28 +211,24 @@ export function CheckoutScreen() {
     if (selected.senator2 && senators[1]) result.push(senators[1]);
     return result;
   };
-
   const showCardConfetti = () => {
     const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
-    
+
     // Get the card element position
     const cardElement = document.querySelector('[data-confetti-card]') as HTMLElement;
     if (!cardElement) return;
-    
     const cardRect = cardElement.getBoundingClientRect();
     const cardLeft = cardRect.left;
     const cardWidth = cardRect.width;
     const cardTop = cardRect.top;
-    
     for (let i = 0; i < 30; i++) {
       createCardConfettiPiece(colors[Math.floor(Math.random() * colors.length)], cardLeft, cardWidth, cardTop);
     }
   };
-
   const createCardConfettiPiece = (color: string, cardLeft: number, cardWidth: number, startY: number) => {
     const confetti = document.createElement('div');
-    const randomX = cardLeft + (Math.random() * cardWidth); // Spread confetti across card width
-    
+    const randomX = cardLeft + Math.random() * cardWidth; // Spread confetti across card width
+
     confetti.style.cssText = `
       position: fixed;
       width: 8px;
@@ -251,7 +240,6 @@ export function CheckoutScreen() {
       border-radius: 50%;
       animation: card-confetti-fall ${Math.random() * 2 + 1.5}s linear forwards;
     `;
-    
     document.body.appendChild(confetti);
 
     // Add CSS animation if not already present
@@ -268,7 +256,6 @@ export function CheckoutScreen() {
       `;
       document.head.appendChild(style);
     }
-    
     setTimeout(() => confetti.remove(), 3000);
   };
   const handlePayment = async () => {
@@ -344,12 +331,10 @@ export function CheckoutScreen() {
       setIsProcessing(false);
     }
   };
-  
   const handleBackFromCheckout = () => {
     setShowCheckout(false);
     setClientSecret(null);
   };
-  
   const goBack = () => {
     dispatch({
       type: 'SET_STEP',
@@ -372,7 +357,6 @@ export function CheckoutScreen() {
         </div>
       </div>;
   }
-  
   return <>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pb-24 max-w-2xl">
@@ -387,11 +371,7 @@ export function CheckoutScreen() {
           <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => handleSelectionChange('rep-only')}>
             {/* Checkbox in top-right corner */}
             <div className="absolute top-4 right-4">
-              <Checkbox 
-                checked={selection === 'rep-only'} 
-                onCheckedChange={(checked) => checked && handleSelectionChange('rep-only')}
-                onClick={(e) => e.stopPropagation()}
-              />
+              <Checkbox checked={selection === 'rep-only'} onCheckedChange={checked => checked && handleSelectionChange('rep-only')} onClick={e => e.stopPropagation()} />
             </div>
 
             <div className="mb-2">
@@ -405,17 +385,9 @@ export function CheckoutScreen() {
             
             <div className="flex items-center gap-3 mb-3">
               <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {rep?.photo ? (
-                  <img 
-                    src={rep.photo} 
-                    alt={`Photo of Rep. ${rep.name}`} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                {rep?.photo ? <img src={rep.photo} alt={`Photo of Rep. ${rep.name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
                     {rep?.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
             
@@ -429,11 +401,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Recommended - Maximum Impact Card */}
-          <div 
-            className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} 
-            onClick={() => handleSelectionChange('all-three')}
-            data-confetti-card
-          >
+          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} onClick={() => handleSelectionChange('all-three')} data-confetti-card>
             {/* Save $3 Badge */}
             <div className="absolute -top-2 -left-2 z-10">
               <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold shadow-md">
@@ -443,11 +411,7 @@ export function CheckoutScreen() {
             
             {/* Checkbox in top-right corner */}
             <div className="absolute top-4 right-4">
-              <Checkbox 
-                checked={selection === 'all-three'} 
-                onCheckedChange={(checked) => checked && handleSelectionChange('all-three')}
-                onClick={(e) => e.stopPropagation()}
-              />
+              <Checkbox checked={selection === 'all-three'} onCheckedChange={checked => checked && handleSelectionChange('all-three')} onClick={e => e.stopPropagation()} />
             </div>
             
             <div className="mb-2 pr-16">
@@ -461,48 +425,24 @@ export function CheckoutScreen() {
             
             <div className="flex items-center gap-2 mb-3">
               <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {rep?.photo ? (
-                  <img 
-                    src={rep.photo} 
-                    alt={`Photo of Rep. ${rep.name}`} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                {rep?.photo ? <img src={rep.photo} alt={`Photo of Rep. ${rep.name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
                     {rep?.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                )}
+                  </div>}
               </div>
               {senators[0] && <>
                   <span className="text-muted-foreground">·</span>
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {senators[0].photo ? (
-                      <img 
-                        src={senators[0].photo} 
-                        alt={`Photo of Sen. ${senators[0].name}`} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                    {senators[0].photo ? <img src={senators[0].photo} alt={`Photo of Sen. ${senators[0].name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
                         {senators[0].name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </>}
               {senators[1] && <>
                   <span className="text-muted-foreground">·</span>
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {senators[1].photo ? (
-                      <img 
-                        src={senators[1].photo} 
-                        alt={`Photo of Sen. ${senators[1].name}`} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                    {senators[1].photo ? <img src={senators[1].photo} alt={`Photo of Sen. ${senators[1].name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
                         {senators[1].name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </>}
             </div>
@@ -520,15 +460,13 @@ export function CheckoutScreen() {
               <span>Auto-addressed with proper titles</span>
             </div>
             
-            <p className="text-sm text-muted-foreground">
-              Your message lands on every federal office that represents you.
-            </p>
+            <p className="text-sm text-muted-foreground">Louder voice — your message lands on every federal office that represents you.</p>
           </div>
 
           {/* Mix & Match Card */}
           <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer ${selection === 'custom' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => setShowMixMatch(true)}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-medium text-muted-foreground">Optional: Mix and Match Recipients</span>
+              <span className="text-base font-medium text-muted-foreground">Optional: mix and match recipients</span>
               <ChevronRight className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
             </div>
             
@@ -557,36 +495,26 @@ export function CheckoutScreen() {
                     </div>
                     <ChevronRight className={`w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform ${isOrderSummaryOpen ? 'rotate-90' : ''}`} />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Price includes high-quality postcards, real ballpoint pen, and First-Class postage & mailing.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Price includes high-quality postcards written with real ballpoint pen, and First-Class postage.</p>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="pt-4 space-y-2">
-                    {getSelectedRecipients().representative && (
-                      <div className="flex justify-between">
+                    {getSelectedRecipients().representative && <div className="flex justify-between">
                         <span>Rep. {rep?.name.split(' ').pop() || 'Representative'}</span>
                         <span>$5.00</span>
-                      </div>
-                    )}
-                    {getSelectedRecipients().senator1 && senators[0] && (
-                      <div className="flex justify-between">
+                      </div>}
+                    {getSelectedRecipients().senator1 && senators[0] && <div className="flex justify-between">
                         <span>Sen. {senators[0].name.split(' ').pop()}</span>
                         <span>$5.00</span>
-                      </div>
-                    )}
-                    {getSelectedRecipients().senator2 && senators[1] && (
-                      <div className="flex justify-between">
+                      </div>}
+                    {getSelectedRecipients().senator2 && senators[1] && <div className="flex justify-between">
                         <span>Sen. {senators[1].name.split(' ').pop()}</span>
                         <span>$5.00</span>
-                      </div>
-                    )}
-                    {getSelectedCount() === 3 && (
-                      <div className="flex justify-between text-sm text-muted-foreground">
+                      </div>}
+                    {getSelectedCount() === 3 && <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Bundle savings</span>
                         <span>−$3.00</span>
-                      </div>
-                    )}
+                      </div>}
                     <div className="border-t border-border pt-2 mt-2">
                       <div className="flex justify-between text-lg font-bold text-foreground">
                         <span>Total</span>
@@ -604,29 +532,13 @@ export function CheckoutScreen() {
               <div className="space-y-2">
                 <span className="display-title text-lg">Your Email</span>
                 <div className="relative">
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@example.com" 
-                    value={email} 
-                    onChange={e => handleEmailChange(e.target.value)}
-                    onBlur={handleEmailBlur}
-                    className={`bg-white pr-10 ${
-                      emailError ? 'border-destructive focus-visible:border-destructive' : ''
-                    }`} 
-                  />
-                  {emailValid && (
-                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  )}
+                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} onBlur={handleEmailBlur} className={`bg-white pr-10 ${emailError ? 'border-destructive focus-visible:border-destructive' : ''}`} />
+                  {emailValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
                 </div>
-                {emailError && (
-                  <div className="text-sm text-destructive">
+                {emailError && <div className="text-sm text-destructive">
                     {emailError}
-                  </div>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  We'll send you an order confirmation here after checkout and when your card is mailed.
-                </p>
+                  </div>}
+                <p className="text-sm text-muted-foreground">We'll send you an order confirmation here after checkout and when your card is mailed.</p>
               </div>
 
               {/* Navigation */}
