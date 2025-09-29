@@ -370,7 +370,7 @@ export function CraftMessageScreen() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="field-label">How it affects me or my community:</label>
+                  <label className="field-label">How it affects me (optional):</label>
                   <div className="flex gap-3 items-stretch">
                     <div className="relative flex-1">
                       <Textarea
@@ -401,7 +401,7 @@ export function CraftMessageScreen() {
                             e.preventDefault();
                           }}
                         >
-                          (Optional) Cuts to arts and science programs at my kids school
+                          Cuts to arts programs at my kids' school
                         </div>
                       )}
                     </div>
