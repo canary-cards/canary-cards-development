@@ -191,7 +191,7 @@ ${userInfo?.fullName}`;
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Your Message</label>
+                  <label className="text-sm font-medium">Your message</label>
                   <span className={`text-xs ${charCount > maxChars ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {charCount}/{maxChars}
                   </span>
