@@ -181,7 +181,7 @@ export function LandingScreen() {
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
-            <div className="flex flex-col gap-3 text-primary text-sm">
+            <div className="flex flex-col gap-3 text-primary text-sm mb-4">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">96% of staffers say personalized messages from constituents influence votes</p>
@@ -193,7 +193,7 @@ export function LandingScreen() {
             </div>
             
             {/* Sources Section */}
-            <div className="mt-3 text-center">
+            <div className="text-center">
               <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
                 <CollapsibleTrigger 
                   className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
