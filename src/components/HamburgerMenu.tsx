@@ -275,7 +275,7 @@ function ResearchContent() {
           <div className="space-y-3">
             <h4 className="eyebrow normal-case text-primary">3. Physical mail cuts through.</h4>
             <p className="body-text text-sm">
-              We use AI to help write the postcards, but our postcards are AI-proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
+              We use AI to help write your message, but our postcards are AI-proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
             </p>
           </div>
           
