@@ -185,7 +185,7 @@ export function LandingScreen() {
             <div className="flex flex-col gap-3 text-primary text-sm">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">96% of staffers say personalized messages from constituents influence votes</p>
+                <p className="body-text">96% of staffers say personalized constituent messages influence votes</p>
               </div>
               <div className="flex items-start gap-3">
                 <PenTool className="w-4 h-4 flex-shrink-0 mt-0.5" />
