@@ -360,7 +360,7 @@ export function CheckoutScreen() {
         <div className="container mx-auto px-4 pb-24 max-w-2xl">
           {/* Header Section */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-display font-bold text-foreground mb-2">Let's get your masterful postcard out the door</h1>
+            <h1 className="display-title mb-2">Let's get your masterful postcard out the door</h1>
             <h3 className="subtitle text-base">You have three congresspeople in D.C. Most send to all of them.</h3>
           </div>
 
