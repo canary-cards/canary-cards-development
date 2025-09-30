@@ -13,7 +13,6 @@ import FAQ from "./pages/FAQ";
 import ContactUs from "./pages/ContactUs";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
-import Research from "./pages/Research";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentReturn from "./pages/PaymentReturn";
@@ -55,7 +54,6 @@ const PaymentLoadingDetector = () => {
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
-      <Route path="/research" element={<Research />} />
       <Route path="/share" element={<Share />} />
       <Route path="/share/:orderId" element={<Share />} />
       

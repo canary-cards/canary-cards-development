@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -234,17 +233,88 @@ function PrivacyTermsContent() {
   );
 }
 
-export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
+function ResearchContent() {
+  return (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">The science behind why handwritten postcards cut through</h3>
+        
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">1. Personalized correspondence is the key to influence.</h4>
+            <p className="body-text text-sm">
+              Congressional offices consistently state that nothing has more sway on undecided votes than personalized communication from real constituents—not mass petitions, not form letters, not even most calls. In fact, 96% of Capitol Hill staff say that personalized letters specifically influence how their bosses vote, especially when the issue is undecided. The Congressional Management Foundation's research has found that messages which include personal stories, details about how an issue affects the sender, and some sign of genuine effort—like writing by hand—get more attention and are far more likely to be passed directly to the Member.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">2. Generative AI has changed the email game.</h4>
+            <p className="body-text text-sm">
+              Mass AI-generated emails can now mimic personalization. According to CMF, many congressional offices are increasingly aware of this and are treating many digital messages—no matter how "personal"—like form emails, discounting their impact.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">3. Physical mail cuts through.</h4>
+            <p className="body-text text-sm">
+              We use AI to help write the postcards, but our postcards are AI-proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
+            </p>
+          </div>
+          
+          <div className="space-y-3 pt-4 border-t border-[#E8DECF]">
+            <p className="body-text text-sm font-semibold text-primary text-center">
+              Send a postcard. Be heard.
+            </p>
+          </div>
+          
+          <div className="pt-4 border-t border-[#E8DECF]/50">
+            <p className="text-xs text-muted-foreground mb-2 font-medium">Sources:</p>
+            <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+              <p>
+                Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.
+              </p>
+              <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
+              <p>
+                Congressional Management Foundation. Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill (2011).
+              </p>
+              <p>
+                Congressional Management Foundation. Communicating with Congress: How Citizen Advocacy Is Changing Mail Operations on Capitol Hill (2011).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function HamburgerMenu({ 
+  isDark = false, 
+  initialView = 'main',
+  onOpenChange 
+}: { 
+  isDark?: boolean;
+  initialView?: DrawerView;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<DrawerView>('main');
-  const navigate = useNavigate();
+  const [currentView, setCurrentView] = useState<DrawerView>(initialView);
+
+  // Update view when initialView changes
+  React.useEffect(() => {
+    if (initialView !== 'main') {
+      setCurrentView(initialView);
+      setOpen(true);
+    }
+  }, [initialView]);
 
   // Reset to main view when drawer closes
   useEffect(() => {
     if (!open) {
       setCurrentView('main');
     }
-  }, [open]);
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   // Prevent auto-focus on first button when drawer opens
   useEffect(() => {
@@ -315,12 +385,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   }, [open, currentView]);
 
   const handleNavigation = (view: DrawerView) => {
-    if (view === 'research') {
-      setOpen(false);
-      navigate('/research');
-    } else {
-      setCurrentView(view);
-    }
+    setCurrentView(view);
   };
 
   const handleBack = () => {
@@ -450,6 +515,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                  {currentView === 'faq' && <FAQContent />}
                  {currentView === 'contact' && <ContactContent />}
                  {currentView === 'privacy-terms' && <PrivacyTermsContent />}
+                 {currentView === 'research' && <ResearchContent />}
               </div>
             )}
           </div>

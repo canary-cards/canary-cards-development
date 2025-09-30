@@ -16,9 +16,11 @@ import { lookupRepresentatives } from '../../services/geocodio';
 import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
+import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 export function LandingScreen() {
   const [isSourceOpen, setIsSourceOpen] = useState(false);
+  const [openResearchMenu, setOpenResearchMenu] = useState(false);
   const {
     state,
     dispatch
@@ -239,7 +241,7 @@ export function LandingScreen() {
               ))}
             </div>
 
-            {/* Collapsible Context Layer - only once results are visible */}
+            {/* Reassurance Card */}
             <Card className="mb-6 bg-card border-border">
               <CardContent className="p-4 text-center">
                 <p className="body-text text-sm text-foreground mb-3">
@@ -247,13 +249,25 @@ export function LandingScreen() {
                 </p>
                 <Button
                   variant="link"
-                  onClick={() => window.location.href = '/research'}
+                  onClick={() => setOpenResearchMenu(true)}
                   className="text-primary underline text-sm p-0 h-auto font-normal"
                 >
                   Learn why this works →
                 </Button>
               </CardContent>
             </Card>
+            
+            {/* Hidden HamburgerMenu for Research */}
+            <div className="hidden">
+              {openResearchMenu && (
+                <HamburgerMenu 
+                  initialView="research"
+                  onOpenChange={(open) => {
+                    if (!open) setOpenResearchMenu(false);
+                  }}
+                />
+              )}
+            </div>
           </>
         )}
 
