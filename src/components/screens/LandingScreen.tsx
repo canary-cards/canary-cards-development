@@ -182,7 +182,7 @@ export function LandingScreen() {
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm">The Research</h3>
             </div>
-            <div className="flex flex-col gap-3 text-primary text-sm">
+            <div className="flex flex-col gap-3 text-primary text-sm mb-3">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">96% of staffers say personalized constituent messages influence votes</p>
