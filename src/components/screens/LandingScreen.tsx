@@ -255,14 +255,14 @@ export function LandingScreen() {
                   </p>
                 </div>
                 <div className="text-center">
-                <Button
-                  variant="link"
-                  onClick={() => setOpenResearchMenu(true)}
-                  className="text-primary text-sm p-0 h-auto font-semibold inline-flex items-center gap-1"
-                >
-                  Learn why this works
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setOpenResearchMenu(true)}
+                    className="text-sm font-semibold inline-flex items-center gap-1"
+                  >
+                    Learn why this works
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
