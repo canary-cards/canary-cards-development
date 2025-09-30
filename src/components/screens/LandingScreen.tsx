@@ -173,6 +173,28 @@ export function LandingScreen() {
           </CardContent>
         </Card>
 
+        {/* Proof Strip - Always Visible */}
+        <Card className="mb-4 bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground">
+              <div className="flex items-center gap-1.5">
+                <PenTool className="w-4 h-4 text-primary" />
+                <span>Handwritten on real cardstock</span>
+              </div>
+              <div className="hidden sm:block text-muted-foreground">•</div>
+              <div className="flex items-center gap-1.5">
+                <Mail className="w-4 h-4 text-primary" />
+                <span>Arrives in 2-3 days</span>
+              </div>
+              <div className="hidden sm:block text-muted-foreground">•</div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span className="font-medium">96% of staff say these influence votes</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Collapsible Context Layer - Why Postcards Work (Always Visible) */}
         <Collapsible open={isContextOpen} onOpenChange={setIsContextOpen} className="mb-6">
           <Card className="bg-card border-border">
@@ -265,28 +287,6 @@ export function LandingScreen() {
           </div>}
 
         {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-3 space-y-4">
-            {/* Proof Strip */}
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <PenTool className="w-4 h-4 text-primary" />
-                    <span>Handwritten on real cardstock</span>
-                  </div>
-                  <div className="hidden sm:block text-muted-foreground">•</div>
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="w-4 h-4 text-primary" />
-                    <span>Arrives in 2-3 days</span>
-                  </div>
-                  <div className="hidden sm:block text-muted-foreground">•</div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
-                    <span className="font-medium">96% of staff say these influence votes</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {representatives.length > 1 && <p className="text-center text-sm text-muted-foreground px-4">
                 Multiple representatives found. Select yours:
               </p>}
