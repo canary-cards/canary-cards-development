@@ -236,7 +236,7 @@ function PrivacyTermsContent() {
 
 function ResearchContent() {
   return (
-    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+    <div className="space-y-6">
       <div className="space-y-4">
         <h3 className="eyebrow-lowercase text-secondary">The science behind why handwritten postcards cut through</h3>
         
