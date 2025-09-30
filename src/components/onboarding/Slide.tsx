@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { DynamicSvg } from '../DynamicSvg';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -80,10 +81,13 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
           {finePrint && (
             <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
               <CollapsibleTrigger 
-                className="text-xs text-muted-foreground/70 mt-4 sm:mt-6 hover:text-muted-foreground transition-colors cursor-pointer"
+                className="text-xs text-muted-foreground/70 mt-4 sm:mt-6 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
                 onClick={(e) => e.stopPropagation()}
               >
-                source
+                Source
+                <ChevronDown 
+                  className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
+                />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <p className="text-xs text-muted-foreground/70 mt-2">
