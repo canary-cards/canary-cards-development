@@ -178,7 +178,7 @@ export function LandingScreen() {
 
         {/* Research Card */}
         <Card className="mb-4 border-primary/20 shadow-sm">
-          <CardContent className="pt-4 px-4 !pb-2">
+          <CardContent className="pt-4 px-4 !pb-4">
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm">The Research</h3>
             </div>
@@ -193,7 +193,7 @@ export function LandingScreen() {
               </div>
             </div>
             
-            <Separator className="my-2" />
+            <Separator className="my-4" />
             
             {/* Sources Section */}
             <div className="text-center">
