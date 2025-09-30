@@ -271,7 +271,7 @@ export function PostcardHero({
       <Card className="p-6">
         {/* Hero text */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-primary mb-2 font-display">Here's how your postcard will look</h1>
+          <h1 className="display-title mb-2">Here's how your postcard will look</h1>
           <p className="subtitle text-base">Written with real ballpoint pen on premium cardstock</p>
         </div>
 
