@@ -14,7 +14,7 @@ import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
 import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
-import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, ChevronDown } from 'lucide-react';
+import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, ChevronDown, Mail } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import { HamburgerMenu } from '../HamburgerMenu';
@@ -246,18 +246,23 @@ export function LandingScreen() {
 
             {/* Reassurance Card */}
             <Card className="mb-6 bg-card border-border">
-              <CardContent className="p-4 text-center">
-                <h3 className="subtitle text-sm mb-3">Why this works</h3>
-                <p className="body-text text-sm text-foreground mb-3">
-                  We use AI to help write the postcards, but our postcards are AI-proof.
-                </p>
-                <Button
-                  variant="link"
-                  onClick={() => setOpenResearchMenu(true)}
-                  className="text-primary underline text-sm p-0 h-auto font-normal"
-                >
-                  Learn why this works →
-                </Button>
+              <CardContent className="p-4">
+                <h3 className="subtitle text-sm mb-3 text-center">Why this works</h3>
+                <div className="flex items-start gap-3 text-primary text-sm mb-3">
+                  <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="body-text text-left">
+                    We use AI to help write the postcards, but our postcards are AI-proof.
+                  </p>
+                </div>
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => setOpenResearchMenu(true)}
+                    className="text-primary underline text-sm p-0 h-auto font-normal"
+                  >
+                    Learn why this works →
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             
