@@ -194,7 +194,7 @@ export function LandingScreen() {
               <div className="hidden sm:block text-muted-foreground">•</div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span className="font-medium">96% of staff say letters influence votes</span>
+                <span>96% of staff say letters influence votes</span>
               </div>
             </div>
           </CardContent>
