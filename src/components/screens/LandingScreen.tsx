@@ -189,7 +189,7 @@ export function LandingScreen() {
               <div className="hidden sm:block text-muted-foreground">•</div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span className="font-medium">96% of Capitol Hill staff say personalized letters influence undecided congressional votes</span>
+                <span className="font-medium">Personal letters influence votes: 96% of staff agree</span>
               </div>
             </div>
           </CardContent>
