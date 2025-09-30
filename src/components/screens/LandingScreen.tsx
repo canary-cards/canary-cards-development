@@ -247,6 +247,7 @@ export function LandingScreen() {
             {/* Reassurance Card */}
             <Card className="mb-6 bg-card border-border">
               <CardContent className="p-4 text-center">
+                <h3 className="subtitle text-sm mb-3">Why this works.</h3>
                 <p className="body-text text-sm text-foreground mb-3">
                   We use AI to help write the postcards, but our postcards are AI-proof.
                 </p>
