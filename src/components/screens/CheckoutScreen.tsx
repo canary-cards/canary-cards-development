@@ -44,7 +44,6 @@ export function CheckoutScreen() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [validationError, setValidationError] = useState('');
-  const [confettiTriggered, setConfettiTriggered] = useState(false);
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
 
@@ -172,10 +171,9 @@ export function CheckoutScreen() {
     setSelection(newSelection);
     setValidationError('');
 
-    // Trigger confetti when "all-three" is selected for the first time
-    if (newSelection === 'all-three' && !confettiTriggered) {
+    // Trigger confetti when "all-three" is selected
+    if (newSelection === 'all-three') {
       showCardConfetti();
-      setConfettiTriggered(true);
     }
   };
   const handleCustomSelection = (recipient: keyof typeof customSelection, checked: boolean) => {
