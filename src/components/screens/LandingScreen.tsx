@@ -258,7 +258,7 @@ export function LandingScreen() {
                   <Button
                     variant="link"
                     onClick={() => setOpenResearchMenu(true)}
-                    className="text-secondary text-sm p-0 h-auto font-normal inline-flex items-center gap-1"
+                    className="text-primary text-sm p-0 h-auto font-normal inline-flex items-center gap-1"
                   >
                     Learn why this works
                     <ChevronRight className="w-4 h-4" />
