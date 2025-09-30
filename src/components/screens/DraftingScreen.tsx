@@ -184,7 +184,7 @@ export function DraftingScreen() {
             )}
           </div>
           <div className="text-center space-y-3">
-            <h1 className="text-2xl display-title">
+            <h1 className="display-title">
               Drafting your postcard
             </h1>
             

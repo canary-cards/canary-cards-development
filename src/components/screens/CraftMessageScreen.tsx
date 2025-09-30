@@ -284,7 +284,7 @@ export function CraftMessageScreen() {
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
-              <h1 className="text-2xl display-title mb-2">What's on your mind?</h1>
+              <h1 className="display-title mb-2">What's on your mind?</h1>
               
               <h3 className="subtitle text-base mb-4">Reps respond best to personal messages </h3>
             </div>

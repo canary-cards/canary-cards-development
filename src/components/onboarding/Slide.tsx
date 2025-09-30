@@ -69,7 +69,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         }}
       >
         <div className="space-y-4">
-          <h2 className="text-2xl display-title leading-tight">
+          <h2 className="display-title leading-tight">
             {title}
           </h2>
           <h3 className="subtitle text-base leading-relaxed">

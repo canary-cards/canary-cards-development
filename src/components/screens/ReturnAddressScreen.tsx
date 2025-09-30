@@ -220,7 +220,7 @@ export function ReturnAddressScreen() {
         <Card className="card-warm">
           <CardContent className="p-8">
             <div className="text-center mb-8">
-              <h1 className="text-2xl display-title mb-2">Return address</h1>
+              <h1 className="display-title mb-2">Return address</h1>
               <p className="subtitle text-base">Representatives prioritize mail from their constituents</p>
             </div>
 
