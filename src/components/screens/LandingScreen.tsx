@@ -177,7 +177,7 @@ export function LandingScreen() {
 
         {/* Research Card */}
         <Card className="mb-4 border-primary/20 shadow-sm">
-          <CardContent className="p-4">
+          <CardContent className="pt-4 px-4 pb-4">
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
