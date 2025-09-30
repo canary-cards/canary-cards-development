@@ -178,7 +178,7 @@ export function LandingScreen() {
           <CardContent className="p-4">
             <div className="text-center mb-3">
               <p className="text-sm font-semibold text-foreground">
-                In the age of AI, handwritten breaks through
+                In the age of AI, handwriting breaks through
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground">
