@@ -173,28 +173,20 @@ export function LandingScreen() {
           </CardContent>
         </Card>
 
-        {/* Proof Strip - Always Visible */}
-        <Card className="mb-4 bg-muted/30">
-          <CardContent className="p-4">
-            <div className="text-center mb-4">
-              <p className="text-sm font-semibold text-foreground">
-                In the age of AI, handwriting breaks through
-              </p>
+        {/* Research Card */}
+        <Card className="mb-4 bg-card">
+          <CardContent className="p-6">
+            <div className="text-center mb-6">
+              <h3 className="eyebrow text-rust tracking-wider">THE RESEARCH</h3>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3 text-sm text-foreground leading-relaxed">
-              <div className="flex items-center gap-1.5">
-                <PenTool className="w-4 h-4 text-primary" />
-                <span>Handwritten on real cardstock</span>
+            <div className="flex flex-col gap-4 text-primary">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p className="body-text">96% of staffers say personalized messages from constituents influence votes</p>
               </div>
-              <div className="hidden sm:block text-muted-foreground">•</div>
-              <div className="flex items-center gap-1.5">
-                <Target className="w-4 h-4 text-primary" />
-                <span>Personalized correspondence is key</span>
-              </div>
-              <div className="hidden sm:block text-muted-foreground">•</div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>96% of staff say letters influence votes</span>
+              <div className="flex items-start gap-3">
+                <PenTool className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p className="body-text">About 1 in 20 handwritten postcards get a written response</p>
               </div>
             </div>
           </CardContent>
