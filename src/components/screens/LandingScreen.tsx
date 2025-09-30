@@ -13,7 +13,7 @@ import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
 import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
-import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target, ChevronDown, Mail, CheckCircle2 } from 'lucide-react';
+import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
@@ -30,7 +30,6 @@ export function LandingScreen() {
   const [selectedRep, setSelectedRep] = useState<Representative | null>(null);
   const [showSharedDialog, setShowSharedDialog] = useState(false);
   const [sharedByName, setSharedByName] = useState('');
-  const [isContextOpen, setIsContextOpen] = useState(false);
 
   // Refs for auto-scrolling
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -241,112 +240,20 @@ export function LandingScreen() {
             </div>
 
             {/* Collapsible Context Layer - only once results are visible */}
-            <Collapsible
-              open={isContextOpen}
-              onOpenChange={setIsContextOpen}
-              className="mb-6"
-            >
-              <Card className="bg-card border-border">
-                <CollapsibleTrigger className="w-full">
-                  <CardContent className="p-4 hover:bg-accent/5 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-primary" />
-                        <span className="text-sm font-semibold text-foreground">
-                          Why does this work? (See the research)
-                        </span>
-                      </div>
-                      <ChevronDown
-                        className={`w-5 h-5 text-muted-foreground transition-transform ${
-                          isContextOpen ? 'rotate-180' : ''
-                        }`}
-                      />
-                    </div>
-                  </CardContent>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent>
-                  <CardContent className="px-6 pb-6 pt-2 space-y-6">
-                    <div className="text-center mb-4">
-                      <p className="text-sm font-semibold text-secondary tracking-wide uppercase">
-                        The Research Behind Our Method
-                      </p>
-                    </div>
-
-                    {/* Section 1: Personalized correspondence */}
-                    <div className="space-y-3">
-                      <h3 className="text-base font-semibold text-foreground">
-                        1. Personalized correspondence is the key to influence.
-                      </h3>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        Congressional offices consistently state that nothing has more sway on undecided votes than personalized communication from real constituents—not mass petitions, not form letters, not even most calls. In fact, 96% of Capitol Hill staff say that personalized letters specifically influence how their bosses vote, especially when the issue is undecided. The Congressional Management Foundation's research has found that messages which include personal stories, details about how an issue affects the sender, and some sign of genuine effort—like writing by hand—get more attention and are far more likely to be passed directly to the Member.
-                      </p>
-
-                      {/* Responsive Chart */}
-                      <div className="w-full mt-4">
-                        <DynamicSvg
-                          assetName="constituent-importance-mobile.svg"
-                          alt="Chart showing constituent importance rankings - mobile view"
-                          className="w-full h-auto md:hidden"
-                        />
-                        <DynamicSvg
-                          assetName="constituent-importance-desktop.svg"
-                          alt="Chart showing constituent importance rankings - desktop view"
-                          className="hidden md:block w-full h-auto"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2 italic">
-                        Data source: CMF 2011 Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill
-                      </p>
-                    </div>
-
-                    {/* Section 2: AI impact */}
-                    <div className="space-y-3">
-                      <h3 className="text-base font-semibold text-foreground">
-                        2. Generative AI has changed the email game.
-                      </h3>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        Mass AI-generated emails can now mimic personalization. According to CMF, many congressional offices are increasingly aware of this and are treating many digital messages—no matter how "personal"—like form emails, discounting their impact.
-                      </p>
-                    </div>
-
-                    {/* Section 3: Physical mail advantages */}
-                    <div className="space-y-3">
-                      <h3 className="text-base font-semibold text-foreground">
-                        3. Physical mail cuts through.
-                      </h3>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        We use AI to help write the postcards, but our postcards are AI proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
-                      </p>
-                    </div>
-
-                    {/* Call to action */}
-                    <div className="text-center pt-4 border-t border-muted">
-                      <p className="text-base font-semibold text-primary">
-                        Send a postcard. Be heard.
-                      </p>
-                    </div>
-
-                    {/* Sources */}
-                    <div className="pt-4 border-t border-muted/50">
-                      <p className="text-xs text-muted-foreground mb-2 font-medium">Sources:</p>
-                      <div className="space-y-1 text-xs text-muted-foreground leading-relaxed">
-                        <p>
-                          Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.
-                        </p>
-                        <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
-                        <p>
-                          Congressional Management Foundation. Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill (2011).
-                        </p>
-                        <p>
-                          Congressional Management Foundation. Communicating with Congress: How Citizen Advocacy Is Changing Mail Operations on Capitol Hill (2011).
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card className="mb-6 bg-card border-border">
+              <CardContent className="p-4 text-center">
+                <p className="body-text text-sm text-foreground mb-3">
+                  We use AI to help write the postcards, but our postcards are AI-proof.
+                </p>
+                <Button
+                  variant="link"
+                  onClick={() => window.location.href = '/research'}
+                  className="text-primary underline text-sm p-0 h-auto font-normal"
+                >
+                  Learn why this works →
+                </Button>
+              </CardContent>
+            </Card>
           </>
         )}
 

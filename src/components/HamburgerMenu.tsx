@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -7,7 +8,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
-type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms';
+type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research';
 
 // Content components for each section
 function AboutContent() {
@@ -236,6 +237,7 @@ function PrivacyTermsContent() {
 export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   const [open, setOpen] = useState(false);
   const [currentView, setCurrentView] = useState<DrawerView>('main');
+  const navigate = useNavigate();
 
   // Reset to main view when drawer closes
   useEffect(() => {
@@ -313,7 +315,12 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
   }, [open, currentView]);
 
   const handleNavigation = (view: DrawerView) => {
-    setCurrentView(view);
+    if (view === 'research') {
+      setOpen(false);
+      navigate('/research');
+    } else {
+      setCurrentView(view);
+    }
   };
 
   const handleBack = () => {
@@ -326,6 +333,7 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
       case 'faq': return 'FAQ';
       case 'contact': return 'Contact Us';
       case 'privacy-terms': return 'Privacy & Terms';
+      case 'research': return 'The Research';
       default: return 'Canary Cards';
     }
   };
@@ -405,6 +413,15 @@ export function HamburgerMenu({ isDark = false }: { isDark?: boolean }) {
                      className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
                    >
                     <div className="text-primary">FAQ</div>
+                  </button>
+                  
+                  <div className="border-b border-[#E8DECF] my-2"></div>
+                  
+                  <button
+                    onClick={() => handleNavigation('research')}
+                    className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                  >
+                    <div className="text-primary">The Research</div>
                   </button>
                   
                   <div className="border-b border-[#E8DECF] my-2"></div>
