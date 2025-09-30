@@ -176,11 +176,11 @@ export function LandingScreen() {
 
         {/* Research Card */}
         <Card className="mb-4 bg-card">
-          <CardContent className="p-6">
-            <div className="text-center mb-6">
+          <CardContent className="p-4">
+            <div className="text-center mb-4">
               <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
-            <div className="flex flex-col gap-4 text-primary text-sm">
+            <div className="flex flex-col gap-3 text-primary text-sm">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">96% of staffers say personalized messages from constituents influence votes</p>
