@@ -176,12 +176,12 @@ export function LandingScreen() {
         {/* Proof Strip - Always Visible */}
         <Card className="mb-4 bg-muted/30">
           <CardContent className="p-4">
-            <div className="text-center mb-3">
+            <div className="text-center mb-4">
               <p className="text-sm font-semibold text-foreground">
                 In the age of AI, handwriting breaks through
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-foreground leading-relaxed">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3 text-sm text-foreground leading-relaxed">
               <div className="flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-primary" />
                 <span>Handwritten on real cardstock</span>
