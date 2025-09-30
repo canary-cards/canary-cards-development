@@ -262,6 +262,7 @@ export function LandingScreen() {
               initialView={openResearchMenu ? "research" : "main"}
               externalOpen={openResearchMenu}
               externalSetOpen={setOpenResearchMenu}
+              hideTrigger={true}
               onOpenChange={(open) => {
                 if (!open) setOpenResearchMenu(false);
               }}
