@@ -158,7 +158,7 @@ serve(async (req) => {
             currency: "usd",
             product_data: { 
               name: selectedPricing.name,
-              description: `Written and mailed to your representative`
+              description: `Written and mailed on your behalf`
             },
             unit_amount: selectedPricing.amount,
           },
