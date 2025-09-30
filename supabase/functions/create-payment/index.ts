@@ -75,9 +75,9 @@ serve(async (req) => {
 
     // Set pricing based on send option
     const pricing = {
-      single: { amount: 500, name: "Single Postcard" },
+      single: { amount: 500, name: "Single postcard" },
       double: { amount: 1000, name: "Double Postcard Package" },
-      triple: { amount: 1200, name: "Triple Postcard Package" } // $12 with bundle savings
+      triple: { amount: 1200, name: "Triple postcard package" } // $12 with bundle savings
     };
 
     const selectedPricing = pricing[sendOption as keyof typeof pricing];
