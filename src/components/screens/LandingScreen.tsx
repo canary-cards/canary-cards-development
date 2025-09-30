@@ -177,7 +177,7 @@ export function LandingScreen() {
 
         {/* Research Card */}
         <Card className="mb-4 border-primary/20 shadow-sm">
-          <CardContent className="pt-4 px-4 pb-4">
+          <CardContent className="pt-4 px-4 pb-0">
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
@@ -193,7 +193,7 @@ export function LandingScreen() {
             </div>
             
             {/* Sources Section */}
-            <div className="mt-4 text-center">
+            <div className="mt-4 mb-4 text-center">
               <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
                 <CollapsibleTrigger 
                   className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
