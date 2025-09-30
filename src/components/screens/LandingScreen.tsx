@@ -179,13 +179,13 @@ export function LandingScreen() {
             <div className="text-center mb-6">
               <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
-            <div className="flex flex-col gap-4 text-primary">
+            <div className="flex flex-col gap-4 text-primary text-sm">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">96% of staffers say personalized messages from constituents influence votes</p>
               </div>
               <div className="flex items-start gap-3">
-                <PenTool className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <PenTool className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">About 1 in 20 handwritten postcards get a written response</p>
               </div>
             </div>
