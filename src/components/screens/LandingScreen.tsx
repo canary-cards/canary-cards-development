@@ -177,7 +177,7 @@ export function LandingScreen() {
         <Card className="mb-4 bg-card">
           <CardContent className="p-6">
             <div className="text-center mb-6">
-              <h3 className="text-sm font-semibold text-muted-foreground tracking-wider">THE RESEARCH</h3>
+              <h3 className="subtitle text-sm font-semibold tracking-wider">THE RESEARCH</h3>
             </div>
             <div className="flex flex-col gap-4 text-primary">
               <div className="flex items-start gap-3">
