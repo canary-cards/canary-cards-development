@@ -192,7 +192,7 @@ export function LandingScreen() {
             </div>
             
             {/* Sources Section */}
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
                 <CollapsibleTrigger 
                   className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
@@ -204,7 +204,7 @@ export function LandingScreen() {
                   />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="text-xs text-muted-foreground/70 leading-relaxed mt-3 space-y-2">
+                  <div className="text-xs text-muted-foreground/70 leading-relaxed mt-2 space-y-2">
                     <p>Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.</p>
                     <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
                   </div>
