@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DynamicSvg } from '../DynamicSvg';
 import { useIsMobile } from '../../hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SlideProps {
   title: string;
@@ -15,6 +16,7 @@ interface SlideProps {
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   const isMobile = useIsMobile();
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
   
   return (
     <div className="relative h-full">
@@ -76,9 +78,19 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             {subtitle}
           </h3>
           {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-4 sm:mt-6">
-              {finePrint}
-            </p>
+            <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
+              <CollapsibleTrigger 
+                className="text-xs text-muted-foreground/70 mt-4 sm:mt-6 hover:text-muted-foreground transition-colors cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                source
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <p className="text-xs text-muted-foreground/70 mt-2">
+                  {finePrint}
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
       </div>
