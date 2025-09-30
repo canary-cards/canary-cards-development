@@ -6,6 +6,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { DynamicSvg } from '@/components/DynamicSvg';
 
 type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research';
 
@@ -244,6 +245,23 @@ function ResearchContent() {
             <h4 className="eyebrow normal-case text-primary">1. Personalized correspondence is the key to influence.</h4>
             <p className="body-text text-sm">
               Congressional offices consistently state that nothing has more sway on undecided votes than personalized communication from real constituents—not mass petitions, not form letters, not even most calls. In fact, 96% of Capitol Hill staff say that personalized letters specifically influence how their bosses vote, especially when the issue is undecided. The Congressional Management Foundation's research has found that messages which include personal stories, details about how an issue affects the sender, and some sign of genuine effort—like writing by hand—get more attention and are far more likely to be passed directly to the Member.
+            </p>
+            
+            {/* Responsive Chart */}
+            <div className="w-full mt-4 mb-2">
+              <DynamicSvg
+                assetName="constituent-importance-mobile.svg"
+                alt="Chart showing constituent importance rankings - mobile view"
+                className="w-full h-auto md:hidden"
+              />
+              <DynamicSvg
+                assetName="constituent-importance-desktop.svg"
+                alt="Chart showing constituent importance rankings - desktop view"
+                className="hidden md:block w-full h-auto"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground italic">
+              Data source: CMF 2011 Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill
             </p>
           </div>
           
