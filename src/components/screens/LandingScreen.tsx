@@ -174,7 +174,7 @@ export function LandingScreen() {
         </Card>
 
         {/* Proof Strip - Always Visible */}
-        <Card className="mb-4">
+        <Card className="mb-4 bg-muted/30">
           <CardContent className="p-4">
             <div className="text-center mb-3">
               <p className="text-sm font-semibold text-foreground">
