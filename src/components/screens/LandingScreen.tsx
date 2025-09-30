@@ -251,7 +251,7 @@ export function LandingScreen() {
                 <div className="flex items-start gap-3 text-primary text-sm mb-3">
                   <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="body-text text-left">
-                    We use AI to help write the postcards, but our postcards are AI-proof.
+                    We use AI to help write your message, but our postcards are AI-proof.
                   </p>
                 </div>
                 <div className="text-center">
