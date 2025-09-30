@@ -189,7 +189,7 @@ export function LandingScreen() {
               </div>
               <div className="flex items-start gap-3">
                 <PenTool className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">About 1 in 20 handwritten postcards get a written response compared to 1 in 1000 emails.</p>
+                <p className="body-text">About 1 in 20 handwritten postcards get a response compared to 1 in 1000 emails.</p>
               </div>
             </div>
             
