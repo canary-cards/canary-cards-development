@@ -123,7 +123,7 @@ export function LandingScreen() {
           {/* Hero Text */}
           <div className="w-full p-6 pb-0">
             <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative</h1>
-            <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards get noticed, emails don't</h2>
+            <h2 className="subtitle text-base mb-0 leading-relaxed">In the age of AI, physical mail is the gold standard.</h2>
           </div>
         </div>
 
