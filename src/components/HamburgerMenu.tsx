@@ -449,7 +449,7 @@ export function HamburgerMenu({
       )}
       <SheetContent 
         side="right" 
-        className="bg-white text-primary border-l-0 max-h-screen overflow-y-auto shadow-xl shadow-primary/10"
+        className="bg-white text-primary border-l-0 max-h-screen shadow-xl shadow-primary/10 p-0"
         data-hamburger-menu="true"
       >
         <div 
