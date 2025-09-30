@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { RepresentativeCard } from '@/components/rep/RepresentativeCard';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '../../context/AppContext';
 import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
@@ -192,8 +193,10 @@ export function LandingScreen() {
               </div>
             </div>
             
+            <Separator className="my-4" />
+            
             {/* Sources Section */}
-            <div className="mt-4 text-center">
+            <div className="text-center">
               <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
                 <CollapsibleTrigger 
                   className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
