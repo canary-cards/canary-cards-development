@@ -181,7 +181,7 @@ export function LandingScreen() {
                 In the age of AI, handwriting breaks through
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-foreground leading-relaxed">
               <div className="flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-primary" />
                 <span>Handwritten on real cardstock</span>
