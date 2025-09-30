@@ -258,16 +258,14 @@ export function LandingScreen() {
             </Card>
             
             {/* Programmatically controlled HamburgerMenu for Research */}
-            {openResearchMenu && (
-              <div className="absolute top-0 right-0">
-                <HamburgerMenu 
-                  initialView="research"
-                  onOpenChange={(open) => {
-                    if (!open) setOpenResearchMenu(false);
-                  }}
-                />
-              </div>
-            )}
+            <HamburgerMenu 
+              initialView={openResearchMenu ? "research" : "main"}
+              externalOpen={openResearchMenu}
+              externalSetOpen={setOpenResearchMenu}
+              onOpenChange={(open) => {
+                if (!open) setOpenResearchMenu(false);
+              }}
+            />
           </>
         )}
 

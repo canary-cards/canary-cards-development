@@ -309,14 +309,22 @@ function ResearchContent() {
 export function HamburgerMenu({ 
   isDark = false, 
   initialView = 'main',
-  onOpenChange 
+  onOpenChange,
+  externalOpen,
+  externalSetOpen
 }: { 
   isDark?: boolean;
   initialView?: DrawerView;
   onOpenChange?: (open: boolean) => void;
+  externalOpen?: boolean;
+  externalSetOpen?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<DrawerView>(initialView);
+
+  // Use external control if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalSetOpen || setInternalOpen;
 
   // Update view when initialView changes
   React.useEffect(() => {
@@ -324,7 +332,7 @@ export function HamburgerMenu({
       setCurrentView(initialView);
       setOpen(true);
     }
-  }, [initialView]);
+  }, [initialView, setOpen]);
 
   // Reset to main view when drawer closes
   useEffect(() => {
