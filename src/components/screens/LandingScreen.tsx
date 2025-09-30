@@ -18,6 +18,7 @@ import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 export function LandingScreen() {
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
   const {
     state,
     dispatch
@@ -188,6 +189,27 @@ export function LandingScreen() {
                 <PenTool className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="body-text">About 1 in 20 handwritten postcards get a written response</p>
               </div>
+            </div>
+            
+            {/* Sources Section */}
+            <div className="mt-4 text-center">
+              <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
+                <CollapsibleTrigger 
+                  className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Sources
+                  <ChevronDown 
+                    className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="text-xs text-muted-foreground/70 leading-relaxed mt-3 space-y-2">
+                    <p>Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.</p>
+                    <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </CardContent>
         </Card>
