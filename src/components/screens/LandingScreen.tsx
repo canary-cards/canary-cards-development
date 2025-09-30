@@ -248,7 +248,7 @@ export function LandingScreen() {
             <Card className="mb-6 bg-card border-border">
               <CardContent className="p-4">
                 <h3 className="subtitle text-sm mb-3 text-center">Why this works</h3>
-                <div className="flex items-start gap-3 text-primary text-sm mb-2">
+                <div className="flex items-start gap-3 text-primary text-sm mb-3">
                   <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="body-text text-left">
                     We use AI to help write your message, but our postcards are AI-proof.
