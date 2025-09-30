@@ -189,7 +189,7 @@ export function LandingScreen() {
               <div className="hidden sm:block text-muted-foreground">•</div>
               <div className="flex items-center gap-1.5">
                 <Target className="w-4 h-4 text-primary" />
-                <span>Personalized correspondence is key to influence</span>
+                <span>Personalized correspondence is key</span>
               </div>
               <div className="hidden sm:block text-muted-foreground">•</div>
               <div className="flex items-center gap-1.5">
