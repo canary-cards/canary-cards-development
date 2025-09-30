@@ -65,10 +65,11 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
 
       {/* Text area - responsive spacing from icon */}
       <div 
-        className="absolute inset-x-0 px-4 sm:px-6 text-center"
+        className="absolute inset-x-0 px-4 sm:px-6 text-center overflow-y-auto"
         style={{
           top: isMobile ? '48%' : '47%', // Increased mobile spacing from 42% to 48%
-          bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
+          bottom: 'max(env(safe-area-inset-bottom, 1rem), 2rem)', // Increased bottom padding
+          paddingBottom: '1rem',
         }}
       >
         <div className="space-y-4">
@@ -90,7 +91,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <p className="text-xs text-muted-foreground/70 mt-2">
+                <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">
                   {finePrint}
                 </p>
               </CollapsibleContent>
