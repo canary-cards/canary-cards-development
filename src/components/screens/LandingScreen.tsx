@@ -174,7 +174,7 @@ export function LandingScreen() {
         </Card>
 
         {/* Proof Strip - Always Visible */}
-        <Card className="mb-4 bg-primary/5 border-primary/20">
+        <Card className="mb-4">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-foreground">
               <div className="flex items-center gap-1.5">
