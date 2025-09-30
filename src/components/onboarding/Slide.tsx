@@ -90,7 +90,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">
+                <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
                   {finePrint}
                 </p>
               </CollapsibleContent>
