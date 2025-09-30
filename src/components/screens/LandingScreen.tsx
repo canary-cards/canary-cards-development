@@ -196,7 +196,7 @@ export function LandingScreen() {
             <div className="mt-4 text-center">
               <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
                 <CollapsibleTrigger 
-                  className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                  className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Sources
