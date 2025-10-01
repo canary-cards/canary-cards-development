@@ -32,7 +32,7 @@ export default function FAQ() {
                       What does my postcard look like?
                     </h3>
                     <p className="body-text">
-                      A sturdy 5×7 postcard on glossy stock. Real words, real ink, mailed to your representative.
+                      A sturdy 5×7 postcard on glossy stock featuring beautiful imagery of great American national parks. Real words, real ink, mailed to your representative.
                     </p>
                   </div>
                   <div className="space-y-3">
