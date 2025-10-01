@@ -56,16 +56,18 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
           Do postcards really make a difference?
         </h4>
         <p className="body-text">
-          Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
-          {onSeeResearch && (
+          Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
+        </p>
+        {onSeeResearch && (
+          <p className="body-text">
             <button
               onClick={onSeeResearch}
               className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
             >
               See the Research
             </button>
-          )}
-        </p>
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -91,16 +93,18 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
           Do you sell my personal information?
         </h4>
         <p className="body-text">
-          No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.{' '}
-          {onSeePrivacy && (
+          No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+        </p>
+        {onSeePrivacy && (
+          <p className="body-text">
             <button
               onClick={onSeePrivacy}
-              className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+              className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
             >
               Read full Privacy & Terms
             </button>
-          )}
-        </p>
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
