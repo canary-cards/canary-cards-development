@@ -239,12 +239,12 @@ function ResearchContent() {
             {/* Responsive Chart */}
             <div className="w-full mt-4 mb-2">
               <DynamicSvg
-                assetName="constituent-importance-mobile.svg"
+                assetName="chart_mobile_desaturated_key_1.svg"
                 alt="Chart showing constituent importance rankings - mobile view"
                 className="w-full h-auto md:hidden"
               />
               <DynamicSvg
-                assetName="constituent-importance-desktop.svg"
+                assetName="chart_desktop_desaturated_key_suptitle_x058.svg"
                 alt="Chart showing constituent importance rankings - desktop view"
                 className="hidden md:block w-full h-auto"
               />
