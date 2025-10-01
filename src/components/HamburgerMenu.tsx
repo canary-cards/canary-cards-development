@@ -59,7 +59,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
           Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
         </p>
         {onSeeResearch && (
-          <p className="body-text">
+          <p className="body-text mt-0">
             <button
               onClick={onSeeResearch}
               className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
@@ -96,7 +96,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
           No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
         </p>
         {onSeePrivacy && (
-          <p className="body-text">
+          <p className="body-text mt-0">
             <button
               onClick={onSeePrivacy}
               className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
