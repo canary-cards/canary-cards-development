@@ -228,7 +228,7 @@ function ResearchContent() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">The science behind why handwritten postcards cut through</h3>
+        <h3 className="eyebrow-lowercase text-secondary">Why a handwritten postcard is the gold standard in 2025</h3>
         
         <div className="space-y-6">
           <div className="space-y-3">
