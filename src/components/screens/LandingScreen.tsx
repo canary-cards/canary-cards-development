@@ -235,23 +235,23 @@ export function LandingScreen() {
                 />
               ))}
             </div>
-
-            {/* Programmatically controlled HamburgerMenu for Research */}
-            <HamburgerMenu 
-              initialView={openResearchMenu ? "research" : "main"}
-              externalOpen={openResearchMenu}
-              externalSetOpen={setOpenResearchMenu}
-              hideTrigger={true}
-              onOpenChange={(open) => {
-                if (!open) setOpenResearchMenu(false);
-              }}
-            />
           </>
         )}
 
         {/* Spacer for sticky button */}
         {selectedRep && <div className="h-20" />}
       </div>
+
+      {/* Programmatically controlled HamburgerMenu for Research - Always available */}
+      <HamburgerMenu 
+        initialView={openResearchMenu ? "research" : "main"}
+        externalOpen={openResearchMenu}
+        externalSetOpen={setOpenResearchMenu}
+        hideTrigger={true}
+        onOpenChange={(open) => {
+          if (!open) setOpenResearchMenu(false);
+        }}
+      />
 
       {/* Sticky CTA */}
       {selectedRep && (
