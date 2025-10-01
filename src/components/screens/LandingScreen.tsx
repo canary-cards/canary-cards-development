@@ -184,10 +184,10 @@ export function LandingScreen() {
               <p className="body-text font-medium">96% of staffers say personalized constituent messages influence undecided votes</p>
             </div>
             
-            <Separator className="my-1" />
+            <Separator className="my-0.5" />
             
             {/* Learn Why This Works Link */}
-            <div className="text-center py-2">
+            <div className="text-center py-1">
               <button
                 onClick={() => setOpenResearchMenu(true)}
                 className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
