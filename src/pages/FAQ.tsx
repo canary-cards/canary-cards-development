@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
+import { HamburgerMenu } from '@/components/HamburgerMenu';
 
 export default function FAQ() {
+  const [openResearchMenu, setOpenResearchMenu] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,7 +54,13 @@ export default function FAQ() {
                     Do postcards really make a difference?
                   </h3>
                   <p className="body-text">
-                    Yes. Research shows postcards bypass long mail screening, arrive faster than letters, and get prioritized over mass emails. Congressional staff pay closer attention to constituent mail.
+                    Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
+                    <button
+                      onClick={() => setOpenResearchMenu(true)}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      See full research here
+                    </button>
                   </p>
                 </div>
               </div>
@@ -96,6 +104,14 @@ export default function FAQ() {
           </Card>
         </div>
       </main>
+
+      <HamburgerMenu
+        isDark={false}
+        initialView="research"
+        externalOpen={openResearchMenu}
+        externalSetOpen={setOpenResearchMenu}
+        hideTrigger={true}
+      />
     </div>
   );
 }
