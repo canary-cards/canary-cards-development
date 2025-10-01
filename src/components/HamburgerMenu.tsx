@@ -15,12 +15,15 @@ function AboutContent() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Why we built this</h3>
+        <h3 className="eyebrow-lowercase text-secondary">Why We Built Canary</h3>
         <p className="body-text">
-          We built Canary Cards because we were frustrated, too.
+          When the early drafts of the One Big Beautiful Bill Act included sweeping public land sell‑offs, Americans from all sides flooded Congress with letters, postcards, and phone calls demanding: public land is not for sale. The public backlash was so intense that lawmakers across the political spectrum quietly stripped out the land‑sale provisions from the final legislation.
         </p>
         <p className="body-text">
-          Buying postcards, finding stamps, handwriting a message, and hauling it to the post office — all that effort makes it easy to give up.
+          That moment made something very clear to us: when people speak, decision‑makers listen. The problem is, most citizens lack the time, the confidence, or the know‑how to turn their concern into real influence.
+        </p>
+        <p className="body-text">
+          So we built Canary, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
         </p>
       </div>
       
@@ -71,7 +74,7 @@ function FAQContent() {
             Do postcards really make a difference?
           </h4>
           <p className="body-text">
-            Yes. Research shows postcards bypass long mail screening, arrive faster than letters, and get prioritized over mass emails. Congressional staff pay closer attention to constituent mail.
+            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
           </p>
         </div>
       </div>
