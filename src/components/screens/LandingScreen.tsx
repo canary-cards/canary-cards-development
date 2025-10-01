@@ -180,19 +180,8 @@ export function LandingScreen() {
             <div className="text-center mb-4">
               <h3 className="subtitle text-sm">THE RESEARCH</h3>
             </div>
-            <div className="flex flex-col gap-3 text-primary text-sm mb-3">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">Personalized correspondence is the key to influence</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Bot className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">Generative AI has changed the email game</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">Physical mail cuts through</p>
-              </div>
+            <div className="text-center text-primary text-sm mb-3">
+              <p className="body-text font-medium">96% of staffers say personalized constituent messages influence undecided votes</p>
             </div>
             
             <Separator className="my-1" />
