@@ -57,7 +57,7 @@ export default function FAQ() {
                     Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
                     <button
                       onClick={() => setOpenResearchMenu(true)}
-                      className="text-primary hover:underline font-medium"
+                      className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
                     >
                       See full research here
                     </button>

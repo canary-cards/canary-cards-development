@@ -30,7 +30,7 @@ function AboutContent() {
   );
 }
 
-function FAQContent() {
+function FAQContent({ onSeeResearch }: { onSeeResearch?: () => void }) {
   return (
     <div className="space-y-8">
       {/* About the postcard */}
@@ -64,7 +64,15 @@ function FAQContent() {
             Do postcards really make a difference?
           </h4>
           <p className="body-text">
-            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
+            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
+            {onSeeResearch && (
+              <button
+                onClick={onSeeResearch}
+                className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+              >
+                See full research here
+              </button>
+            )}
           </p>
         </div>
       </div>
@@ -534,9 +542,9 @@ export function HamburgerMenu({
             ) : (
               /* Content Views */
               <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
-                 {currentView === 'about' && <AboutContent />}
-                 {currentView === 'faq' && <FAQContent />}
-                 {currentView === 'contact' && <ContactContent />}
+          {currentView === 'about' && <AboutContent />}
+          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} />}
+          {currentView === 'contact' && <ContactContent />}
                  {currentView === 'privacy-terms' && <PrivacyTermsContent />}
                  {currentView === 'research' && <ResearchContent />}
               </div>
