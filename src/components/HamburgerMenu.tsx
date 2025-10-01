@@ -60,7 +60,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
           {onSeeResearch && (
             <button
               onClick={onSeeResearch}
-              className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+              className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
             >
               See the Research
             </button>
