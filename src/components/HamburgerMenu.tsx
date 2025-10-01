@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { DynamicSvg } from '@/components/DynamicSvg';
+import { ExpandableChart } from '@/components/ExpandableChart';
 
 type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research';
 
@@ -243,10 +244,10 @@ function ResearchContent() {
                 alt="Chart showing constituent importance rankings - mobile view"
                 className="w-full h-auto md:hidden"
               />
-              <DynamicSvg
+              <ExpandableChart
                 assetName="chart_desktop_desaturated_key_suptitle_x058.svg"
                 alt="Chart showing constituent importance rankings - desktop view"
-                className="hidden md:block w-full h-auto"
+                className="hidden md:block"
               />
             </div>
             <p className="text-xs text-muted-foreground italic">
