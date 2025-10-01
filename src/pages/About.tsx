@@ -22,13 +22,13 @@ export default function About() {
             <CardContent className="p-8 space-y-4">
               <h2 className="eyebrow-lowercase text-secondary">Why We Built Canary</h2>
               <p className="body-text">
-                When the early drafts of the One Big Beautiful Bill Act included sweeping public land sell‑offs, Americans from all sides flooded Congress with letters, postcards, and phone calls demanding: public land is not for sale. The public backlash was so intense that lawmakers across the political spectrum quietly stripped out the land‑sale provisions from the final legislation.
+                When the early drafts of the One Big Beautiful Bill Act included sweeping public land sell‑offs, Americans from all sides flooded Congress with letters, postcards, and phone calls demanding: <strong>public land is not for sale</strong>. The public backlash was so intense that lawmakers across the political spectrum quietly stripped out the land‑sale provisions from the final legislation.
               </p>
               <p className="body-text">
-                That moment made something very clear to us: when people speak, decision‑makers listen. The problem is, most citizens lack the time, the confidence, or the know‑how to turn their concern into real influence.
+                That moment made something very clear to us: <strong>when people speak, decision‑makers listen</strong>. The problem is, most citizens lack the time, the confidence, or the know‑how to turn their concern into real influence.
               </p>
               <p className="body-text">
-                So we built Canary, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
+                So we built <strong>Canary</strong>, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
               </p>
             </CardContent>
           </Card>
