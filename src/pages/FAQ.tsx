@@ -59,7 +59,7 @@ export default function FAQ() {
                       onClick={() => setOpenResearchMenu(true)}
                       className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
                     >
-                      See full research here
+                      See the Research
                     </button>
                   </p>
                 </div>
