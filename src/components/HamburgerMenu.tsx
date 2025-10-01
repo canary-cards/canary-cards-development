@@ -26,16 +26,6 @@ function AboutContent() {
           So we built <strong>Canary</strong>, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
         </p>
       </div>
-      
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Why this works</h3>
-        <p className="body-text">
-          Postcards cut through. A real card lands on your representative's desk, where emails and petitions usually don't.
-        </p>
-        <p className="body-text">
-          In under two minutes, you write. We handle the rest — non-partisan, no extra steps, just your voice delivered.
-        </p>
-      </div>
     </div>
   );
 }
