@@ -32,108 +32,84 @@ function AboutContent() {
 
 function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => void; onSeePrivacy?: () => void }) {
   return (
-    <div className="space-y-8">
-      {/* About the postcard */}
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">About the postcard</h3>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              What does my postcard look like?
-            </h4>
-                    <p className="body-text">
-                      A sturdy 5×7 postcard on glossy stock featuring beautiful imagery of great American national parks. Real words, real ink, mailed to your representative.
-                    </p>
-          </div>
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              Is it really handwritten?
-            </h4>
-            <p className="body-text">
-              Yes. Robots use real pens with natural variations in pressure, spacing, and letter forms — indistinguishable from human handwriting.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          What does my postcard look like?
+        </h4>
+        <p className="body-text">
+          A sturdy 5×7 postcard on glossy stock featuring beautiful imagery of great American national parks. Real words, real ink, mailed to your representative.
+        </p>
       </div>
 
-      {/* Why it works */}
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Why it works</h3>
-        <div className="space-y-3">
-          <h4 className="eyebrow normal-case text-primary">
-            Do postcards really make a difference?
-          </h4>
-          <p className="body-text">
-            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
-            {onSeeResearch && (
-              <button
-                onClick={onSeeResearch}
-                className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
-              >
-                See the Research
-              </button>
-            )}
-          </p>
-        </div>
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          Is it really handwritten?
+        </h4>
+        <p className="body-text">
+          Yes. Robots use real pens with natural variations in pressure, spacing, and letter forms — indistinguishable from human handwriting.
+        </p>
       </div>
 
-      {/* How it works */}
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">How it works</h3>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              How do the robots work?
-            </h4>
-            <p className="body-text">
-              We send your message to robots that hold real pens and write each card uniquely. Then we drop it in the mail.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              Will I know when my card is sent?
-            </h4>
-            <p className="body-text">
-              Yes. You'll get a confirmation email once your card has been mailed.
-            </p>
-          </div>
-        </div>
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          Do postcards really make a difference?
+        </h4>
+        <p className="body-text">
+          Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
+          {onSeeResearch && (
+            <button
+              onClick={onSeeResearch}
+              className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+            >
+              See the Research
+            </button>
+          )}
+        </p>
       </div>
 
-      {/* Privacy & Data */}
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Privacy & Data</h3>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h4 className="eyebrow normal-case text-primary">
-              Do you sell my personal information?
-            </h4>
-            <p className="body-text">
-              No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.{' '}
-              {onSeePrivacy && (
-                <button
-                  onClick={onSeePrivacy}
-                  className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
-                >
-                  Read full Privacy & Terms
-                </button>
-              )}
-            </p>
-          </div>
-        </div>
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          How do the robots work?
+        </h4>
+        <p className="body-text">
+          We send your message to robots that hold real pens and write each card uniquely. Then we drop it in the mail.
+        </p>
       </div>
 
-      {/* Non-partisan promise */}
-      <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Non-partisan promise</h3>
-        <div className="space-y-3">
-          <h4 className="eyebrow normal-case text-primary">
-            Is Canary partisan?
-          </h4>
-          <p className="body-text">
-            No. Canary is proudly non-partisan. It works for anyone who wants their voice heard.
-          </p>
-        </div>
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          Will I know when my card is sent?
+        </h4>
+        <p className="body-text">
+          Yes. You'll get a confirmation email once your card has been mailed.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          Do you sell my personal information?
+        </h4>
+        <p className="body-text">
+          No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.{' '}
+          {onSeePrivacy && (
+            <button
+              onClick={onSeePrivacy}
+              className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+            >
+              Read full Privacy & Terms
+            </button>
+          )}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <h4 className="eyebrow normal-case text-primary">
+          Is Canary partisan?
+        </h4>
+        <p className="body-text">
+          No. Canary is proudly non-partisan. It works for anyone who wants their voice heard.
+        </p>
       </div>
     </div>
   );
