@@ -245,7 +245,7 @@ function ResearchContent() {
                 className="w-full h-auto md:hidden"
               />
               <ExpandableChart
-                assetName="chart_desktop_desaturated_key_suptitle_x058.svg"
+                assetName="chart_desktop_desaturated_key_brandcolors.svg"
                 alt="Chart showing constituent importance rankings - desktop view"
                 className="hidden md:block"
               />
