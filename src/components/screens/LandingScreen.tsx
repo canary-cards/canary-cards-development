@@ -192,7 +192,7 @@ export function LandingScreen() {
                 onClick={() => setOpenResearchMenu(true)}
                 className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
               >
-                Learn Why This Works
+                Learn more.
                 <ChevronRight className="w-3 h-3" />
               </button>
             </div>
