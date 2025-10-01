@@ -53,15 +53,17 @@ export default function FAQ() {
                   <h3 className="eyebrow normal-case text-primary">
                     Do postcards really make a difference?
                   </h3>
-                  <p className="body-text">
-                    Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.{' '}
+                  <div>
+                    <p className="body-text">
+                      Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
+                    </p>
                     <button
                       onClick={() => setOpenResearchMenu(true)}
-                      className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+                      className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
                     >
                       See the Research
                     </button>
-                  </p>
+                  </div>
                 </div>
               </div>
 

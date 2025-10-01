@@ -55,19 +55,19 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
         <h4 className="eyebrow normal-case text-secondary">
           Do postcards really make a difference?
         </h4>
-        <p className="body-text">
-          Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
-        </p>
-        {onSeeResearch && (
-          <p className="body-text -mt-2">
+        <div>
+          <p className="body-text">
+            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
+          </p>
+          {onSeeResearch && (
             <button
               onClick={onSeeResearch}
-              className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
+              className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
             >
               See the Research
             </button>
-          </p>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -92,19 +92,19 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
         <h4 className="eyebrow normal-case text-secondary">
           Do you sell my personal information?
         </h4>
-        <p className="body-text">
-          No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
-        </p>
-        {onSeePrivacy && (
-          <p className="body-text -mt-2">
+        <div>
+          <p className="body-text">
+            No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+          </p>
+          {onSeePrivacy && (
             <button
               onClick={onSeePrivacy}
-              className="text-blue-600 underline hover:text-blue-800 cursor-pointer"
+              className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
             >
               Read full Privacy & Terms
             </button>
-          </p>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">
