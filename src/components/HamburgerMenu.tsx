@@ -30,7 +30,7 @@ function AboutContent() {
   );
 }
 
-function FAQContent({ onSeeResearch }: { onSeeResearch?: () => void }) {
+function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => void; onSeePrivacy?: () => void }) {
   return (
     <div className="space-y-8">
       {/* About the postcard */}
@@ -109,7 +109,15 @@ function FAQContent({ onSeeResearch }: { onSeeResearch?: () => void }) {
               Do you sell my personal information?
             </h4>
             <p className="body-text">
-              No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+              No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.{' '}
+              {onSeePrivacy && (
+                <button
+                  onClick={onSeePrivacy}
+                  className="text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer"
+                >
+                  Read full Privacy & Terms
+                </button>
+              )}
             </p>
           </div>
         </div>
@@ -543,7 +551,7 @@ export function HamburgerMenu({
               /* Content Views */
               <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
           {currentView === 'about' && <AboutContent />}
-          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} />}
+          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} onSeePrivacy={() => setCurrentView('privacy-terms')} />}
           {currentView === 'contact' && <ContactContent />}
                  {currentView === 'privacy-terms' && <PrivacyTermsContent />}
                  {currentView === 'research' && <ResearchContent />}
