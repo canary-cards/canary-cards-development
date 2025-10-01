@@ -7,20 +7,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { RepresentativeCard } from '@/components/rep/RepresentativeCard';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '../../context/AppContext';
 import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
 import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
-import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, ChevronDown, Mail, ChevronRight } from 'lucide-react';
+import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, Mail, ChevronRight } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 export function LandingScreen() {
-  const [isSourceOpen, setIsSourceOpen] = useState(false);
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
   const {
     state,
@@ -185,35 +183,29 @@ export function LandingScreen() {
             <div className="flex flex-col gap-3 text-primary text-sm mb-3">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">96% of staffers say personalized constituent messages influence votes</p>
+                <p className="body-text">Personalized correspondence is the key to influence</p>
               </div>
               <div className="flex items-start gap-3">
-                <PenTool className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="body-text">About 1 in 20 handwritten postcards get a response compared to 1 in 1000 emails.</p>
+                <Bot className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="body-text">Generative AI has changed the email game</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="body-text">Physical mail cuts through</p>
               </div>
             </div>
             
             <Separator className="my-1" />
             
-            {/* Sources Section */}
-            <div className="text-center">
-              <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
-                <CollapsibleTrigger 
-                  className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1 py-0 my-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Sources
-                  <ChevronDown 
-                    className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="text-xs text-muted-foreground/70 leading-relaxed mt-2 space-y-2">
-                    <p>Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.</p>
-                    <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+            {/* Learn Why This Works Link */}
+            <div className="text-center py-2">
+              <button
+                onClick={() => setOpenResearchMenu(true)}
+                className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+              >
+                Learn Why This Works
+                <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -244,29 +236,6 @@ export function LandingScreen() {
               ))}
             </div>
 
-            {/* Reassurance Card */}
-            <Card className="mb-6 bg-card border-border">
-              <CardContent className="p-4">
-                <h3 className="subtitle text-sm mb-3 text-center">Why this works</h3>
-                <div className="flex items-start gap-3 text-primary text-sm mb-8">
-                  <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p className="body-text text-left">
-                    We use AI to help write your message, but our postcards are AI-proof.
-                  </p>
-                </div>
-                <div className="text-center">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setOpenResearchMenu(true)}
-                    className="text-sm font-semibold inline-flex items-center gap-1"
-                  >
-                    Learn why this works
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
             {/* Programmatically controlled HamburgerMenu for Research */}
             <HamburgerMenu 
               initialView={openResearchMenu ? "research" : "main"}
