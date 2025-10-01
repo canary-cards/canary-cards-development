@@ -34,7 +34,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           What does my postcard look like?
         </h4>
         <p className="body-text">
@@ -43,7 +43,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           Is it really handwritten?
         </h4>
         <p className="body-text">
@@ -52,7 +52,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           Do postcards really make a difference?
         </h4>
         <p className="body-text">
@@ -69,7 +69,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           How do the robots work?
         </h4>
         <p className="body-text">
@@ -78,7 +78,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           Will I know when my card is sent?
         </h4>
         <p className="body-text">
@@ -87,7 +87,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           Do you sell my personal information?
         </h4>
         <p className="body-text">
@@ -104,7 +104,7 @@ function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => voi
       </div>
 
       <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-primary">
+        <h4 className="eyebrow normal-case text-secondary">
           Is Canary partisan?
         </h4>
         <p className="body-text">
