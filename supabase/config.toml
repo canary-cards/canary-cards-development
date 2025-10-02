@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.env-diagnostics]
 verify_jwt = false
 
-[functions.fetch-link-preview]
-verify_jwt = false
-
 [functions.geocodio-lookup]
 verify_jwt = false
 

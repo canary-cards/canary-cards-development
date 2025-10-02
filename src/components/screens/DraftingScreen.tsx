@@ -3,9 +3,6 @@ import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
 import { DynamicSvg } from '../DynamicSvg';
 import { DotLottiePlayer } from '@dotlottie/react-player';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
 
 const draftingMessages = [
   "Polishing your message…",
@@ -18,15 +15,12 @@ const draftingMessages = [
 
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
-  const { toast } = useToast();
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
-  const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1); // Start at -1 to show initial delay
+  const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1); // What message is actually shown
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [animationError, setAnimationError] = useState(false);
-  const [apiCompleted, setApiCompleted] = useState(false);
-  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     // Start immediately with no delay
@@ -60,20 +54,12 @@ export function DraftingScreen() {
 
   // Handle the actual drafting process
   useEffect(() => {
-    // Prevent multiple API calls
-    if (apiCompleted) return;
-
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
         
         if (!concerns && !personalImpact) {
-          setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "Missing Information",
-            description: "Please provide your concerns or personal impact.",
-          });
+          dispatch({ type: 'SET_ERROR', payload: 'Missing required information' });
           return;
         }
 
@@ -98,43 +84,22 @@ export function DraftingScreen() {
 
         if (error) {
           console.error('Error drafting message:', error);
-          setApiCompleted(true);
-          setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "Failed to Draft Message",
-            description: error.message || "An error occurred while drafting your message.",
-          });
+          dispatch({ type: 'SET_ERROR', payload: `Failed to draft message: ${error.message}` });
           return;
         }
 
         if (!data) {
           console.error('No data in response');
-          setApiCompleted(true);
-          setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "No Response",
-            description: "No response from AI service. Please try again.",
-          });
+          dispatch({ type: 'SET_ERROR', payload: 'No response from AI service' });
           return;
         }
 
         // Note: draftMessage might be empty if AI generation failed, but we still have a draftId
         if (!data.draftMessage && !data.draftId) {
           console.error('No draft message or draft ID in response:', data);
-          setApiCompleted(true);
-          setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "Invalid Response",
-            description: "Invalid response from AI service. Please try again.",
-          });
+          dispatch({ type: 'SET_ERROR', payload: 'Invalid response from AI service' });
           return;
         }
-
-        // Mark API as completed successfully
-        setApiCompleted(true);
 
         // Ensure minimum 1 second dwell time
         const elapsedTime = Date.now() - startTime;
@@ -173,102 +138,68 @@ export function DraftingScreen() {
 
       } catch (error) {
         console.error('Error in drafting process:', error);
-        setApiCompleted(true);
-        setHasError(true);
-        toast({
-          variant: "destructive",
-          title: "Error Occurred",
-          description: "An unexpected error occurred while drafting your message.",
-        });
+        dispatch({ type: 'SET_ERROR', payload: 'An error occurred while drafting your message' });
       }
     };
 
     draftMessage();
 
-    // Set timeout for 60 seconds (1 minute)
+    // Set timeout for 45 seconds
     const timeout = setTimeout(() => {
-      if (!apiCompleted) {
-        console.error('Timeout: API call did not complete within 60 seconds');
-        setHasError(true);
-        toast({
-          variant: "destructive",
-          title: "Request Timeout",
-          description: "The request took too long. Please try again.",
-        });
-      }
-    }, 60000);
+      // Mark as completed and navigate to review
+      setIsCompleted(true);
+      setTimeout(() => {
+        dispatch({ type: 'SET_STEP', payload: 3 });
+      }, 500);
+    }, 45000);
 
     return () => clearTimeout(timeout);
-  }, [dispatch, startTime, apiCompleted, toast]);
-
-  const handleRetry = () => {
-    // Navigate back to the craft message screen
-    dispatch({ type: 'SET_STEP', payload: 2 });
-  };
+  }, [state.postcardData, dispatch, startTime]);
 
   return (
     <div className="min-h-screen h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-6 max-w-md mx-auto">
-        {hasError ? (
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
-              <AlertCircle className="w-10 h-10 text-destructive" />
-            </div>
-            <div className="text-center space-y-3">
-              <h1 className="display-title">
-                Something went wrong
-              </h1>
-              <p className="text-base text-muted-foreground">
-                We couldn't draft your postcard. Please try again.
-              </p>
-            </div>
-            <Button onClick={handleRetry} size="lg">
-              Try Again
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72">
-              {!animationError ? (
-                <Suspense fallback={
-                  <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
-                    <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
-                  </div>
-                }>
-                  <DotLottiePlayer
-                    src="/assets/writing-animation.json"
-                    autoplay
-                    loop
-                    className="w-full h-full"
-                    onError={() => setAnimationError(true)}
-                  />
-                </Suspense>
-              ) : (
-                <DynamicSvg 
-                  assetName="onboarding_icon_2.svg"
-                  alt="Canary research process"
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72">
+            {!animationError ? (
+              <Suspense fallback={
+                <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                  <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
+                </div>
+              }>
+                <DotLottiePlayer
+                  src="/assets/writing-animation.json"
+                  autoplay
+                  loop
                   className="w-full h-full"
+                  onError={() => setAnimationError(true)}
                 />
+              </Suspense>
+            ) : (
+              <DynamicSvg 
+                assetName="onboarding_icon_2.svg"
+                alt="Canary research process"
+                className="w-full h-full"
+              />
+            )}
+          </div>
+          <div className="text-center space-y-3">
+            <h1 className="display-title">
+              Drafting your postcard
+            </h1>
+            
+            {/* Typewriter message with smooth transition */}
+            <div className="h-6 flex items-center justify-center">
+              {displayedMessageIndex >= 0 && (
+                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
+                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+                }`}>
+                  {draftingMessages[displayedMessageIndex]}
+                </p>
               )}
             </div>
-            <div className="text-center space-y-3">
-              <h1 className="display-title">
-                Drafting your postcard
-              </h1>
-              
-              {/* Typewriter message with smooth transition */}
-              <div className="h-6 flex items-center justify-center">
-                {displayedMessageIndex >= 0 && (
-                  <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
-                    showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
-                  }`}>
-                    {draftingMessages[displayedMessageIndex]}
-                  </p>
-                )}
-              </div>
-            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { DynamicSvg } from '@/components/DynamicSvg';
-import { ExpandableChart } from '@/components/ExpandableChart';
 
 type DrawerView = 'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research';
 
@@ -16,105 +15,116 @@ function AboutContent() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Why We Built Canary</h3>
+        <h3 className="eyebrow-lowercase text-secondary">Why we built this</h3>
         <p className="body-text">
-          When the early drafts of the One Big Beautiful Bill Act included sweeping public land sell‑offs, Americans from all sides flooded Congress with letters, postcards, and phone calls demanding: <strong>public land is not for sale</strong>. The public backlash was so intense that lawmakers across the political spectrum quietly stripped out the land‑sale provisions from the final legislation.
+          We built Canary Cards because we were frustrated, too.
         </p>
         <p className="body-text">
-          That moment made something very clear to us: <strong>when people speak, decision‑makers listen</strong>. The problem is, most citizens lack the time, the confidence, or the know‑how to turn their concern into real influence.
+          Buying postcards, finding stamps, handwriting a message, and hauling it to the post office — all that effort makes it easy to give up.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Why this works</h3>
+        <p className="body-text">
+          Postcards cut through. A real card lands on your representative's desk, where emails and petitions usually don't.
         </p>
         <p className="body-text">
-          So we built <strong>Canary</strong>, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
+          In under two minutes, you write. We handle the rest — non-partisan, no extra steps, just your voice delivered.
         </p>
       </div>
     </div>
   );
 }
 
-function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => void; onSeePrivacy?: () => void }) {
+function FAQContent() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          What does my postcard look like?
-        </h4>
-        <p className="body-text">
-          A sturdy 5×7 postcard on glossy stock featuring beautiful imagery of great American national parks. Real words, real ink, mailed to your representative.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          Is it really handwritten?
-        </h4>
-        <p className="body-text">
-          Yes. Robots use real pens with natural variations in pressure, spacing, and letter forms — indistinguishable from human handwriting.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          Do postcards really make a difference?
-        </h4>
-        <div>
-          <p className="body-text">
-            Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
-          </p>
-          {onSeeResearch && (
-            <button
-              onClick={onSeeResearch}
-              className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
-            >
-              See the Research
-            </button>
-          )}
+    <div className="space-y-8">
+      {/* About the postcard */}
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">About the postcard</h3>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">
+              What does my postcard look like?
+            </h4>
+            <p className="body-text">
+              A sturdy 5×7 postcard on glossy stock. Real words, real ink, mailed to your representative.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">
+              Is it really handwritten?
+            </h4>
+            <p className="body-text">
+              Yes. Robots use real pens with natural variations in pressure, spacing, and letter forms — indistinguishable from human handwriting.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          How do the robots work?
-        </h4>
-        <p className="body-text">
-          We send your message to robots that hold real pens and write each card uniquely. Then we drop it in the mail.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          Will I know when my card is sent?
-        </h4>
-        <p className="body-text">
-          Yes. You'll get a confirmation email once your card has been mailed.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          Do you sell my personal information?
-        </h4>
-        <div>
+      {/* Why it works */}
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Why it works</h3>
+        <div className="space-y-3">
+          <h4 className="eyebrow normal-case text-primary">
+            Do postcards really make a difference?
+          </h4>
           <p className="body-text">
-            No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+            Yes. Research shows postcards bypass long mail screening, arrive faster than letters, and get prioritized over mass emails. Congressional staff pay closer attention to constituent mail.
           </p>
-          {onSeePrivacy && (
-            <button
-              onClick={onSeePrivacy}
-              className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
-            >
-              Read full Privacy & Terms
-            </button>
-          )}
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h4 className="eyebrow normal-case text-secondary">
-          Is Canary partisan?
-        </h4>
-        <p className="body-text">
-          No. Canary is proudly non-partisan. It works for anyone who wants their voice heard.
-        </p>
+      {/* How it works */}
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">How it works</h3>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">
+              How do the robots work?
+            </h4>
+            <p className="body-text">
+              We send your message to robots that hold real pens and write each card uniquely. Then we drop it in the mail.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">
+              Will I know when my card is sent?
+            </h4>
+            <p className="body-text">
+              Yes. You'll get a confirmation email once your card has been mailed.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy & Data */}
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Privacy & Data</h3>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="eyebrow normal-case text-primary">
+              Do you sell my personal information?
+            </h4>
+            <p className="body-text">
+              No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Non-partisan promise */}
+      <div className="space-y-4">
+        <h3 className="eyebrow-lowercase text-secondary">Non-partisan promise</h3>
+        <div className="space-y-3">
+          <h4 className="eyebrow normal-case text-primary">
+            Is Canary partisan?
+          </h4>
+          <p className="body-text">
+            No. Canary is proudly non-partisan. It works for anyone who wants their voice heard.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -228,7 +238,7 @@ function ResearchContent() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="eyebrow-lowercase text-secondary">Why a handwritten postcard is the gold standard in 2025</h3>
+        <h3 className="eyebrow-lowercase text-secondary">The science behind why handwritten postcards cut through</h3>
         
         <div className="space-y-6">
           <div className="space-y-3">
@@ -240,14 +250,14 @@ function ResearchContent() {
             {/* Responsive Chart */}
             <div className="w-full mt-4 mb-2">
               <DynamicSvg
-                assetName="chart_mobile_desaturated_key_1.svg"
+                assetName="constituent-importance-mobile.svg"
                 alt="Chart showing constituent importance rankings - mobile view"
                 className="w-full h-auto md:hidden"
               />
-              <ExpandableChart
-                assetName="chart_desktop_desaturated_key_brandcolors.svg"
+              <DynamicSvg
+                assetName="constituent-importance-desktop.svg"
                 alt="Chart showing constituent importance rankings - desktop view"
-                className="hidden md:block"
+                className="hidden md:block w-full h-auto"
               />
             </div>
             <p className="text-xs text-muted-foreground italic">
@@ -531,9 +541,9 @@ export function HamburgerMenu({
             ) : (
               /* Content Views */
               <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
-          {currentView === 'about' && <AboutContent />}
-          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} onSeePrivacy={() => setCurrentView('privacy-terms')} />}
-          {currentView === 'contact' && <ContactContent />}
+                 {currentView === 'about' && <AboutContent />}
+                 {currentView === 'faq' && <FAQContent />}
+                 {currentView === 'contact' && <ContactContent />}
                  {currentView === 'privacy-terms' && <PrivacyTermsContent />}
                  {currentView === 'research' && <ResearchContent />}
               </div>

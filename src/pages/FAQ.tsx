@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
-import { HamburgerMenu } from '@/components/HamburgerMenu';
 
 export default function FAQ() {
-  const [openResearchMenu, setOpenResearchMenu] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,14 +23,14 @@ export default function FAQ() {
             <CardContent className="p-8 space-y-8">
               {/* About the postcard */}
               <div className="space-y-4">
-                <h2 className="eyebrow-lowercase text-primary">About the postcard</h2>
+                <h2 className="eyebrow-lowercase text-secondary">About the postcard</h2>
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <h3 className="eyebrow normal-case text-primary">
                       What does my postcard look like?
                     </h3>
                     <p className="body-text">
-                      A sturdy 5×7 postcard on glossy stock featuring beautiful imagery of great American national parks. Real words, real ink, mailed to your representative.
+                      A sturdy 5×7 postcard on glossy stock. Real words, real ink, mailed to your representative.
                     </p>
                   </div>
                   <div className="space-y-3">
@@ -48,28 +46,20 @@ export default function FAQ() {
 
               {/* Why it works */}
               <div className="space-y-4">
-                <h2 className="eyebrow-lowercase text-primary">Why it works</h2>
+                <h2 className="eyebrow-lowercase text-secondary">Why it works</h2>
                 <div className="space-y-3">
                   <h3 className="eyebrow normal-case text-primary">
                     Do postcards really make a difference?
                   </h3>
-                  <div>
-                    <p className="body-text">
-                      Yes. Research shows that personalized correspondence is the best way to make your voice heard, and physical mail cannot be ignored.
-                    </p>
-                    <button
-                      onClick={() => setOpenResearchMenu(true)}
-                      className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
-                    >
-                      See the Research
-                    </button>
-                  </div>
+                  <p className="body-text">
+                    Yes. Research shows postcards bypass long mail screening, arrive faster than letters, and get prioritized over mass emails. Congressional staff pay closer attention to constituent mail.
+                  </p>
                 </div>
               </div>
 
               {/* How it works */}
               <div className="space-y-4">
-                <h2 className="eyebrow-lowercase text-primary">How it works</h2>
+                <h2 className="eyebrow-lowercase text-secondary">How it works</h2>
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <h3 className="eyebrow normal-case text-primary">
@@ -92,7 +82,7 @@ export default function FAQ() {
 
               {/* Non-partisan promise */}
               <div className="space-y-4">
-                <h2 className="eyebrow-lowercase text-primary">Non-partisan promise</h2>
+                <h2 className="eyebrow-lowercase text-secondary">Non-partisan promise</h2>
                 <div className="space-y-3">
                   <h3 className="eyebrow normal-case text-primary">
                     Is Canary partisan?
@@ -106,14 +96,6 @@ export default function FAQ() {
           </Card>
         </div>
       </main>
-
-      <HamburgerMenu
-        isDark={false}
-        initialView="research"
-        externalOpen={openResearchMenu}
-        externalSetOpen={setOpenResearchMenu}
-        hideTrigger={true}
-      />
     </div>
   );
 }

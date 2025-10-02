@@ -20,19 +20,28 @@ export default function About() {
           {/* Story Card */}
           <Card className="card-warm">
             <CardContent className="p-8 space-y-4">
-              <h2 className="eyebrow-lowercase text-secondary">Why We Built Canary</h2>
+              <h2 className="eyebrow-lowercase text-secondary">Why we built this</h2>
               <p className="body-text">
-                When the early drafts of the One Big Beautiful Bill Act included sweeping public land sell‑offs, Americans from all sides flooded Congress with letters, postcards, and phone calls demanding: <strong>public land is not for sale</strong>. The public backlash was so intense that lawmakers across the political spectrum quietly stripped out the land‑sale provisions from the final legislation.
+                We built Canary Cards because we were frustrated, too.
               </p>
               <p className="body-text">
-                That moment made something very clear to us: <strong>when people speak, decision‑makers listen</strong>. The problem is, most citizens lack the time, the confidence, or the know‑how to turn their concern into real influence.
-              </p>
-              <p className="body-text">
-                So we built <strong>Canary</strong>, to lower the barrier so that every constituent can be heard. In just a couple of taps, your voice adds to a movement that can't be ignored. Real change can start with one clear message—your message—landing where it matters.
+                Buying postcards, finding stamps, handwriting a message, and hauling it to the post office — all that effort makes it easy to give up.
               </p>
             </CardContent>
           </Card>
 
+          {/* Solution Card */}
+          <Card className="card-warm">
+            <CardContent className="p-8 space-y-4">
+              <h2 className="eyebrow-lowercase text-secondary">Why this works</h2>
+              <p className="body-text">
+                Postcards cut through. A real card lands on your representative's desk, where emails and petitions usually don't.
+              </p>
+              <p className="body-text">
+                In under two minutes, you write. We handle the rest — non-partisan, no extra steps, just your voice delivered.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
