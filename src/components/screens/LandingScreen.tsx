@@ -199,7 +199,10 @@ export function LandingScreen() {
             {/* Learn Why This Works Link */}
             <div className="text-center py-1">
               <button
-                onClick={() => setOpenResearchMenu(true)}
+                onClick={() => {
+                  setMenuView('research');
+                  setOpenResearchMenu(true);
+                }}
                 className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
               >
                 Learn More
