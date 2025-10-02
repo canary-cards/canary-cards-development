@@ -272,7 +272,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72">
+            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]">
               {!animationError ? (
                 <Suspense fallback={
                   <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
