@@ -242,7 +242,7 @@ Be extremely precise with article titles - use the actual headline, not a descri
         },
         {
           role: 'user',
-          content: `Find 6-8 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+          content: `Find 4-5 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
@@ -268,7 +268,7 @@ For each source you cite, provide in this EXACT format:
 Focus on news from the last 30 days. Provide relevance scores to help identify the most useful sources.`
         }
       ],
-      max_tokens: 800,
+      max_tokens: 500,
       temperature: 0.1,
       return_citations: true,
       search_recency_filter: 'month'
