@@ -7,6 +7,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 
+// CDN-hosted animations for better load times
+const animationUrls = [
+  "YOUR_FIRST_CDN_URL_HERE",
+  "YOUR_SECOND_CDN_URL_HERE",
+  "YOUR_THIRD_CDN_URL_HERE"
+];
+
 const draftingMessages = [
   "Polishing your message…",
   "Fitting onto a postcard…",
@@ -21,6 +28,7 @@ export function DraftingScreen() {
   const { toast } = useToast();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
   const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1);
+  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -57,6 +65,15 @@ export function DraftingScreen() {
       return () => clearInterval(interval);
     }
   }, [currentMessageIndex]);
+
+  // Rotate animations every 3 seconds
+  useEffect(() => {
+    const animationInterval = setInterval(() => {
+      setCurrentAnimationIndex((prev) => (prev + 1) % animationUrls.length);
+    }, 3000);
+
+    return () => clearInterval(animationInterval);
+  }, []);
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -233,11 +250,12 @@ export function DraftingScreen() {
                   </div>
                 }>
                   <DotLottiePlayer
-                    src="/assets/writing-animation.json"
+                    src={animationUrls[currentAnimationIndex]}
                     autoplay
                     loop
                     className="w-full h-full"
                     onError={() => setAnimationError(true)}
+                    key={currentAnimationIndex}
                   />
                 </Suspense>
               ) : (
