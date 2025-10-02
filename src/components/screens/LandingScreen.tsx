@@ -20,6 +20,7 @@ import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
 export function LandingScreen() {
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
+  const [menuView, setMenuView] = useState<'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research'>('main');
   const {
     state,
     dispatch
@@ -36,14 +37,23 @@ export function LandingScreen() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Check for shared link on mount
+  // Check for shared link and menu view parameter on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Check for shared link
     const sharedBy = urlParams.get('shared_by');
     if (sharedBy) {
       setSharedByName(decodeURIComponent(sharedBy));
       setShowSharedDialog(true);
       // Don't remove the query param - keep it for persistence
+    }
+    
+    // Check for view parameter to open menu to specific view
+    const view = urlParams.get('view');
+    if (view && ['research', 'faq', 'about', 'contact', 'privacy-terms'].includes(view)) {
+      setMenuView(view as any);
+      setOpenResearchMenu(true);
     }
   }, []);
   const validateZipCode = (zip: string) => {
@@ -233,12 +243,15 @@ export function LandingScreen() {
 
       {/* Programmatically controlled HamburgerMenu for Research - Always available */}
       <HamburgerMenu 
-        initialView={openResearchMenu ? "research" : "main"}
+        initialView={openResearchMenu ? menuView : "main"}
         externalOpen={openResearchMenu}
         externalSetOpen={setOpenResearchMenu}
         hideTrigger={true}
         onOpenChange={(open) => {
-          if (!open) setOpenResearchMenu(false);
+          if (!open) {
+            setOpenResearchMenu(false);
+            setMenuView('main');
+          }
         }}
       />
 
