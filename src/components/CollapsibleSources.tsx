@@ -148,11 +148,6 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       const CACHE_KEY_PREFIX = 'link-preview-';
       const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-      // Initialize with original sources
-      const sourcesWithLoading: EnhancedSource[] = sources.map(s => ({ ...s, isLoading: true }));
-      setEnhancedSources(sourcesWithLoading);
-      setIsLoading(false);
-
       // Fetch previews in parallel
       const previewPromises = sources.map(async (source, index) => {
         try {
@@ -192,23 +187,23 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       // Process results as they come in
       const results = await Promise.all(previewPromises);
       
-      setEnhancedSources(prev => {
-        const updated = [...prev];
-        results.forEach(({ index, data }) => {
-          if (data && !data.error) {
-            updated[index] = {
-              ...updated[index],
-              enhancedTitle: data.title,
-              enhancedDescription: data.description,
-              siteName: data.siteName,
-              isLoading: false
-            };
-          } else {
-            updated[index] = { ...updated[index], isLoading: false };
-          }
-        });
-        return updated;
+      // Build enhanced sources from results
+      const newEnhancedSources: EnhancedSource[] = sources.map((source, index) => {
+        const result = results[index];
+        if (result.data && !result.data.error) {
+          return {
+            ...source,
+            enhancedTitle: result.data.title,
+            enhancedDescription: result.data.description,
+            siteName: result.data.siteName,
+            isLoading: false
+          };
+        }
+        return { ...source, isLoading: false };
       });
+      
+      setEnhancedSources(newEnhancedSources);
+      setIsLoading(false);
     };
 
     fetchLinkPreviews();
@@ -236,8 +231,8 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           const domain = new URL(source.url).hostname;
           const enhancedSource = source as EnhancedSource;
           
-          // Use enhanced title if available, otherwise fall back to original
-          const displayTitle = enhancedSource.enhancedTitle || source.headline || source.description.replace(/<[^>]*>/g, '').trim();
+          // Use enhanced title from link preview, or fallback to domain
+          const displayTitle = enhancedSource.enhancedTitle || domain;
           const displayDescription = enhancedSource.enhancedDescription;
           
           return (
