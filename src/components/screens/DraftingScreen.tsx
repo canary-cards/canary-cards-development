@@ -88,13 +88,21 @@ export function DraftingScreen() {
     }
   }, [currentMessageIndex]);
 
-  // Rotate animations every 5 seconds
+  // Sequential animation timing: first for 7s, second for 7s, third stays until complete
   useEffect(() => {
-    const animationInterval = setInterval(() => {
-      setCurrentAnimationIndex((prev) => (prev + 1) % animationUrls.length);
-    }, 5000);
+    // Show first animation for 7 seconds
+    const firstTimeout = setTimeout(() => {
+      setCurrentAnimationIndex(1);
+      
+      // Show second animation for 7 seconds, then switch to third
+      const secondTimeout = setTimeout(() => {
+        setCurrentAnimationIndex(2);
+      }, 7000);
+      
+      return () => clearTimeout(secondTimeout);
+    }, 7000);
 
-    return () => clearInterval(animationInterval);
+    return () => clearTimeout(firstTimeout);
   }, []);
 
   // Handle the actual drafting process
