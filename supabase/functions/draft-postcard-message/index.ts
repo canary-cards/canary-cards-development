@@ -571,21 +571,25 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
 
   console.log(`Ranked ${sourceCandidates.length} sources by relevance and local priority`);
 
-  // Step 3: Select top 4 sources and fetch titles only when needed
+  // Step 3: Select top 4 sources and fetch titles in parallel
   const top4Candidates = sourceCandidates.slice(0, 4);
-  const sources: Source[] = [];
-
-  for (const candidate of top4Candidates) {
+  
+  // Create parallel promises for web scraping only when needed
+  const titleFetchPromises = top4Candidates.map(async (candidate) => {
     let headline = candidate.perplexityTitle;
     let titleSource = 'perplexity';
     
     // Only web scrape if Perplexity title is poor quality
     if (!isTitleGoodQuality(headline)) {
       console.log(`⚠️ Perplexity title poor quality for ${candidate.url}, fetching from web...`);
-      const scrapedTitle = await fetchPageTitle(candidate.url);
-      if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
-        headline = scrapedTitle;
-        titleSource = 'web-scrape';
+      try {
+        const scrapedTitle = await fetchPageTitle(candidate.url);
+        if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
+          headline = scrapedTitle;
+          titleSource = 'web-scrape';
+        }
+      } catch (error) {
+        console.error(`Failed to fetch title for ${candidate.url}:`, error);
       }
     }
     
@@ -598,15 +602,22 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     
     console.log(`✅ Final title (${titleSource}) for ${candidate.url}: "${headline}"`);
 
-
-    sources.push({
+    return {
       url: candidate.url,
       outlet: candidate.outlet,
       headline,
       relevanceScore: candidate.relevanceScore,
       localPriority: candidate.localPriority
-    });
-  }
+    };
+  });
+
+  // Wait for all title fetching to complete in parallel
+  const settledResults = await Promise.allSettled(titleFetchPromises);
+  
+  // Extract successful results
+  const sources: Source[] = settledResults
+    .filter(result => result.status === 'fulfilled')
+    .map(result => (result as PromiseFulfilledResult<Source>).value);
   
   console.log(`Selected top 4 sources with relevance scores: ${sources.map(s => s.relevanceScore).join(', ')}`);
   return sources;
