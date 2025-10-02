@@ -88,19 +88,19 @@ export function DraftingScreen() {
     }
   }, [currentMessageIndex]);
 
-  // Sequential animation timing: first for 7s, second for 7s, third stays until complete
+  // Sequential animation timing: first for 5s, second for 5s, third stays until complete
   useEffect(() => {
-    // Show first animation for 7 seconds
+    // Show first animation for 5 seconds
     const firstTimeout = setTimeout(() => {
       setCurrentAnimationIndex(1);
       
-      // Show second animation for 7 seconds, then switch to third
+      // Show second animation for 5 seconds, then switch to third
       const secondTimeout = setTimeout(() => {
         setCurrentAnimationIndex(2);
-      }, 7000);
+      }, 5000);
       
       return () => clearTimeout(secondTimeout);
-    }, 7000);
+    }, 5000);
 
     return () => clearTimeout(firstTimeout);
   }, []);
