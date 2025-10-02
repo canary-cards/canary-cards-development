@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
 import { supabase } from '@/integrations/supabase/client';
 import type { Source } from '@/types';
@@ -245,28 +244,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                   </div>
                 ) : (
                   <>
-                    {displayDescription ? (
-                      <HoverCard openDelay={200} closeDelay={100}>
-                        <HoverCardTrigger asChild>
-                          <span className="cursor-help underline decoration-dotted decoration-muted-foreground/40 hover:decoration-primary/60 transition-colors">
-                            {displayTitle}
-                          </span>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-80 text-sm" side="top" align="start">
-                          <div className="space-y-2">
-                            <p className="font-medium text-foreground">{displayTitle}</p>
-                            <p className="text-muted-foreground text-xs leading-relaxed">{displayDescription}</p>
-                            {enhancedSource.siteName && (
-                              <p className="text-xs text-muted-foreground/80 pt-1 border-t border-border">
-                                Source: {enhancedSource.siteName}
-                              </p>
-                            )}
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    ) : (
-                      <span>{displayTitle}</span>
-                    )}{' '}
+                    {displayTitle}{' '}
                     <a
                       href={source.url}
                       target="_blank"
