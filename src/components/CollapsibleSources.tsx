@@ -2,7 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
+import { supabase } from '@/integrations/supabase/client';
 import type { Source } from '@/types';
+
+interface LinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+}
+
+interface EnhancedSource extends Source {
+  preview?: LinkPreview;
+  previewLoading?: boolean;
+}
 
 interface SourceIconProps {
   url: string;
@@ -120,13 +134,65 @@ const truncateTitle = (title: string, maxWords: number = 8): string => {
 };
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
+  const [enhancedSources, setEnhancedSources] = useState<EnhancedSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Simulate loading state (in real app this would depend on data fetching)
+  // Fetch link previews for all sources
   useEffect(() => {
-    if (sources && sources.length > 0) {
+    if (!sources || sources.length === 0) {
       setIsLoading(false);
+      return;
     }
+
+    const fetchLinkPreviews = async () => {
+      // Initialize with original sources
+      const initialSources: EnhancedSource[] = sources.map(s => ({ 
+        ...s, 
+        previewLoading: true 
+      }));
+      setEnhancedSources(initialSources);
+      setIsLoading(false);
+
+      // Fetch all previews in parallel
+      const previewPromises = sources.map(async (source, index) => {
+        try {
+          const { data, error } = await supabase.functions.invoke('fetch-link-preview', {
+            body: { url: source.url }
+          });
+
+          if (error) throw error;
+
+          return { index, preview: data as LinkPreview };
+        } catch (error) {
+          console.error(`Failed to fetch preview for ${source.url}:`, error);
+          return { index, preview: null };
+        }
+      });
+
+      const results = await Promise.allSettled(previewPromises);
+      
+      // Update sources with previews
+      setEnhancedSources(prev => {
+        const updated = [...prev];
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value.preview) {
+            updated[result.value.index] = {
+              ...updated[result.value.index],
+              preview: result.value.preview,
+              previewLoading: false
+            };
+          } else if (result.status === 'fulfilled') {
+            updated[result.value.index] = {
+              ...updated[result.value.index],
+              previewLoading: false
+            };
+          }
+        });
+        return updated;
+      });
+    };
+
+    fetchLinkPreviews();
   }, [sources]);
   
   if (!sources || sources.length === 0) {
@@ -138,7 +204,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   }
 
   // Sort all sources by priority (government > news agencies > newspapers)
-  const prioritizedSources = sources
+  const prioritizedSources = enhancedSources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
 
   return (
@@ -148,23 +214,31 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       <div className="space-y-4">
         {prioritizedSources.map((source, index) => {
           const domain = new URL(source.url).hostname;
-          const summaryText = source.headline 
-            ? source.headline.trim()
-            : source.description.replace(/<[^>]*>/g, '').trim();
+          
+          // Use link preview data if available, fallback to original data
+          const title = source.preview?.title || source.headline;
+          const description = source.preview?.description || source.description;
+          const summaryText = title?.trim() || description.replace(/<[^>]*>/g, '').trim();
           
           return (
             <div key={index} className="space-y-2">
               <div className="body-text text-sm leading-relaxed">
-                {summaryText}{' '}
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
-                  aria-label={`Read source from ${domain} (opens in new tab)`}
-                >
-                  {domain}
-                </a>
+                {source.previewLoading ? (
+                  <span className="inline-block animate-pulse">Loading preview...</span>
+                ) : (
+                  <>
+                    {summaryText}{' '}
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                      aria-label={`Read source from ${domain} (opens in new tab)`}
+                    >
+                      {source.preview?.siteName || domain}
+                    </a>
+                  </>
+                )}
               </div>
             </div>
           );

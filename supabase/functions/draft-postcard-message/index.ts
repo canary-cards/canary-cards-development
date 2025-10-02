@@ -418,83 +418,7 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     }
   };
 
-  // Helper: Check if title is good quality (relaxed criteria)
-  const isTitleGoodQuality = (title: string): boolean => {
-    if (!title || title.length < 8) return false;
-    
-    // Reject only truly generic/placeholder titles
-    const genericPatterns = [
-      /^video content$/i,
-      /^news article$/i,
-      /^government report$/i,
-      /^article$/i,
-      /^home$/i,
-      /^404$/i,
-      /^page not found$/i,
-      /^error$/i
-    ];
-    
-    // Check for patterns that suggest it's a real title
-    const hasSubstantiveContent = title.length >= 15 || /[A-Z]/.test(title) || /\d/.test(title);
-    
-    return !genericPatterns.some(pattern => pattern.test(title)) && hasSubstantiveContent;
-  };
-
-  // Helper: Fetch actual page title with improved scraping
-  const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(targetUrl, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'user-agent': 'Mozilla/5.0 (compatible; LovableBot/1.0)' }
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) return null;
-      
-      const html = await res.text();
-      const snippet = html.slice(0, 100000);
-      
-      // Try multiple meta tags in priority order
-      const og = snippet.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
-        || snippet.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
-      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i)
-        || snippet.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:title["']/i);
-      const dc = snippet.match(/<meta[^>]+name=["']DC\.title["'][^>]+content=["']([^"']+)["']/i);
-      const tt = snippet.match(/<title[^>]*>([^<]+)<\/title>/i);
-      
-      // Prefer OpenGraph, then Twitter, then DC, then title tag
-      let title = og?.[1] || tw?.[1] || dc?.[1] || tt?.[1];
-      
-      if (title) {
-        // Clean HTML entities and trim
-        title = title
-          .replace(/&amp;/g, '&')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&apos;/g, "'")
-          .replace(/&mdash;/g, '—')
-          .replace(/&ndash;/g, '–')
-          .replace(/&rsquo;/g, "'")
-          .replace(/&lsquo;/g, "'")
-          .replace(/&rdquo;/g, '"')
-          .replace(/&ldquo;/g, '"')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        // Remove common site name suffixes (e.g., " | CNN", " - The New York Times")
-        const cleanedTitle = title.replace(/\s*[\|\-–—]\s*[^|\-–—]+$/, '').trim();
-        const finalTitle = cleanedTitle.length > 15 ? cleanedTitle : title;
-        
-        console.log(`🌐 Web scraped title for ${targetUrl}: "${finalTitle}"`);
-        return finalTitle.substring(0, 200);
-      }
-    } catch (err: any) {
-      console.log(`❌ fetchPageTitle error for ${targetUrl}:`, err?.message || err);
-    }
-    return null;
-  };
+  // Web scraping removed - frontend now handles link previews via fetch-link-preview edge function
 
   // Step 1: Filter and parse all valid URLs with metadata
   interface SourceCandidate {
@@ -571,54 +495,20 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
 
   console.log(`Ranked ${sourceCandidates.length} sources by relevance and local priority`);
 
-  // Step 3: Select top 4 sources and fetch titles in parallel
+  // Step 3: Select top 4 sources and return with Perplexity data
+  // Frontend will fetch link previews for better titles/descriptions
   const top4Candidates = sourceCandidates.slice(0, 4);
   
-  // Create parallel promises for web scraping only when needed
-  const titleFetchPromises = top4Candidates.map(async (candidate) => {
-    let headline = candidate.perplexityTitle;
-    let titleSource = 'perplexity';
-    
-    // Only web scrape if Perplexity title is poor quality
-    if (!isTitleGoodQuality(headline)) {
-      console.log(`⚠️ Perplexity title poor quality for ${candidate.url}, fetching from web...`);
-      try {
-        const scrapedTitle = await fetchPageTitle(candidate.url);
-        if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
-          headline = scrapedTitle;
-          titleSource = 'web-scrape';
-        }
-      } catch (error) {
-        console.error(`Failed to fetch title for ${candidate.url}:`, error);
-      }
-    }
-    
-    // Smart URL-based fallback if still missing
-    if (!isTitleGoodQuality(headline)) {
-      headline = extractTitleFromUrl(candidate.url);
-      titleSource = 'url-fallback';
-      console.log(`🔗 Using URL-based fallback for ${candidate.url}: "${headline}"`);
-    }
-    
-    console.log(`✅ Final title (${titleSource}) for ${candidate.url}: "${headline}"`);
-
-    return {
-      url: candidate.url,
-      outlet: candidate.outlet,
-      headline,
-      relevanceScore: candidate.relevanceScore,
-      localPriority: candidate.localPriority
-    };
-  });
-
-  // Wait for all title fetching to complete in parallel
-  const settledResults = await Promise.allSettled(titleFetchPromises);
-  
-  // Extract successful results
-  const sources: Source[] = settledResults
-    .filter(result => result.status === 'fulfilled')
-    .map(result => (result as PromiseFulfilledResult<Source>).value);
-  
+  const sources: Source[] = top4Candidates.map(candidate => ({
+    url: candidate.url,
+    outlet: candidate.outlet,
+    headline: candidate.perplexityTitle, // Frontend will enhance with link preview
+    description: '', // Will be populated by frontend link preview
+    summary: candidate.perplexityTitle,
+    relevanceScore: candidate.relevanceScore,
+    localPriority: candidate.localPriority
+  }));
+   
   console.log(`Selected top 4 sources with relevance scores: ${sources.map(s => s.relevanceScore).join(', ')}`);
   return sources;
 }
