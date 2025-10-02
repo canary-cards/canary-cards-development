@@ -244,11 +244,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
                   </div>
                 ) : (
                   <>
-                    <span className="font-medium">{displayTitle}</span>
-                    {displayDescription && (
-                      <span className="text-muted-foreground"> — {displayDescription}</span>
-                    )}
-                    {' '}
+                    {displayTitle}{' '}
                     <a
                       href={source.url}
                       target="_blank"
