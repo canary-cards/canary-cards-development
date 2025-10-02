@@ -220,12 +220,12 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: 
       messages: [
         {
           role: 'system',
-          content: `You are a news research assistant specializing in local and state-level political news. For each source, provide structured information in this EXACT format:
+          content: `You are a news research assistant specializing in local and national political news. For each source, provide structured information in this EXACT format:
 
 **ARTICLE TITLE:** [The exact headline from the original article]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
 **RELEVANCE_SCORE:** [Rate 1-10 how relevant this source is to the user's concern]
-**LOCAL_PRIORITY:** [Classify as: local, state, regional, or national]
+**LOCAL_PRIORITY:** [Classify as: local or national]
 
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
@@ -250,10 +250,8 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (search in this order):
-1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
-2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. REGIONAL: Regional publications covering ${location.state}
-4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites, ${location.state} state publications
+2. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
 
 REQUIRED CONTENT TYPES:
 - News articles from established publications
@@ -265,7 +263,7 @@ For each source you cite, provide in this EXACT format:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
 **OUTLET:** [Full publication name]
 **RELEVANCE_SCORE:** [Rate 1-10 based on how well this source supports arguments about ${themeAnalysis.primaryTheme}]
-**LOCAL_PRIORITY:** [Classify as: local, state, regional, or national]
+**LOCAL_PRIORITY:** [Classify as: local or national]
 
 Focus on news from the last 30 days. Provide relevance scores to help identify the most useful sources.`
         }
@@ -295,7 +293,7 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     const relevanceScore = scoreMatch ? parseInt(scoreMatch[1], 10) : 5;
     
     // Extract local priority
-    const priorityMatch = context.match(/\*\*LOCAL_PRIORITY:\*\*\s*(local|state|regional|national)/i);
+    const priorityMatch = context.match(/\*\*LOCAL_PRIORITY:\*\*\s*(local|national)/i);
     const localPriority = priorityMatch ? priorityMatch[1].toLowerCase() : 'national';
     
     return { relevanceScore, localPriority };
@@ -423,9 +421,7 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
 
   // Step 2: Rank sources by relevance and local priority
   const priorityWeight: { [key: string]: number } = {
-    'local': 4,
-    'state': 3,
-    'regional': 2,
+    'local': 2,
     'national': 1
   };
 
