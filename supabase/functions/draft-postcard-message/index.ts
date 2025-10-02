@@ -9,8 +9,9 @@ const corsHeaders = {
 interface Source {
   url: string;
   outlet: string;
-  summary: string;
   headline: string;
+  relevanceScore?: number;
+  localPriority?: string;
 }
 
 interface ThemeAnalysis {
@@ -219,22 +220,29 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: 
       messages: [
         {
           role: 'system',
-          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
+          content: `You are a news research assistant specializing in local and state-level political news. For each source, provide structured information in this EXACT format:
 
 **ARTICLE TITLE:** [The exact headline from the original article]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
-**SUMMARY:** [Key points in 1-2 sentences]
+**RELEVANCE_SCORE:** [Rate 1-10 how relevant this source is to the user's concern]
+**LOCAL_PRIORITY:** [Classify as: local, state, regional, or national]
 
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
 - STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
 - PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
 
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
+RELEVANCE SCORING GUIDE:
+- 9-10: Directly addresses the specific concern with local data
+- 7-8: Covers the topic with strong relevance to the region
+- 5-6: Related but not directly on topic
+- 1-4: Tangentially related or background info
+
+Be extremely precise with article titles - use the actual headline, not a description or URL fragment.`
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+          content: `Find 6-8 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
@@ -253,12 +261,13 @@ REQUIRED CONTENT TYPES:
 - Policy analysis pieces
 - Legislative updates
 
-For each source you cite, provide:
+For each source you cite, provide in this EXACT format:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
 **OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
+**RELEVANCE_SCORE:** [Rate 1-10 based on how well this source supports arguments about ${themeAnalysis.primaryTheme}]
+**LOCAL_PRIORITY:** [Classify as: local, state, regional, or national]
 
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
+Focus on news from the last 30 days. Provide relevance scores to help identify the most useful sources.`
         }
       ],
       max_tokens: 800,
@@ -272,11 +281,61 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
 
-  // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
+  // Helper: Extract relevance score and local priority from Perplexity response
+  const extractSourceMetadata = (url: string, searchText: string): { relevanceScore: number; localPriority: string } => {
+    const urlIndex = searchText.indexOf(url);
+    if (urlIndex === -1) return { relevanceScore: 5, localPriority: 'national' };
+    
+    const beforeUrl = searchText.substring(Math.max(0, urlIndex - 500), urlIndex);
+    const afterUrl = searchText.substring(urlIndex, Math.min(searchText.length, urlIndex + 300));
+    const context = beforeUrl + afterUrl;
+    
+    // Extract relevance score
+    const scoreMatch = context.match(/\*\*RELEVANCE_SCORE:\*\*\s*(\d+)/i);
+    const relevanceScore = scoreMatch ? parseInt(scoreMatch[1], 10) : 5;
+    
+    // Extract local priority
+    const priorityMatch = context.match(/\*\*LOCAL_PRIORITY:\*\*\s*(local|state|regional|national)/i);
+    const localPriority = priorityMatch ? priorityMatch[1].toLowerCase() : 'national';
+    
+    return { relevanceScore, localPriority };
+  };
+
+  // Helper: Parse title from Perplexity response
+  const extractPerplexityTitle = (url: string, searchText: string): string => {
+    const urlIndex = searchText.indexOf(url);
+    if (urlIndex === -1) return '';
+    
+    const marker = '**ARTICLE TITLE:**';
+    const lastTitleIdx = searchText.lastIndexOf(marker, urlIndex);
+    if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
+      const afterTitle = searchText.substring(lastTitleIdx + marker.length, urlIndex);
+      const firstLine = afterTitle.split(/\r?\n/)[0].trim();
+      if (firstLine) return firstLine.replace(/^[*-]\s*/, '').trim();
+    }
+    
+    return '';
+  };
+
+  // Helper: Check if title is good quality
+  const isTitleGoodQuality = (title: string): boolean => {
+    if (!title || title.length < 10) return false;
+    // Reject generic titles
+    const genericPatterns = [
+      /^video content$/i,
+      /^news article$/i,
+      /^government report$/i,
+      /^\w+ information$/i,
+      /^article$/i
+    ];
+    return !genericPatterns.some(pattern => pattern.test(title));
+  };
+
+  // Helper: Fetch actual page title only when needed
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced from 6000ms to 3000ms
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const res = await fetch(targetUrl, {
         signal: controller.signal,
         redirect: 'follow',
@@ -308,131 +367,119 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
     return null;
   };
 
-  // First, filter valid URLs and collect them for concurrent processing
-  const validUrls: string[] = [];
-  const urlIndexMap: Map<string, number> = new Map();
+  // Step 1: Filter and parse all valid URLs with metadata
+  interface SourceCandidate {
+    url: string;
+    perplexityTitle: string;
+    relevanceScore: number;
+    localPriority: string;
+    outlet: string;
+  }
+
+  const sourceCandidates: SourceCandidate[] = [];
   
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
     
-    // Filter out aggregation/listing pages
+    // Filter out aggregation/listing pages (be more specific to avoid false positives)
     const urlLower = url.toLowerCase();
+    const urlPath = new URL(url).pathname.toLowerCase();
+    
+    // Only filter if URL ends with these patterns (not just contains)
     if (
-      urlLower.includes('/tag/') || 
-      urlLower.includes('/tags/') ||
-      urlLower.includes('/category/') ||
-      urlLower.includes('/categories/') ||
-      urlLower.includes('/archive/') ||
-      urlLower.includes('/search/') ||
-      urlLower.includes('/latest-') ||
-      urlLower.includes('-news/') ||
-      urlLower.includes('today-latest-updates') ||
-      /\/\d+\/?$/.test(url) || // URLs ending with numbers (pagination)
-      urlLower.includes('/topics/') ||
-      urlLower.includes('/feeds/') ||
-      urlLower.includes('/rss/')
+      urlPath.endsWith('/tag/') || 
+      urlPath.endsWith('/tags/') ||
+      urlPath.endsWith('/category/') ||
+      urlPath.endsWith('/categories/') ||
+      urlPath.endsWith('/archive/') ||
+      urlPath.endsWith('/search/') ||
+      urlPath.endsWith('/topics/') ||
+      urlPath.endsWith('/feeds/') ||
+      urlPath.endsWith('/rss/') ||
+      urlPath.endsWith('/news/') ||
+      /\/\d+\/?$/.test(urlPath) || // URLs ending only with numbers
+      urlLower.includes('latest-updates') ||
+      urlLower.includes('breaking-news-live')
     ) {
       console.log('Filtered out aggregation page:', url);
       continue;
     }
     
-    validUrls.push(url);
-    urlIndexMap.set(url, searchContent.indexOf(url));
+    const metadata = extractSourceMetadata(url, searchContent);
+    const perplexityTitle = extractPerplexityTitle(url, searchContent);
+    
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace('www.', '');
+    const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+    
+    sourceCandidates.push({
+      url,
+      perplexityTitle,
+      relevanceScore: metadata.relevanceScore,
+      localPriority: metadata.localPriority,
+      outlet
+    });
   }
 
-  // Fetch all page titles concurrently
-  console.log(`Fetching ${validUrls.length} page titles concurrently...`);
-  const titlePromises = validUrls.map(url => fetchPageTitle(url));
-  const fetchedTitles = await Promise.all(titlePromises);
-  
-  // Create title lookup map
-  const titleMap: Map<string, string | null> = new Map();
-  validUrls.forEach((url, index) => {
-    titleMap.set(url, fetchedTitles[index]);
+  // Step 2: Rank sources by relevance and local priority
+  const priorityWeight: { [key: string]: number } = {
+    'local': 4,
+    'state': 3,
+    'regional': 2,
+    'national': 1
+  };
+
+  sourceCandidates.sort((a, b) => {
+    // Primary: relevance score (higher is better)
+    if (b.relevanceScore !== a.relevanceScore) {
+      return b.relevanceScore - a.relevanceScore;
+    }
+    // Secondary: local priority (local > state > regional > national)
+    const aPriority = priorityWeight[a.localPriority] || 0;
+    const bPriority = priorityWeight[b.localPriority] || 0;
+    return bPriority - aPriority;
   });
 
+  console.log(`Ranked ${sourceCandidates.length} sources by relevance and local priority`);
+
+  // Step 3: Select top 4 sources and fetch titles only when needed
+  const top4Candidates = sourceCandidates.slice(0, 4);
   const sources: Source[] = [];
 
-  // Process each valid URL with its pre-fetched title
-  for (const url of validUrls) {
-    const urlIndex = urlIndexMap.get(url) || -1;
+  for (const candidate of top4Candidates) {
+    let headline = candidate.perplexityTitle;
     
-    // 1) Use the pre-fetched page title
-    let headline = titleMap.get(url) || '';
-
-    // 2) If unavailable, try to parse from Perplexity text near the URL
-    if (!headline && urlIndex !== -1) {
-      const marker = '**ARTICLE TITLE:**';
-      const lastTitleIdx = searchContent.lastIndexOf(marker, urlIndex);
-      if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
-        const afterTitle = searchContent.substring(lastTitleIdx + marker.length, urlIndex);
-        const firstLine = afterTitle.split(/\r?\n/)[0].trim();
-        if (firstLine) headline = firstLine.replace(/^[*-]\s*/, '').trim();
-      }
-      if (!headline) {
-        const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const lines = before.split(/\n/).map((l: string) => l.trim()).filter(Boolean);
-        const titleLine = [...lines].reverse().find(l => /(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|^TITLE:|^Title:)/i.test(l));
-        if (titleLine) {
-          const cleaned = titleLine.replace(/\*\*/g, '');
-          const m = cleaned.match(/(?:ARTICLE TITLE:|TITLE:)\s*(.+)/i);
-          if (m) headline = m[1].trim();
-        }
-        // Ultra-fallback: previous non-empty line as title
-        if (!headline && lines.length) {
-          headline = lines[lines.length - 1].replace(/^[\-*\d.]+\s*/, '').trim();
-        }
+    // Only web scrape if Perplexity title is poor quality
+    if (!isTitleGoodQuality(headline)) {
+      console.log(`Perplexity title poor quality for ${candidate.url}, fetching from web...`);
+      const scrapedTitle = await fetchPageTitle(candidate.url);
+      if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
+        headline = scrapedTitle;
       }
     }
-
-    // 3) Domain-based fallback if still missing
-    if (!headline) {
-      const domain = new URL(url).hostname.replace('www.', '');
+    
+    // Domain-based fallback if still missing
+    if (!isTitleGoodQuality(headline)) {
+      const domain = new URL(candidate.url).hostname.replace('www.', '');
       if (domain.includes('congress.gov')) headline = 'Congressional Information';
       else if (domain.includes('census.gov')) headline = 'Census Data and Statistics';
       else if (domain.includes('bls.gov')) headline = 'Bureau of Labor Statistics Report';
-      else if (domain.includes('youtube.com')) headline = 'Video Content';
-      else if (domain.includes('rentcafe.com')) headline = 'Cost of Living Analysis';
-      else if (domain.includes('oysterlink.com')) headline = 'Local Economic Data';
       else if (domain.includes('.gov')) headline = 'Government Report';
       else if (/(news|times|post)/i.test(domain)) headline = 'News Article';
       else headline = `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
     }
 
-    // Outlet from URL
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname.replace('www.', '');
-    const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
-
-    // Summary extraction near URL
-    let summary = '';
-    if (urlIndex !== -1) {
-      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
-      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 500));
-      const summaryMatch = (beforeUrl + afterUrl).match(/\*\*SUMMARY:\*\*\s*([^*\n]+)/i);
-      if (summaryMatch) {
-        summary = summaryMatch[1].trim();
-      } else {
-        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningful = contextSentences.filter((s: string) => s.length > 30 && s.length < 300 &&
-          !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
-        let best = meaningful.find((s: string) => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
-        if (!best && meaningful.length) best = meaningful[0];
-        if (best) summary = best.trim();
-      }
-    }
-    if (!summary) summary = 'Recent developments in this policy area.';
-
     sources.push({
-      url,
-      outlet,
-      summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
-      headline
+      url: candidate.url,
+      outlet: candidate.outlet,
+      headline,
+      relevanceScore: candidate.relevanceScore,
+      localPriority: candidate.localPriority
     });
   }
   
-  return sources.slice(0, 4); // Return top 4 sources
+  console.log(`Selected top 4 sources with relevance scores: ${sources.map(s => s.relevanceScore).join(', ')}`);
+  return sources;
 }
 
 async function draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative }: {
@@ -497,9 +544,9 @@ Location: ${location.city}, ${location.state}
 Representative: ${representative.name} (${representative.party}, ${representative.type})
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
-${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
+${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
      Outlet: ${s.outlet}
-     Summary: ${s.summary}
+     Relevance: ${s.relevanceScore}/10 (${s.localPriority} priority)
      URL: ${s.url}`).join('\n')}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
