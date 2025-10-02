@@ -187,8 +187,8 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 300,
       temperature: 0.1,
       system: THEME_ANALYZER_PROMPT,
       messages: [{ role: 'user', content: userMessage }]
@@ -669,7 +669,7 @@ ${contentToShorten}
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 300,
         temperature: 0.1,
         system: SHORTENING_PROMPT,
