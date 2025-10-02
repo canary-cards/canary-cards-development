@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
@@ -131,6 +131,12 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [enhancedSources, setEnhancedSources] = useState<EnhancedSource[]>([]);
   
+  // Create stable URL-based dependency to prevent unnecessary re-fetches
+  const sourceUrls = useMemo(() => 
+    sources?.map(s => s.url).join('|') || '', 
+    [sources]
+  );
+  
   // Fetch link previews from cache or API
   useEffect(() => {
     if (!sources || sources.length === 0) {
@@ -206,7 +212,7 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
     };
 
     fetchLinkPreviews();
-  }, [sources]);
+  }, [sourceUrls, sources]);
   
   if (!sources || sources.length === 0) {
     return null;
