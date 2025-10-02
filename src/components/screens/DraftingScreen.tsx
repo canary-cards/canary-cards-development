@@ -60,6 +60,9 @@ export function DraftingScreen() {
 
   // Handle the actual drafting process
   useEffect(() => {
+    // Prevent multiple API calls
+    if (apiCompleted) return;
+
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
@@ -196,7 +199,7 @@ export function DraftingScreen() {
     }, 60000);
 
     return () => clearTimeout(timeout);
-  }, [state.postcardData, dispatch, startTime, apiCompleted, toast]);
+  }, [dispatch, startTime, apiCompleted, toast]);
 
   const handleRetry = () => {
     // Navigate back to the craft message screen
