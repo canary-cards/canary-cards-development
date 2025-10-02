@@ -315,54 +315,44 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     return '';
   };
 
-  // Helper: Check if title is good quality
-  const isTitleGoodQuality = (title: string): boolean => {
-    if (!title || title.length < 10) return false;
-    // Reject generic titles
-    const genericPatterns = [
-      /^video content$/i,
-      /^news article$/i,
-      /^government report$/i,
-      /^\w+ information$/i,
-      /^article$/i
-    ];
-    return !genericPatterns.some(pattern => pattern.test(title));
-  };
-
-  // Helper: Fetch actual page title only when needed
-  const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(targetUrl, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'user-agent': 'Mozilla/5.0 (LovableBot)' }
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) return null;
-      const html = await res.text();
-      const snippet = html.slice(0, 100000);
-      const og = snippet.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
-        || snippet.match(/<meta[^>]+name=["']og:title["'][^>]+content=["']([^"']+)["']/i);
-      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i);
-      const tt = snippet.match(/<title[^>]*>([^<]+)<\/title>/i);
-      let title = og?.[1] || tw?.[1] || tt?.[1];
-      if (title) {
-        title = title
-          .replace(/&amp;/g, '&')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&mdash;/g, '—')
-          .replace(/&ndash;/g, '–')
-          .replace(/\s+/g, ' ')
-          .trim();
-        return title.substring(0, 200);
-      }
-    } catch (err: any) {
-      console.log('fetchPageTitle error:', targetUrl, err?.message || err);
+  // Helper: Enhanced domain-based fallback titles
+  const getDomainBasedTitle = (url: string, themeAnalysis: ThemeAnalysis): string => {
+    const domain = new URL(url).hostname.replace('www.', '');
+    const pathParts = new URL(url).pathname.split('/').filter(p => p);
+    
+    // Government domains - enhanced with path analysis
+    if (domain.includes('congress.gov')) {
+      if (pathParts.includes('bill')) return 'Congressional Bill Information';
+      if (pathParts.includes('committee')) return 'Committee Report';
+      return 'Congressional Information';
     }
-    return null;
+    if (domain.includes('census.gov')) return 'Census Data and Statistics';
+    if (domain.includes('bls.gov')) return 'Bureau of Labor Statistics Report';
+    if (domain.includes('ed.gov')) return 'Department of Education Report';
+    if (domain.includes('hhs.gov')) return 'Health and Human Services Report';
+    if (domain.includes('.gov')) return 'Government Report';
+    
+    // News domains - enhanced with better names
+    const newsDomains: { [key: string]: string } = {
+      'nytimes.com': 'New York Times Article',
+      'washingtonpost.com': 'Washington Post Article',
+      'cnn.com': 'CNN News Report',
+      'foxnews.com': 'Fox News Article',
+      'bbc.com': 'BBC News Article',
+      'reuters.com': 'Reuters Report',
+      'apnews.com': 'Associated Press Report',
+      'npr.org': 'NPR Report'
+    };
+    
+    if (newsDomains[domain]) return newsDomains[domain];
+    
+    // Generic news patterns
+    if (/(news|times|post|tribune|herald|gazette)/i.test(domain)) {
+      return 'News Article';
+    }
+    
+    // Theme-based fallback
+    return `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
   };
 
   // Step 1: Filter and parse all valid URLs with metadata
@@ -438,31 +428,18 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
 
   console.log(`Ranked ${sourceCandidates.length} sources by relevance and local priority`);
 
-  // Step 3: Select top 4 sources and fetch titles only when needed
+  // Step 3: Select top 4 sources - return with Perplexity titles or domain fallbacks
   const top4Candidates = sourceCandidates.slice(0, 4);
   const sources: Source[] = [];
 
   for (const candidate of top4Candidates) {
-    let headline = candidate.perplexityTitle;
+    // Use Perplexity title if available and non-empty, otherwise use domain-based fallback
+    let headline = candidate.perplexityTitle?.trim() || '';
     
-    // Only web scrape if Perplexity title is poor quality
-    if (!isTitleGoodQuality(headline)) {
-      console.log(`Perplexity title poor quality for ${candidate.url}, fetching from web...`);
-      const scrapedTitle = await fetchPageTitle(candidate.url);
-      if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
-        headline = scrapedTitle;
-      }
-    }
-    
-    // Domain-based fallback if still missing
-    if (!isTitleGoodQuality(headline)) {
-      const domain = new URL(candidate.url).hostname.replace('www.', '');
-      if (domain.includes('congress.gov')) headline = 'Congressional Information';
-      else if (domain.includes('census.gov')) headline = 'Census Data and Statistics';
-      else if (domain.includes('bls.gov')) headline = 'Bureau of Labor Statistics Report';
-      else if (domain.includes('.gov')) headline = 'Government Report';
-      else if (/(news|times|post)/i.test(domain)) headline = 'News Article';
-      else headline = `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
+    // Use domain-based fallback if no title from Perplexity
+    if (!headline || headline.length < 5) {
+      headline = getDomainBasedTitle(candidate.url, themeAnalysis);
+      console.log(`Using domain fallback title for ${candidate.url}: "${headline}"`);
     }
 
     sources.push({
