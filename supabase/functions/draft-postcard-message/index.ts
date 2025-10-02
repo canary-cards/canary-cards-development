@@ -381,22 +381,25 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
     
-    // Filter out aggregation/listing pages
+    // Filter out aggregation/listing pages (be more specific to avoid false positives)
     const urlLower = url.toLowerCase();
+    const urlPath = new URL(url).pathname.toLowerCase();
+    
+    // Only filter if URL ends with these patterns (not just contains)
     if (
-      urlLower.includes('/tag/') || 
-      urlLower.includes('/tags/') ||
-      urlLower.includes('/category/') ||
-      urlLower.includes('/categories/') ||
-      urlLower.includes('/archive/') ||
-      urlLower.includes('/search/') ||
-      urlLower.includes('/latest-') ||
-      urlLower.includes('-news/') ||
-      urlLower.includes('today-latest-updates') ||
-      /\/\d+\/?$/.test(url) ||
-      urlLower.includes('/topics/') ||
-      urlLower.includes('/feeds/') ||
-      urlLower.includes('/rss/')
+      urlPath.endsWith('/tag/') || 
+      urlPath.endsWith('/tags/') ||
+      urlPath.endsWith('/category/') ||
+      urlPath.endsWith('/categories/') ||
+      urlPath.endsWith('/archive/') ||
+      urlPath.endsWith('/search/') ||
+      urlPath.endsWith('/topics/') ||
+      urlPath.endsWith('/feeds/') ||
+      urlPath.endsWith('/rss/') ||
+      urlPath.endsWith('/news/') ||
+      /\/\d+\/?$/.test(urlPath) || // URLs ending only with numbers
+      urlLower.includes('latest-updates') ||
+      urlLower.includes('breaking-news-live')
     ) {
       console.log('Filtered out aggregation page:', url);
       continue;
