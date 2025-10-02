@@ -2,16 +2,38 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
 import { DynamicSvg } from '../DynamicSvg';
-import { DotLottiePlayer } from '@dotlottie/react-player';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 
+// Type declaration for lottie-player custom element
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'lottie-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        src?: string;
+        autoplay?: boolean;
+        loop?: boolean;
+        speed?: string;
+        background?: string;
+      };
+    }
+  }
+}
+
+// Load lottie-player web component
+if (typeof window !== 'undefined' && !customElements.get('lottie-player')) {
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+  script.async = true;
+  document.head.appendChild(script);
+}
+
 // CDN-hosted animations for better load times
 const animationUrls = [
-  "YOUR_FIRST_CDN_URL_HERE",
-  "YOUR_SECOND_CDN_URL_HERE",
-  "YOUR_THIRD_CDN_URL_HERE"
+  "https://cdn.lottielab.com/l/DpA7DrGV7NdExu.json",
+  "https://cdn.lottielab.com/l/2FdfJEUKxUWhCF.json",
+  "https://cdn.lottielab.com/l/3Q5fRmtNUXVCDz.json"
 ];
 
 const draftingMessages = [
@@ -66,11 +88,11 @@ export function DraftingScreen() {
     }
   }, [currentMessageIndex]);
 
-  // Rotate animations every 3 seconds
+  // Rotate animations every 5 seconds
   useEffect(() => {
     const animationInterval = setInterval(() => {
       setCurrentAnimationIndex((prev) => (prev + 1) % animationUrls.length);
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(animationInterval);
   }, []);
@@ -249,12 +271,13 @@ export function DraftingScreen() {
                     <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                   </div>
                 }>
-                  <DotLottiePlayer
+                  <lottie-player
                     src={animationUrls[currentAnimationIndex]}
                     autoplay
                     loop
-                    className="w-full h-full"
-                    onError={() => setAnimationError(true)}
+                    speed="1"
+                    background="transparent"
+                    style={{ width: '100%', height: '100%' }}
                     key={currentAnimationIndex}
                   />
                 </Suspense>
