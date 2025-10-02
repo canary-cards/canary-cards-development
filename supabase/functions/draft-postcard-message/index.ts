@@ -222,10 +222,18 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: 
           role: 'system',
           content: `You are a news research assistant specializing in local and state-level political news. For each source, provide structured information in this EXACT format:
 
-**ARTICLE TITLE:** [The exact headline from the original article]
+**ARTICLE TITLE:** [The exact headline from the original article - must be the actual published title, not a summary or description]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
 **RELEVANCE_SCORE:** [Rate 1-10 how relevant this source is to the user's concern]
 **LOCAL_PRIORITY:** [Classify as: local, state, regional, or national]
+
+TITLE FORMATTING REQUIREMENTS (CRITICAL):
+- MUST use the EXACT headline as published on the original article
+- DO NOT create descriptive titles or summaries
+- DO NOT use URL fragments or generic descriptions
+- DO NOT use phrases like "Government Report" or "News Article"
+- MUST be specific and informative (e.g., "Senate Passes $1.2T Infrastructure Bill" not "Infrastructure News")
+- Each title must be unique and specific to the article
 
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
@@ -238,7 +246,7 @@ RELEVANCE SCORING GUIDE:
 - 5-6: Related but not directly on topic
 - 1-4: Tangentially related or background info
 
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment.`
+Be extremely precise with article titles - use the actual headline as it appears on the page, not a description or URL fragment.`
         },
         {
           role: 'user',
@@ -301,37 +309,138 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     return { relevanceScore, localPriority };
   };
 
-  // Helper: Parse title from Perplexity response
+  // Helper: Parse title from Perplexity response (improved flexibility)
   const extractPerplexityTitle = (url: string, searchText: string): string => {
     const urlIndex = searchText.indexOf(url);
     if (urlIndex === -1) return '';
     
-    const marker = '**ARTICLE TITLE:**';
-    const lastTitleIdx = searchText.lastIndexOf(marker, urlIndex);
-    if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
-      const afterTitle = searchText.substring(lastTitleIdx + marker.length, urlIndex);
-      const firstLine = afterTitle.split(/\r?\n/)[0].trim();
-      if (firstLine) return firstLine.replace(/^[*-]\s*/, '').trim();
+    // Try multiple markers for better extraction
+    const markers = ['**ARTICLE TITLE:**', '**Title:**', 'ARTICLE TITLE:', 'Title:'];
+    
+    for (const marker of markers) {
+      const lastTitleIdx = searchText.lastIndexOf(marker, urlIndex);
+      if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 400) {
+        const afterTitle = searchText.substring(lastTitleIdx + marker.length, urlIndex);
+        // Try to extract first line or text before next marker
+        const lines = afterTitle.split(/\r?\n/);
+        for (const line of lines) {
+          const cleaned = line.replace(/^[*-]\s*/, '').replace(/\*\*/g, '').trim();
+          // Return first substantial line (more than just outlet name)
+          if (cleaned && cleaned.length > 10 && !cleaned.toUpperCase().includes('OUTLET:') && !cleaned.toUpperCase().includes('RELEVANCE')) {
+            console.log(`📰 Extracted Perplexity title for ${url}: "${cleaned}"`);
+            return cleaned;
+          }
+        }
+      }
     }
     
     return '';
   };
 
-  // Helper: Check if title is good quality
+  // Helper: Extract meaningful title from URL path and domain
+  const extractTitleFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace('www.', '');
+      const path = urlObj.pathname;
+      
+      // Domain-specific patterns
+      const domainTitles: { [key: string]: string } = {
+        'congress.gov': 'Congressional Legislative Information',
+        'senate.gov': 'U.S. Senate Official Information',
+        'house.gov': 'U.S. House of Representatives',
+        'whitehouse.gov': 'White House Statement',
+        'census.gov': 'U.S. Census Bureau Report',
+        'irs.gov': 'IRS Tax Information',
+        'treasury.gov': 'U.S. Treasury Department',
+        'hhs.gov': 'Health and Human Services',
+        'ed.gov': 'Department of Education',
+        'dol.gov': 'Department of Labor',
+        'transportation.gov': 'Department of Transportation',
+        'epa.gov': 'Environmental Protection Agency',
+        'cdc.gov': 'CDC Health Information',
+        'fda.gov': 'FDA Regulatory Information',
+        'nih.gov': 'National Institutes of Health',
+        'usda.gov': 'USDA Agricultural Information'
+      };
+      
+      // Check for domain-specific titles
+      for (const [domainPattern, title] of Object.entries(domainTitles)) {
+        if (domain.includes(domainPattern)) {
+          // Try to enhance with path info
+          const pathSegments = path.split('/').filter(seg => seg && seg.length > 2);
+          if (pathSegments.length > 0) {
+            const lastSegment = pathSegments[pathSegments.length - 1]
+              .replace(/[-_]/g, ' ')
+              .replace(/\.(html|htm|php|aspx?)$/i, '')
+              .replace(/\b\w/g, l => l.toUpperCase());
+            if (lastSegment.length > 5 && !/^\d+$/.test(lastSegment)) {
+              return `${title}: ${lastSegment}`;
+            }
+          }
+          return title;
+        }
+      }
+      
+      // Extract title from URL path for news articles
+      const pathSegments = path.split('/').filter(seg => seg && seg.length > 3);
+      if (pathSegments.length > 0) {
+        // Look for article slug (usually last segment or second-to-last)
+        for (let i = pathSegments.length - 1; i >= Math.max(0, pathSegments.length - 3); i--) {
+          const segment = pathSegments[i];
+          // Skip common non-title segments
+          if (/^\d{4}$|^\d{6,8}$|^(news|article|story|politics|local|national)$/i.test(segment)) {
+            continue;
+          }
+          
+          // Convert slug to title format
+          const title = segment
+            .replace(/[-_]/g, ' ')
+            .replace(/\.(html|htm|php|aspx?)$/i, '')
+            .replace(/\b\w/g, l => l.toUpperCase())
+            .trim();
+          
+          // Only use if it looks like a real title (not just numbers or too short)
+          if (title.length >= 15 && !/^\d+$/.test(title) && title.split(' ').length >= 3) {
+            return title;
+          }
+        }
+      }
+      
+      // Final fallback: use domain name
+      const siteName = domain.split('.')[0]
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+      return `${siteName} Article`;
+      
+    } catch {
+      return 'News Article';
+    }
+  };
+
+  // Helper: Check if title is good quality (relaxed criteria)
   const isTitleGoodQuality = (title: string): boolean => {
-    if (!title || title.length < 10) return false;
-    // Reject generic titles
+    if (!title || title.length < 8) return false;
+    
+    // Reject only truly generic/placeholder titles
     const genericPatterns = [
       /^video content$/i,
       /^news article$/i,
       /^government report$/i,
-      /^\w+ information$/i,
-      /^article$/i
+      /^article$/i,
+      /^home$/i,
+      /^404$/i,
+      /^page not found$/i,
+      /^error$/i
     ];
-    return !genericPatterns.some(pattern => pattern.test(title));
+    
+    // Check for patterns that suggest it's a real title
+    const hasSubstantiveContent = title.length >= 15 || /[A-Z]/.test(title) || /\d/.test(title);
+    
+    return !genericPatterns.some(pattern => pattern.test(title)) && hasSubstantiveContent;
   };
 
-  // Helper: Fetch actual page title only when needed
+  // Helper: Fetch actual page title with improved scraping
   const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
     try {
       const controller = new AbortController();
@@ -339,30 +448,50 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
       const res = await fetch(targetUrl, {
         signal: controller.signal,
         redirect: 'follow',
-        headers: { 'user-agent': 'Mozilla/5.0 (LovableBot)' }
+        headers: { 'user-agent': 'Mozilla/5.0 (compatible; LovableBot/1.0)' }
       });
       clearTimeout(timeoutId);
       if (!res.ok) return null;
+      
       const html = await res.text();
       const snippet = html.slice(0, 100000);
+      
+      // Try multiple meta tags in priority order
       const og = snippet.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
-        || snippet.match(/<meta[^>]+name=["']og:title["'][^>]+content=["']([^"']+)["']/i);
-      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i);
+        || snippet.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i)
+        || snippet.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:title["']/i);
+      const dc = snippet.match(/<meta[^>]+name=["']DC\.title["'][^>]+content=["']([^"']+)["']/i);
       const tt = snippet.match(/<title[^>]*>([^<]+)<\/title>/i);
-      let title = og?.[1] || tw?.[1] || tt?.[1];
+      
+      // Prefer OpenGraph, then Twitter, then DC, then title tag
+      let title = og?.[1] || tw?.[1] || dc?.[1] || tt?.[1];
+      
       if (title) {
+        // Clean HTML entities and trim
         title = title
           .replace(/&amp;/g, '&')
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
+          .replace(/&apos;/g, "'")
           .replace(/&mdash;/g, '—')
           .replace(/&ndash;/g, '–')
+          .replace(/&rsquo;/g, "'")
+          .replace(/&lsquo;/g, "'")
+          .replace(/&rdquo;/g, '"')
+          .replace(/&ldquo;/g, '"')
           .replace(/\s+/g, ' ')
           .trim();
-        return title.substring(0, 200);
+        
+        // Remove common site name suffixes (e.g., " | CNN", " - The New York Times")
+        const cleanedTitle = title.replace(/\s*[\|\-–—]\s*[^|\-–—]+$/, '').trim();
+        const finalTitle = cleanedTitle.length > 15 ? cleanedTitle : title;
+        
+        console.log(`🌐 Web scraped title for ${targetUrl}: "${finalTitle}"`);
+        return finalTitle.substring(0, 200);
       }
     } catch (err: any) {
-      console.log('fetchPageTitle error:', targetUrl, err?.message || err);
+      console.log(`❌ fetchPageTitle error for ${targetUrl}:`, err?.message || err);
     }
     return null;
   };
@@ -448,26 +577,27 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
 
   for (const candidate of top4Candidates) {
     let headline = candidate.perplexityTitle;
+    let titleSource = 'perplexity';
     
     // Only web scrape if Perplexity title is poor quality
     if (!isTitleGoodQuality(headline)) {
-      console.log(`Perplexity title poor quality for ${candidate.url}, fetching from web...`);
+      console.log(`⚠️ Perplexity title poor quality for ${candidate.url}, fetching from web...`);
       const scrapedTitle = await fetchPageTitle(candidate.url);
       if (scrapedTitle && isTitleGoodQuality(scrapedTitle)) {
         headline = scrapedTitle;
+        titleSource = 'web-scrape';
       }
     }
     
-    // Domain-based fallback if still missing
+    // Smart URL-based fallback if still missing
     if (!isTitleGoodQuality(headline)) {
-      const domain = new URL(candidate.url).hostname.replace('www.', '');
-      if (domain.includes('congress.gov')) headline = 'Congressional Information';
-      else if (domain.includes('census.gov')) headline = 'Census Data and Statistics';
-      else if (domain.includes('bls.gov')) headline = 'Bureau of Labor Statistics Report';
-      else if (domain.includes('.gov')) headline = 'Government Report';
-      else if (/(news|times|post)/i.test(domain)) headline = 'News Article';
-      else headline = `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
+      headline = extractTitleFromUrl(candidate.url);
+      titleSource = 'url-fallback';
+      console.log(`🔗 Using URL-based fallback for ${candidate.url}: "${headline}"`);
     }
+    
+    console.log(`✅ Final title (${titleSource}) for ${candidate.url}: "${headline}"`);
+
 
     sources.push({
       url: candidate.url,
