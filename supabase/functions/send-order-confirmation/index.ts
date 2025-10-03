@@ -4,6 +4,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// VERSION TRACKING - Update this with each deployment
+const FUNCTION_VERSION = "2025-01-03-v1.0";
+const TEMPLATE_VERSION = "2025-01-03-email-v1.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -58,6 +62,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Log version information immediately
+    console.log('=== FUNCTION VERSION INFO ===');
+    console.log('Function Version:', FUNCTION_VERSION);
+    console.log('Template Version:', TEMPLATE_VERSION);
+    console.log('Environment:', Deno.env.get('ENVIRONMENT') || 'unknown');
+    console.log('Supabase URL:', Deno.env.get('SUPABASE_URL')?.substring(0, 30) + '...');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('=============================');
+    
     const { userInfo, representative, senators, sendOption, orderResults, finalMessage, actualMailingDate, refundInfo, summary }: OrderConfirmationRequest = await req.json();
 
     if (!userInfo.email) {
@@ -263,6 +276,7 @@ const handler = async (req: Request): Promise<Response> => {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
   <title>Order confirmed — Your message is in motion</title>
+  <!-- VERSION TRACKING: Function=${FUNCTION_VERSION} Template=${TEMPLATE_VERSION} Generated=${new Date().toISOString()} -->
   
   <!-- Web Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -715,11 +729,17 @@ const handler = async (req: Request): Promise<Response> => {
     </tr>
   </table>
   
+  <!-- VERSION STAMP (hidden) -->
+  <div style="display:none; font-size:1px; color:#ffffff; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden;">
+    Version: ${FUNCTION_VERSION} | Template: ${TEMPLATE_VERSION} | Generated: ${new Date().toISOString()}
+  </div>
+  
 </body>
 </html>`;
 
     console.log('About to send email to:', userInfo.email);
     console.log('Email HTML length:', emailHtml.length);
+    console.log('Email version stamps included:', FUNCTION_VERSION, TEMPLATE_VERSION);
     
     try {
       const emailResponse = await resend.emails.send({
