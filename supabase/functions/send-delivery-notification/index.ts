@@ -9,8 +9,6 @@ const corsHeaders = {
 };
 
 const handler = async (req) => {
-  console.log('[send-delivery-notification v2] Function invoked');
-  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -32,7 +30,7 @@ const handler = async (req) => {
       uid 
     } = await req.json();
     
-    console.log('[send-delivery-notification v2] Processing delivery notification for postcard:', postcardId);
+    console.log('Processing delivery notification for postcard:', postcardId);
     console.log('Recipient:', recipientName);
     console.log('User email:', userEmail);
     
@@ -104,7 +102,7 @@ const handler = async (req) => {
     };
     const postcardContent = formatPostcardMessage(safeMessage, repTitleAndLastName);
     
-    // Create the delivery notification email with redesigned v2 template
+    // Create the delivery notification email with order confirmation structure
     const emailHtml = `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -510,7 +508,7 @@ const handler = async (req) => {
 </body>
 </html>`;
 
-    console.log('[send-delivery-notification v2] Sending redesigned email to:', userEmail);
+    console.log('Sending mailed notification email to:', userEmail);
     
     const emailResponse = await resend.emails.send({
       from: "Canary Cards <hello@canary.cards>",
@@ -521,7 +519,7 @@ const handler = async (req) => {
     });
     
     if (emailResponse.error) {
-      console.error("[send-delivery-notification v2] Resend API error:", emailResponse.error);
+      console.error("Resend API error:", emailResponse.error);
       console.error("Error details:", {
         statusCode: 500,
         message: emailResponse.error.message,
@@ -529,7 +527,7 @@ const handler = async (req) => {
         postcardId
       });
     } else {
-      console.log("[send-delivery-notification v2] Email sent successfully:", emailResponse);
+      console.log("Mailed notification email sent successfully:", emailResponse);
     }
     
     return new Response(JSON.stringify({
@@ -546,7 +544,7 @@ const handler = async (req) => {
     });
     
   } catch (error) {
-    console.error("[send-delivery-notification v2] Error in function:", error);
+    console.error("Error in send-delivery-notification function:", error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
