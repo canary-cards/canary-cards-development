@@ -334,7 +334,7 @@ export function DraftingScreen() {
                 <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
                   showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
                 }`}>
-                  {currentAnimationIndex === 2 && animation3LoopCount > 0
+                  {currentAnimationIndex === 2 && animation3LoopCount >= 3
                     ? draftingMessages[3] // "Completing draft — amplifying your voice."
                     : draftingMessages[currentAnimationIndex] // Match animation index
                   }
