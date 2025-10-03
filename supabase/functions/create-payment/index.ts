@@ -31,7 +31,7 @@ const RequestSchema = z.object({
   email: z.string().trim().email().max(255),
   fullName: z.string().trim().min(1).max(100),
   postcardData: PostcardDataSchema.optional(),
-  simulateFailure: z.number().int().min(0).max(1).optional(),
+  simulateFailure: z.boolean().optional(),
   simulatedFailed: z.number().int().min(0).max(10).optional()
 });
 
@@ -193,7 +193,7 @@ serve(async (req) => {
     
     // Add simulation flags to return URL if provided
     if (simulateFailure) {
-      returnUrl += `&simulate_failure=1`;
+      returnUrl += `&simulate_failure=true`;
       if (simulatedFailed) {
         returnUrl += `&simulate_failed=${simulatedFailed}`;
       }
@@ -234,8 +234,8 @@ serve(async (req) => {
           ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
         ].filter(Boolean)) : "[]",
         // Add simulation parameters for testing
-        simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
-        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0", 
+        simulateFailure: simulateFailure ? "true" : "false",
+        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0",
         ...postcardMetadata // Include all postcard data in session metadata
       }
     });
