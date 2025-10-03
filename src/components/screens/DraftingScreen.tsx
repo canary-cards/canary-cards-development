@@ -304,21 +304,27 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]">
+            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] flex items-center justify-center">
               {!animationError ? (
                 <Suspense fallback={
                   <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
                     <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                   </div>
                 }>
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-[95%] h-[95%] flex items-center justify-center">
                     <lottie-player
                       src={animationUrls[currentAnimationIndex]}
                       autoplay
                       loop
                       speed="1"
                       background="transparent"
-                      style={{ width: '100%', height: '100%' }}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
                       key={currentAnimationIndex}
                     />
                   </div>
