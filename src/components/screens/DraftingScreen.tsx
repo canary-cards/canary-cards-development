@@ -316,15 +316,17 @@ export function DraftingScreen() {
                     <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                   </div>
                 }>
-                  <lottie-player
-                    src={animationUrls[currentAnimationIndex]}
-                    autoplay
-                    loop
-                    speed="1"
-                    background="transparent"
-                    style={{ width: '100%', height: '100%' }}
-                    key={currentAnimationIndex}
-                  />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <lottie-player
+                      src={animationUrls[currentAnimationIndex]}
+                      autoplay
+                      loop
+                      speed="1"
+                      background="transparent"
+                      style={{ width: '100%', height: '100%' }}
+                      key={currentAnimationIndex}
+                    />
+                  </div>
                 </Suspense>
               ) : (
                 <DynamicSvg 
