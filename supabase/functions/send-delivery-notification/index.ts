@@ -30,12 +30,12 @@ const handler = async (req) => {
       uid 
     } = await req.json();
     
-    console.log('Processing delivery notification for postcard:', postcardId);
-    console.log('Recipient:', recipientName);
-    console.log('User email:', userEmail);
+    console.log('[send-delivery-notification v2] Processing delivery notification for postcard:', postcardId);
+    console.log('[send-delivery-notification v2] Recipient:', recipientName);
+    console.log('[send-delivery-notification v2] User email:', userEmail);
     
     if (!userEmail) {
-      console.log('No user email available, cannot send delivery notification');
+      console.log('[send-delivery-notification v2] No user email available, cannot send delivery notification');
       return new Response(JSON.stringify({
         success: false,
         message: 'No user email available for delivery notification'
@@ -519,15 +519,15 @@ const handler = async (req) => {
     });
     
     if (emailResponse.error) {
-      console.error("Resend API error:", emailResponse.error);
-      console.error("Error details:", {
+      console.error("[send-delivery-notification v2] Resend API error:", emailResponse.error);
+      console.error("[send-delivery-notification v2] Error details:", {
         statusCode: 500,
         message: emailResponse.error.message,
         userEmail,
         postcardId
       });
     } else {
-      console.log("Mailed notification email sent successfully:", emailResponse);
+      console.log("[send-delivery-notification v2] Mailed notification email sent successfully:", emailResponse);
     }
     
     return new Response(JSON.stringify({
@@ -544,7 +544,7 @@ const handler = async (req) => {
     });
     
   } catch (error) {
-    console.error("Error in send-delivery-notification function:", error);
+    console.error("[send-delivery-notification v2] Error in send-delivery-notification function:", error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
