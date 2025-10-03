@@ -296,8 +296,8 @@ export function CraftMessageScreen() {
       payload: 1
     });
   };
-  return <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pb-4 max-w-2xl">
+  return <div className="h-screen bg-background overflow-y-auto">
+      <div className="container mx-auto px-4 py-4 max-w-2xl h-full flex flex-col">
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
@@ -324,7 +324,7 @@ export function CraftMessageScreen() {
                         sources: []
                       }
                     });
-                  }} className="input-warm min-h-[70px] resize-none flex-1 placeholder:text-sm placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed" />
+                  }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 placeholder:text-sm placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed overflow-y-auto" />
                     
                     <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'} aria-pressed={isRecording && recordingField === 'concerns'} onClick={() => {
                     if (isRecording && recordingField === 'concerns') {
@@ -370,7 +370,7 @@ export function CraftMessageScreen() {
                           sources: []
                         }
                       });
-                    }} className="input-warm min-h-[70px] resize-none w-full" />
+                    }} className="input-warm min-h-[70px] max-h-[120px] resize-none w-full overflow-y-auto" />
 
                       {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-sm font-medium leading-relaxed text-muted-foreground/70" onMouseDown={e => {
                       const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
