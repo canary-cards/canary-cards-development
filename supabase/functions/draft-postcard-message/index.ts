@@ -571,7 +571,7 @@ function smartTruncate(text: string, maxLength: number = 300): string {
   return text.substring(0, maxLength - 50) + '...';
 }
 
-async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, location: { state: string; city: string; region: string }, representative: any): Promise<string> {
+async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, location: { state: string; city: string; region: string }, representative: any, attemptNumber: number = 1): Promise<string> {
   // Shortening API keys for better rate limit handling
   const shorteningKeys = ['ANTHROPIC_SHORTENING_KEY_1', 'ANTHROPIC_SHORTENING_KEY_2', 'ANTHROPIC_SHORTENING_KEY_3'];
   let apiKey: string | null = null;
@@ -604,7 +604,11 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   const contentMaxLength = 300 - greetingLength;
   
-  const SHORTENING_PROMPT = `🚨 CRITICAL CHARACTER LIMIT WARNING 🚨
+  // Adjust target length based on attempt number - second attempt is more aggressive
+  const targetLength = attemptNumber === 1 ? Math.max(200, contentMaxLength - 20) : 250;
+  const urgencyLevel = attemptNumber === 1 ? 'CRITICAL' : '🚨 FINAL ATTEMPT - EXTREME URGENCY 🚨';
+  
+  const SHORTENING_PROMPT = `🚨 ${urgencyLevel} CHARACTER LIMIT WARNING 🚨
 You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
 ⚠️ MANDATORY TECHNICAL CONSTRAINT ⚠️
@@ -641,12 +645,12 @@ FORMAT REQUIREMENTS - NON-NEGOTIABLE:
 
 QUALITY STANDARDS:
 - 💯 Shortened version must be complete and compelling standalone
-- 🎯 One strong point beats multiple weak points
+- 🎯 ${attemptNumber === 2 ? 'ONE POINT ONLY - NO EXCEPTIONS' : 'One strong point beats multiple weak points'}
 - 💬 Keep contractions and natural language
 - 🚫 NEVER sacrifice authenticity for brevity
 
 🚨 ABSOLUTE NON-NEGOTIABLE REQUIREMENTS 🚨
-- ✅ MUST be WELL UNDER ${contentMaxLength} characters (aim for ${Math.max(200, contentMaxLength - 20)})
+- ✅ MUST be WELL UNDER ${contentMaxLength} characters (aim for ${targetLength})
 - ⛔ No salutation, no signature - just message content
 - 💭 Must sound like a real person, not a form letter
 - 📏 Total with greeting "Rep. ${repLastName}," (${greetingLength} chars) CANNOT exceed 300 chars
@@ -659,7 +663,7 @@ ${contentToShorten}
 ⚠️ REMEMBER: MUST BE WELL UNDER ${contentMaxLength} CHARACTERS OR IT WILL BE DESTROYED BY TRUNCATION ⚠️`;
 
   try {
-    console.log(`Attempting to shorten postcard from ${originalPostcard.length} to under 300 characters`);
+    console.log(`Shortening attempt ${attemptNumber}/2: Reducing ${originalPostcard.length} chars to under 300`);
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -735,23 +739,45 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
     
     // Step 4: Shorten if needed (hard limit at 300 characters)
     if (postcard.length > 300) {
-      console.log(`Postcard over 300 character limit (${postcard.length} chars), attempting shortening...`);
+      console.log(`Postcard over 300 character limit (${postcard.length} chars), attempting AI shortening...`);
       
+      let shortenedPostcard = postcard;
+      let shorteningSucceeded = false;
+      
+      // First AI shortening attempt
       try {
-        const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
-        console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+        shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative, 1);
+        console.log(`Attempt 1 result: ${shortenedPostcard.length} characters`);
         
-        // Use shortened version if it's actually shorter and under limit
         if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
           postcard = shortenedPostcard;
-          console.log(`✅ Shortening successful, using shortened version`);
-        } else {
-          console.log(`Shortening didn't improve length sufficiently, using smart truncation`);
-          postcard = smartTruncate(postcard);
+          shorteningSucceeded = true;
+          console.log(`✅ First attempt successful, using shortened version`);
         }
       } catch (error) {
-        // If shortening failed, try smart truncation as fallback
-        console.log('Shortening API failed, using smart truncation fallback');
+        console.log('First shortening attempt failed, will try second attempt');
+      }
+      
+      // Second AI shortening attempt (if first failed or still over limit)
+      if (!shorteningSucceeded && postcard.length > 300) {
+        console.log(`Attempting second shortening with more aggressive approach...`);
+        try {
+          shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative, 2);
+          console.log(`Attempt 2 result: ${shortenedPostcard.length} characters`);
+          
+          if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
+            postcard = shortenedPostcard;
+            shorteningSucceeded = true;
+            console.log(`✅ Second attempt successful, using shortened version`);
+          }
+        } catch (error) {
+          console.log('Second shortening attempt also failed, will use smart truncation');
+        }
+      }
+      
+      // Final fallback: smart truncation (only if both AI attempts failed)
+      if (!shorteningSucceeded && postcard.length > 300) {
+        console.log('Both AI shortening attempts failed or insufficient, using smart truncation fallback');
         postcard = smartTruncate(postcard);
       }
     }
