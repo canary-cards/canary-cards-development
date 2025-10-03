@@ -30,12 +30,12 @@ const handler = async (req) => {
       uid 
     } = await req.json();
     
-    console.log('[send-delivery-notification v2] Processing delivery notification for postcard:', postcardId);
-    console.log('[send-delivery-notification v2] Recipient:', recipientName);
-    console.log('[send-delivery-notification v2] User email:', userEmail);
+    console.log('[send-delivery-notification v3] Processing delivery notification for postcard:', postcardId);
+    console.log('[send-delivery-notification v3] Recipient:', recipientName);
+    console.log('[send-delivery-notification v3] User email:', userEmail);
     
     if (!userEmail) {
-      console.log('[send-delivery-notification v2] No user email available, cannot send delivery notification');
+      console.log('[send-delivery-notification v3] No user email available, cannot send delivery notification');
       return new Response(JSON.stringify({
         success: false,
         message: 'No user email available for delivery notification'
@@ -361,7 +361,7 @@ const handler = async (req) => {
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
                         <tr>
                           <td style="width: 40px; vertical-align: top; padding-right: 12px;">
-                            <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #FFD44D; border: 2px solid #2F4156; font-weight: 600; color: #2F4156; font-size: 14px; text-align: center; line-height: 28px;">3</div>
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #2F4156; border: 2px solid #2F4156; font-weight: 600; color: white; font-size: 14px; text-align: center; line-height: 28px;">✓</div>
                           </td>
                           <td style="vertical-align: top;">
                             <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #2F4156; margin-bottom: 4px;">Mailed (Today)</div>
@@ -420,7 +420,7 @@ const handler = async (req) => {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-bottom: 16px;">
           <tr>
             <td style="padding: 0;">
-              <a href="https://canary.cards/#research" style="text-decoration: none; display: block;">
+              <a href="https://canary.cards/research" style="text-decoration: none; display: block;">
                 <div style="background-color: #ffffff; border: 1px solid #E8DECF; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); transition: all 0.2s ease;">
                   
                   <h3 class="h3" style="margin-bottom: 16px;">THE RESEARCH</h3>
@@ -508,7 +508,7 @@ const handler = async (req) => {
 </body>
 </html>`;
 
-    console.log('Sending mailed notification email to:', userEmail);
+    console.log('[send-delivery-notification v3] Sending mailed notification email to:', userEmail);
     
     const emailResponse = await resend.emails.send({
       from: "Canary Cards <hello@canary.cards>",
@@ -519,15 +519,15 @@ const handler = async (req) => {
     });
     
     if (emailResponse.error) {
-      console.error("[send-delivery-notification v2] Resend API error:", emailResponse.error);
-      console.error("[send-delivery-notification v2] Error details:", {
+      console.error("[send-delivery-notification v3] Resend API error:", emailResponse.error);
+      console.error("[send-delivery-notification v3] Error details:", {
         statusCode: 500,
         message: emailResponse.error.message,
         userEmail,
         postcardId
       });
     } else {
-      console.log("[send-delivery-notification v2] Mailed notification email sent successfully:", emailResponse);
+      console.log("[send-delivery-notification v3] Mailed notification email sent successfully:", emailResponse);
     }
     
     return new Response(JSON.stringify({
@@ -544,7 +544,7 @@ const handler = async (req) => {
     });
     
   } catch (error) {
-    console.error("[send-delivery-notification v2] Error in send-delivery-notification function:", error);
+    console.error("[send-delivery-notification v3] Error in send-delivery-notification function:", error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
