@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
 import { DynamicSvg } from '../DynamicSvg';
@@ -56,6 +56,7 @@ export function DraftingScreen() {
   const [hasError, setHasError] = useState(false);
   const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
+  const hasDraftedRef = useRef(false);
 
   // Update message based on current animation
   useEffect(() => {
@@ -103,6 +104,15 @@ export function DraftingScreen() {
 
   // Handle the actual drafting process
   useEffect(() => {
+    // Guard: prevent duplicate calls
+    if (hasDraftedRef.current) {
+      console.log('⚠️ Draft already initiated, skipping duplicate call');
+      return;
+    }
+    
+    hasDraftedRef.current = true;
+    console.log('✅ Initiating draft process (first and only call)');
+    
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
@@ -275,7 +285,7 @@ export function DraftingScreen() {
     }, 60000);
 
     return () => clearTimeout(timeout);
-  }, [state.postcardData, dispatch, startTime, apiCompleted, toast]);
+  }, []); // Empty array: run once on mount only
 
   const handleRetry = () => {
     // Navigate back to the craft message screen
