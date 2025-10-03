@@ -1,10 +1,39 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schemas
+const UserInfoSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  streetAddress: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(1).max(100).optional(),
+  state: z.string().trim().max(50).optional(),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional()
+});
+
+const PostcardDataSchema = z.object({
+  userInfo: UserInfoSchema.optional(),
+  finalMessage: z.string().trim().min(10).max(1000).optional(),
+  sendOption: z.enum(['single', 'double', 'triple']).optional(),
+  email: z.string().trim().email().max(255).optional(),
+  draftId: z.string().uuid().optional(),
+  representative: z.any().optional(),
+  senators: z.any().optional()
+});
+
+const RequestSchema = z.object({
+  sendOption: z.enum(['single', 'double', 'triple']),
+  email: z.string().trim().email().max(255),
+  fullName: z.string().trim().min(1).max(100),
+  postcardData: PostcardDataSchema.optional(),
+  simulateFailure: z.number().int().min(0).max(1).optional(),
+  simulatedFailed: z.number().int().min(0).max(10).optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,16 +42,42 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
-    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = validation.data;
+    
+    // Block simulation parameters in production
+    const environment = Deno.env.get('ENVIRONMENT') || 'development';
+    if (environment === 'production' && (simulateFailure || simulatedFailed)) {
+      console.error('Simulation parameters not allowed in production');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
     
     console.log("=== CREATE PAYMENT DEBUG ===");
     console.log("Request data:", { sendOption, email, fullName });
     console.log("Postcard data received:", postcardData ? "Yes" : "No");
-    
-    if (!sendOption || !email) {
-      throw new Error("Missing required fields: sendOption and email");
-    }
 
     // Prepare postcard data for metadata storage
     let postcardMetadata = {};
