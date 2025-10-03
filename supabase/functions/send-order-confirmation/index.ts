@@ -1,7 +1,13 @@
+// ============================================
+// send-order-confirmation v3
+// Sends order confirmation emails via Resend
+// ============================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const VERSION = "v3";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
@@ -10,8 +16,7 @@ const corsHeaders = {
 };
 
 const handler = async (req) => {
-  // Version marker - Updated 2025-10-03
-  console.log('[send-order-confirmation v2] Function invoked');
+  console.log(`[send-order-confirmation ${VERSION}] Function invoked`);
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -615,32 +620,34 @@ const handler = async (req) => {
 </body>
 </html>`;
 
-    console.log('Sending redesigned email to:', userInfo.email);
+    console.log(`[send-order-confirmation ${VERSION}] Sending email to:`, userInfo.email);
     
     try {
       const emailResponse = await resend.emails.send({
         from: "Canary Cards <hello@canary.cards>",
         to: [userInfo.email],
-        subject: "Order confirmed — Your message is in motion",
+        subject: "Order confirmed – Your message is in motion",
         html: emailHtml
       });
 
-      console.log("Order confirmation email sent successfully:", emailResponse);
+      console.log(`[send-order-confirmation ${VERSION}] Email sent successfully:`, emailResponse);
       
       return new Response(JSON.stringify({
         success: true,
-        emailId: emailResponse.data?.id
+        emailId: emailResponse.data?.id,
+        version: VERSION
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
       
     } catch (emailError) {
-      console.error("Failed to send email via Resend:", emailError);
+      console.error(`[send-order-confirmation ${VERSION}] Failed to send email via Resend:`, emailError);
       return new Response(JSON.stringify({
         success: false,
         error: `Email sending failed: ${emailError.message}`,
-        details: emailError.response || emailError.status
+        details: emailError.response || emailError.status,
+        version: VERSION
       }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders }
@@ -648,10 +655,11 @@ const handler = async (req) => {
     }
     
   } catch (error) {
-    console.error("Error in send-order-confirmation function:", error);
+    console.error(`[send-order-confirmation ${VERSION}] Error in function:`, error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: error.message,
+      version: VERSION
     }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders }
