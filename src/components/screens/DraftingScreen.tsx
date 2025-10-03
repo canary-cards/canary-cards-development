@@ -180,6 +180,12 @@ export function DraftingScreen() {
         // Mark API as completed successfully
         setApiCompleted(true);
 
+        // Check if timeout already occurred - ignore late responses
+        if (hasError) {
+          console.log('⏱️ Ignoring late response - timeout already occurred');
+          return;
+        }
+
         // Ensure minimum 1 second dwell time
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, 1000 - elapsedTime);
@@ -232,13 +238,26 @@ export function DraftingScreen() {
     // Set timeout for 60 seconds (1 minute)
     const timeout = setTimeout(() => {
       if (!apiCompleted) {
-        console.error('Timeout: API call did not complete within 60 seconds');
+        console.error('⏱️ Timeout: Request took too long, showing fallback placeholder');
+        setApiCompleted(true);
         setHasError(true);
-        toast({
-          variant: "destructive",
-          title: "Request Timeout",
-          description: "The request took too long. Please try again.",
-        });
+        
+        // Set the fallback placeholder message and navigate to review (no toast error)
+        setTimeout(() => {
+          dispatch({
+            type: 'UPDATE_POSTCARD_DATA',
+            payload: {
+              originalMessage: `${state.postcardData.concerns}\n\n${state.postcardData.personalImpact}`,
+              draftMessage: "Canary just returned from a long flight and needs a moment to catch its breath. Please write your message below, and we'll make sure it reaches your representative.",
+              sources: [],
+              draftId: undefined, // No draft ID since we timed out
+              isFallbackPlaceholder: true // This flag makes it show as placeholder
+            }
+          });
+          
+          // Navigate to review screen
+          dispatch({ type: 'SET_STEP', payload: 3 });
+        }, 500);
       }
     }, 60000);
 
