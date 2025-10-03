@@ -296,8 +296,8 @@ export function CraftMessageScreen() {
       payload: 1
     });
   };
-  return <div className="h-screen bg-background overflow-y-auto">
-      <div className="container mx-auto px-4 py-4 max-w-2xl h-full flex flex-col">
+  return <div className="min-h-[100dvh] bg-background flex flex-col overscroll-contain">
+      <div className="container mx-auto px-4 py-4 max-w-2xl flex-1 flex flex-col overflow-y-auto">
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
