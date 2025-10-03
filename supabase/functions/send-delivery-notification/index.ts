@@ -1,6 +1,12 @@
+// ============================================
+// send-delivery-notification v4
+// Sends delivery notification emails via Resend
+// ============================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
+const VERSION = "v4";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
@@ -30,12 +36,12 @@ const handler = async (req) => {
       uid 
     } = await req.json();
     
-    console.log('[send-delivery-notification v3] Processing delivery notification for postcard:', postcardId);
-    console.log('[send-delivery-notification v3] Recipient:', recipientName);
-    console.log('[send-delivery-notification v3] User email:', userEmail);
+    console.log(`[send-delivery-notification ${VERSION}] Processing delivery notification for postcard:`, postcardId);
+    console.log(`[send-delivery-notification ${VERSION}] Recipient:`, recipientName);
+    console.log(`[send-delivery-notification ${VERSION}] User email:`, userEmail);
     
     if (!userEmail) {
-      console.log('[send-delivery-notification v3] No user email available, cannot send delivery notification');
+      console.log(`[send-delivery-notification ${VERSION}] No user email available, cannot send delivery notification`);
       return new Response(JSON.stringify({
         success: false,
         message: 'No user email available for delivery notification'
@@ -498,7 +504,6 @@ const handler = async (req) => {
         <div class="footer-links" style="text-align: center; margin-top: 32px;">
           <a href="mailto:hello@canary.cards">Support</a>
           <a href="https://canary.cards/privacy">Privacy</a>
-          <a href="https://canary.cards/unsubscribe">Unsubscribe</a>
         </div>
         
       </td>
@@ -508,7 +513,7 @@ const handler = async (req) => {
 </body>
 </html>`;
 
-    console.log('[send-delivery-notification v3] Sending mailed notification email to:', userEmail);
+    console.log(`[send-delivery-notification ${VERSION}] Sending mailed notification email to:`, userEmail);
     
     const emailResponse = await resend.emails.send({
       from: "Canary Cards <hello@canary.cards>",
@@ -519,22 +524,23 @@ const handler = async (req) => {
     });
     
     if (emailResponse.error) {
-      console.error("[send-delivery-notification v3] Resend API error:", emailResponse.error);
-      console.error("[send-delivery-notification v3] Error details:", {
+      console.error(`[send-delivery-notification ${VERSION}] Resend API error:`, emailResponse.error);
+      console.error(`[send-delivery-notification ${VERSION}] Error details:`, {
         statusCode: 500,
         message: emailResponse.error.message,
         userEmail,
         postcardId
       });
     } else {
-      console.log("[send-delivery-notification v3] Mailed notification email sent successfully:", emailResponse);
+      console.log(`[send-delivery-notification ${VERSION}] Mailed notification email sent successfully:`, emailResponse);
     }
     
     return new Response(JSON.stringify({
       success: true,
       emailId: emailResponse.data?.id,
       postcardId,
-      recipientName
+      recipientName,
+      version: VERSION
     }), {
       status: 200,
       headers: {
@@ -544,10 +550,11 @@ const handler = async (req) => {
     });
     
   } catch (error) {
-    console.error("[send-delivery-notification v3] Error in send-delivery-notification function:", error);
+    console.error(`[send-delivery-notification ${VERSION}] Error in function:`, error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: error.message,
+      version: VERSION
     }), {
       status: 500,
       headers: {
