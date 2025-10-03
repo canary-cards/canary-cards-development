@@ -8,7 +8,7 @@ import { getFrontendUrl } from '@/lib/environment';
 // Standard share content
 export const SHARE_TEXT = 'Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.';
 export const SHARE_TITLE = 'Send a handwritten postcard to Congress.';
-export const SHARE_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
+export const SHARE_DESCRIPTION = 'Just a few handwritten postcards can swing a congressional vote';
 
 /**
  * Get the app URL for sharing - always use production domain
