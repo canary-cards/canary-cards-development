@@ -10,7 +10,7 @@ const TOTAL_SLIDES = 4;
 
 const slides = [
   {
-    title: "Handwritten postcards are the gold standard in D.C.",
+    title: "Handwritten postcards are the gold standard in D.C",
     subtitle: "96% of Capitol Hill staff say personalized letters influence undecided congressional votes",
     finePrint: "— Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation",
     iconPlaceholder: "ICON / WHY POSTCARDS",
@@ -18,21 +18,21 @@ const slides = [
     imageAlt: "Why postcards are effective in D.C."
   },
   {
-    title: "Canary does the hard work for you.",
+    title: "Canary does the hard work for you",
     subtitle: "It researches the issues you care about — then writes a clear, persuasive postcard in seconds",
     iconPlaceholder: "ICON / CANARY RESEARCH",
     assetName: "onboarding_icon_2.svg",
     imageAlt: "Canary research process"
   },
   {
-    title: "Your words, written in real ink with a real pen.",
+    title: "Your words, written in real ink with a real pen",
     subtitle: "Written by a robot holding a blue ballpoint, indistinguishable from human handwriting",
     iconPlaceholder: "ICON / REAL INK HANDWRITING",
     assetName: "onboarding_icon_3.svg",
     imageAlt: "Real handwriting with ink and pen"
   },
   {
-    title: "No stamps. No hassle.",
+    title: "No stamps. No hassle",
     subtitle: "Your postcard is mailed straight to your representative's desk",
     iconPlaceholder: "ICON / MAILED FOR YOU",
     assetName: "onboarding_icon_4.svg",
