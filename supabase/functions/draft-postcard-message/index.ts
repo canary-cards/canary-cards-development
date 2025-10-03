@@ -560,14 +560,14 @@ function smartTruncate(text: string, maxLength: number = 300): string {
   const truncatedText = text.substring(0, maxLength);
   const lastPeriodIndex = truncatedText.lastIndexOf('.');
   
-  // If we found a period and it's not too early (at least 200 chars to avoid very short sentences)
-  if (lastPeriodIndex > 200) {
-    console.log(`Smart truncation: found period at position ${lastPeriodIndex}`);
+  // If we found a period, truncate there regardless of position
+  if (lastPeriodIndex !== -1) {
+    console.log(`Smart truncation: ending at last period at position ${lastPeriodIndex}`);
     return text.substring(0, lastPeriodIndex + 1);
   }
   
-  // Fallback to hard truncation
-  console.log(`Hard truncation: no suitable period found, truncating at ${maxLength - 50} chars`);
+  // Fallback to hard truncation only if no period exists at all
+  console.log(`Hard truncation: no period found in first ${maxLength} chars, truncating at ${maxLength - 50} chars`);
   return text.substring(0, maxLength - 50) + '...';
 }
 
