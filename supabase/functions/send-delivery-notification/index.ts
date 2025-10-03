@@ -465,7 +465,7 @@ const handler = async (req) => {
                 </table>
                 
                 <p class="meta-text" style="text-align: center; margin-top: 12px;">
-                  Or copy: <a href="https://www.canary.cards" style="color: #2F4156; font-weight: 600; text-decoration: none;">canary.cards</a>
+                  Or copy: <a href="https://canary.cards" style="color: #2F4156; font-weight: 600; text-decoration: none;">https://canary.cards</a>
                 </p>
                 
               </div>
@@ -494,7 +494,7 @@ const handler = async (req) => {
             <td style="padding: 0;">
               <div style="background-color: #ffffff; border: 1px solid #E8DECF; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                 <p class="body-text">Thanks for raising your voice. We're proud to stand with you.</p>
-                <p class="body-text">—The Canary Cards Team</p>
+                <p class="body-text">–The Canary Cards Team</p>
               </div>
             </td>
           </tr>
