@@ -9,7 +9,7 @@ const AppContent = () => {
   const location = useLocation();
   const { dispatch } = useAppContext();
 
-  // Handle return to home and onboarding redirect
+  // Handle return to home and onboarding redirect - run ONCE on mount only
   useEffect(() => {
     const shouldSkip = location.state?.skipOnboarding;
     console.log('🔍 Index useEffect triggered:', { shouldSkip, pathname: location.pathname, search: location.search });
@@ -23,7 +23,8 @@ const AppContent = () => {
       console.log('🔄 First visit - redirecting to onboarding');
       navigate('/onboarding' + location.search, { replace: true });
     }
-  }, [navigate, location.search, location.state?.skipOnboarding, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run ONCE on mount - intentionally empty deps to prevent redirect loops
 
   return <CivicPostcardApp />;
 };
