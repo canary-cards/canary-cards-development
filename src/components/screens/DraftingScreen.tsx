@@ -108,6 +108,11 @@ export function DraftingScreen() {
 
   // Handle the actual drafting process
   useEffect(() => {
+    // Guard: Only run this effect when we're actually on the DraftingScreen (step 7)
+    if (state.currentStep !== 7) {
+      return;
+    }
+
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
@@ -280,7 +285,7 @@ export function DraftingScreen() {
     }, 60000);
 
     return () => clearTimeout(timeout);
-  }, [state.postcardData, dispatch, startTime, apiCompleted, toast]);
+  }, [state.currentStep, state.postcardData, dispatch, startTime, apiCompleted, toast, hasError]);
 
   const handleRetry = () => {
     // Navigate back to the craft message screen
