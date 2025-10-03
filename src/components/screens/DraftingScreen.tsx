@@ -38,19 +38,15 @@ const animationUrls = [
 ];
 
 const draftingMessages = [
-  "Polishing your message…",
-  "Fitting onto a postcard…",
-  "Matching with bills in Congress…",
-  "Highlighting local impact…",
-  "Optimizing for influence…",
-  "Completing draft — amplifying your voice..."
+  "Synthesizing your concerns.",
+  "Researching trusted local sources.",
+  "Polishing your message.",
+  "Completing draft — amplifying your voice."
 ];
 
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
-  const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1);
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(false);
@@ -58,36 +54,28 @@ export function DraftingScreen() {
   const [animationError, setAnimationError] = useState(false);
   const [apiCompleted, setApiCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
 
+  // Update message based on current animation
   useEffect(() => {
-    // Start immediately with no delay
-    setCurrentMessageIndex(0);
-    setDisplayedMessageIndex(0);
     setShowTypewriter(true);
-  }, []);
+  }, [currentAnimationIndex]);
 
-  // Rotate messages every 1.5 seconds after the initial delay
+  // For animation 3, alternate message after first loop
   useEffect(() => {
-    if (currentMessageIndex >= 0) {
+    if (currentAnimationIndex === 2) {
       const interval = setInterval(() => {
-        setCurrentMessageIndex((prev) => {
-          if (prev < draftingMessages.length - 1) {
-            // First fade out current message
-            setShowTypewriter(false);
-            // Then update the displayed message and fade in
-            setTimeout(() => {
-              setDisplayedMessageIndex(prev + 1);
-              setShowTypewriter(true);
-            }, 200); // Faster crossfade for smoother transitions
-            return prev + 1;
-          }
-          return prev; // Stay on last message
-        });
-      }, 1500);
+        setAnimation3LoopCount(prev => prev + 1);
+        // Fade out and in for smooth transition
+        setShowTypewriter(false);
+        setTimeout(() => {
+          setShowTypewriter(true);
+        }, 200);
+      }, 3000); // Animation 3 duration
 
       return () => clearInterval(interval);
     }
-  }, [currentMessageIndex]);
+  }, [currentAnimationIndex]);
 
   // Sequential animation timing: first for 6s (4 loops), second for 4s (1 loop), third stays until complete
   useEffect(() => {
@@ -343,13 +331,14 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                {displayedMessageIndex >= 0 && (
-                  <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
-                    showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
-                  }`}>
-                    {draftingMessages[displayedMessageIndex]}
-                  </p>
-                )}
+                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
+                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+                }`}>
+                  {currentAnimationIndex === 2 && animation3LoopCount > 0
+                    ? draftingMessages[3] // "Completing draft — amplifying your voice."
+                    : draftingMessages[currentAnimationIndex] // Match animation index
+                  }
+                </p>
               </div>
             </div>
           </div>
