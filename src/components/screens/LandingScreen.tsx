@@ -191,7 +191,7 @@ export function LandingScreen() {
               <h3 className="subtitle text-sm">THE RESEARCH</h3>
             </div>
             <div className="text-center text-primary text-sm mb-3">
-              <p className="body-text font-medium">96% of staffers say personalized constituent messages influence undecided votes</p>
+              <p className="body-text font-medium">96% of staffers say personalized constituent messages influence undecided congressional votes</p>
             </div>
             
             <Separator className="my-0.5" />
