@@ -49,28 +49,35 @@ export function DraftingScreen() {
   const { toast } = useToast();
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
-  const [showTypewriter, setShowTypewriter] = useState(false);
+  const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
   const [animationError, setAnimationError] = useState(false);
   const [apiCompleted, setApiCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
 
   // Update message based on current animation
   useEffect(() => {
-    setShowTypewriter(true);
-  }, [currentAnimationIndex]);
+    const newMessage = currentAnimationIndex === 2 && animation3LoopCount >= 3
+      ? draftingMessages[3]
+      : draftingMessages[currentAnimationIndex];
+    
+    // Only animate transition if message actually changed
+    if (newMessage !== currentMessage) {
+      setShowTypewriter(false);
+      setTimeout(() => {
+        setCurrentMessage(newMessage);
+        setShowTypewriter(true);
+      }, 200);
+    }
+  }, [currentAnimationIndex, animation3LoopCount, currentMessage]);
 
-  // For animation 3, alternate message after first loop
+  // For animation 3, count loops (but don't trigger animation on every loop)
   useEffect(() => {
     if (currentAnimationIndex === 2) {
       const interval = setInterval(() => {
         setAnimation3LoopCount(prev => prev + 1);
-        // Fade out and in for smooth transition
-        setShowTypewriter(false);
-        setTimeout(() => {
-          setShowTypewriter(true);
-        }, 200);
       }, 3000); // Animation 3 duration
 
       return () => clearInterval(interval);
@@ -331,13 +338,10 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
-                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
+                  showTypewriter ? 'opacity-100' : 'opacity-0'
                 }`}>
-                  {currentAnimationIndex === 2 && animation3LoopCount >= 3
-                    ? draftingMessages[3] // "Completing draft — amplifying your voice."
-                    : draftingMessages[currentAnimationIndex] // Match animation index
-                  }
+                  {currentMessage}
                 </p>
               </div>
             </div>
