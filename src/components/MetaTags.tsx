@@ -8,7 +8,7 @@ interface MetaTagsProps {
 }
 
 const DEFAULT_TITLE = 'Send a handwritten postcard to Congress.';
-const DEFAULT_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
+const DEFAULT_DESCRIPTION = 'Just a few handwritten postcards can swing a congressional vote';
 const DEFAULT_IMAGE = 'https://canary.cards/lovable-uploads/new_icon_for_preview.png';
 const DEFAULT_URL = 'https://canary.cards';
 

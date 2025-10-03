@@ -19,6 +19,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentReturn from "./pages/PaymentReturn";
 import PaymentRefunded from "./pages/PaymentRefunded";
 import Share from "./pages/Share";
+import Research from "./pages/Research";
 import { useEffect, useState } from "react";
 
 import { AppProvider, useAppContext } from "./context/AppContext";
@@ -57,6 +58,7 @@ const PaymentLoadingDetector = () => {
       <Route path="/terms" element={<Terms />} />
       <Route path="/share" element={<Share />} />
       <Route path="/share/:orderId" element={<Share />} />
+      <Route path="/research" element={<Research />} />
       
       <Route path="/payment-return" element={<PaymentReturn />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />

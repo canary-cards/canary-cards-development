@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
 import { DynamicSvg } from '../DynamicSvg';
@@ -38,76 +38,81 @@ const animationUrls = [
 ];
 
 const draftingMessages = [
-  "Polishing your message…",
-  "Fitting onto a postcard…",
-  "Matching with bills in Congress…",
-  "Highlighting local impact…",
-  "Optimizing for influence…",
-  "Completing draft — amplifying your voice..."
+  "Synthesizing your concerns.",
+  "Researching trusted local sources.",
+  "Polishing your message.",
+  "Completing draft — amplifying your voice."
 ];
 
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
-  const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1);
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
-  const [showTypewriter, setShowTypewriter] = useState(false);
+  const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
   const [animationError, setAnimationError] = useState(false);
   const [apiCompleted, setApiCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
+  const hasDraftedRef = useRef(false);
 
+  // Update message based on current animation
   useEffect(() => {
-    // Start immediately with no delay
-    setCurrentMessageIndex(0);
-    setDisplayedMessageIndex(0);
-    setShowTypewriter(true);
-  }, []);
+    const newMessage = currentAnimationIndex === 2 && animation3LoopCount >= 3
+      ? draftingMessages[3]
+      : draftingMessages[currentAnimationIndex];
+    
+    // Only animate transition if message actually changed
+    if (newMessage !== currentMessage) {
+      setShowTypewriter(false);
+      setTimeout(() => {
+        setCurrentMessage(newMessage);
+        setShowTypewriter(true);
+      }, 200);
+    }
+  }, [currentAnimationIndex, animation3LoopCount, currentMessage]);
 
-  // Rotate messages every 1.5 seconds after the initial delay
+  // For animation 3, count loops (but don't trigger animation on every loop)
   useEffect(() => {
-    if (currentMessageIndex >= 0) {
+    if (currentAnimationIndex === 2) {
       const interval = setInterval(() => {
-        setCurrentMessageIndex((prev) => {
-          if (prev < draftingMessages.length - 1) {
-            // First fade out current message
-            setShowTypewriter(false);
-            // Then update the displayed message and fade in
-            setTimeout(() => {
-              setDisplayedMessageIndex(prev + 1);
-              setShowTypewriter(true);
-            }, 200); // Faster crossfade for smoother transitions
-            return prev + 1;
-          }
-          return prev; // Stay on last message
-        });
-      }, 1500);
+        setAnimation3LoopCount(prev => prev + 1);
+      }, 3000); // Animation 3 duration
 
       return () => clearInterval(interval);
     }
-  }, [currentMessageIndex]);
+  }, [currentAnimationIndex]);
 
-  // Sequential animation timing: first for 5s, second for 5s, third stays until complete
+  // Sequential animation timing: first for 6s (4 loops), second for 8s (2 loops), third stays until complete
   useEffect(() => {
-    // Show first animation for 5 seconds
+    // Show first animation for 6 seconds
     const firstTimeout = setTimeout(() => {
       setCurrentAnimationIndex(1);
       
-      // Show second animation for 5 seconds, then switch to third
+      // Show second animation for 8 seconds, then switch to third
       const secondTimeout = setTimeout(() => {
         setCurrentAnimationIndex(2);
-      }, 5000);
+      }, 8000);
       
       return () => clearTimeout(secondTimeout);
-    }, 5000);
+    }, 6000);
 
     return () => clearTimeout(firstTimeout);
   }, []);
 
   // Handle the actual drafting process
   useEffect(() => {
+    // Guard: prevent duplicate calls
+    if (hasDraftedRef.current) {
+      console.log('⚠️ Draft already initiated, skipping duplicate call');
+      return;
+    }
+    
+    hasDraftedRef.current = true;
+    console.log('✅ Initiating draft process (first and only call)');
+    
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
@@ -195,9 +200,9 @@ export function DraftingScreen() {
           return;
         }
 
-        // Ensure minimum 1 second dwell time
+        // Ensure minimum 20 second display time for better UX
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, 1000 - elapsedTime);
+        const remainingTime = Math.max(0, 20000 - elapsedTime);
 
         setTimeout(() => {
           // Log the data for debugging
@@ -280,7 +285,7 @@ export function DraftingScreen() {
     }, 60000);
 
     return () => clearTimeout(timeout);
-  }, [state.postcardData, dispatch, startTime, apiCompleted, toast]);
+  }, []); // Empty array: run once on mount only
 
   const handleRetry = () => {
     // Navigate back to the craft message screen
@@ -309,22 +314,30 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem]">
+            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] flex items-center justify-center ml-[13px]">
               {!animationError ? (
                 <Suspense fallback={
                   <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
                     <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                   </div>
                 }>
-                  <lottie-player
-                    src={animationUrls[currentAnimationIndex]}
-                    autoplay
-                    loop
-                    speed="1"
-                    background="transparent"
-                    style={{ width: '100%', height: '100%' }}
-                    key={currentAnimationIndex}
-                  />
+                  <div className="w-[95%] h-[95%] flex items-center justify-center">
+                    <lottie-player
+                      src={animationUrls[currentAnimationIndex]}
+                      autoplay
+                      loop
+                      speed="1"
+                      background="transparent"
+                      style={{ 
+                        width: '100%', 
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      key={currentAnimationIndex}
+                    />
+                  </div>
                 </Suspense>
               ) : (
                 <DynamicSvg 
@@ -341,13 +354,11 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                {displayedMessageIndex >= 0 && (
-                  <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
-                    showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
-                  }`}>
-                    {draftingMessages[displayedMessageIndex]}
-                  </p>
-                )}
+                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
+                  showTypewriter ? 'opacity-100' : 'opacity-0'
+                }`}>
+                  {currentMessage}
+                </p>
               </div>
             </div>
           </div>
