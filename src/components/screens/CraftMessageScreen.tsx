@@ -48,8 +48,8 @@ export function CraftMessageScreen() {
   // Dynamic viewport height to eliminate iOS extra whitespace when keyboard shows
   useEffect(() => {
     const setVH = () => {
-      const vh = (window.visualViewport?.height ?? window.innerHeight);
-      document.documentElement.style.setProperty('--app-vh', `${vh}px`);
+      const vhUnit = (window.visualViewport?.height ?? window.innerHeight) * 0.01; // 1% of viewport height
+      document.documentElement.style.setProperty('--app-vh', `${vhUnit}px`);
     };
     setVH();
     window.addEventListener('resize', setVH);
@@ -312,7 +312,7 @@ export function CraftMessageScreen() {
     });
   };
   return <div className="bg-background flex flex-col overflow-hidden" style={{ height: 'calc(var(--app-vh, 1vh) * 100)' }}>
-      <div className="container mx-auto px-4 py-4 max-w-2xl flex-1 min-h-0 overflow-hidden touch-pan-x pb-3">
+      <div className="container mx-auto px-4 py-4 max-w-2xl flex-1 min-h-0 overflow-y-auto overscroll-contain pb-6">
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
