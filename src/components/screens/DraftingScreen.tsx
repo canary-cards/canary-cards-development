@@ -5,6 +5,7 @@ import { DynamicSvg } from '../DynamicSvg';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
 
 // Type declaration for lottie-player custom element
 declare global {
@@ -142,6 +143,14 @@ export function DraftingScreen() {
 
         if (error) {
           console.error('Error drafting message:', error);
+          captureEdgeFunctionError(error, 'draft-postcard-message', {
+            email: state.postcardData?.email,
+            zipCode: state.postcardData.zipCode,
+            representative: state.postcardData.representative?.name,
+            step: 'drafting',
+            hasConcerns: !!concerns,
+            hasPersonalImpact: !!personalImpact
+          });
           setApiCompleted(true);
           setHasError(true);
           toast({
@@ -223,6 +232,15 @@ export function DraftingScreen() {
 
       } catch (error) {
         console.error('Error in drafting process:', error);
+        captureEdgeFunctionError(error, 'draft-postcard-message', {
+          email: state.postcardData?.email,
+          zipCode: state.postcardData.zipCode,
+          representative: state.postcardData.representative?.name,
+          step: 'drafting',
+          hasConcerns: !!state.postcardData.concerns,
+          hasPersonalImpact: !!state.postcardData.personalImpact,
+          errorContext: 'catch_block'
+        });
         setApiCompleted(true);
         setHasError(true);
         toast({

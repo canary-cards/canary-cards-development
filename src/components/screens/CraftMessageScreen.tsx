@@ -9,6 +9,7 @@ import { Mic, Square, ArrowLeft, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { safeStorage } from '@/lib/safeStorage';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
 export function CraftMessageScreen() {
   const {
     state,
@@ -115,7 +116,15 @@ export function CraftMessageScreen() {
           audio: base64Audio
         }
       });
+      
       if (error) {
+        captureEdgeFunctionError(error, 'transcribe-audio', {
+          email: state.postcardData?.email,
+          zipCode: state.postcardData?.zipCode,
+          representative: state.postcardData?.representative?.name,
+          step: 'craft_message',
+          field
+        });
         throw error;
       }
       if (data?.text) {
@@ -144,6 +153,14 @@ export function CraftMessageScreen() {
       }
     } catch (error) {
       console.error('Transcription error:', error);
+      captureEdgeFunctionError(error, 'transcribe-audio', {
+        email: state.postcardData?.email,
+        zipCode: state.postcardData?.zipCode,
+        representative: state.postcardData?.representative?.name,
+        step: 'craft_message',
+        field,
+        errorContext: 'catch_block'
+      });
       toast({
         title: "Transcription failed",
         description: "Please try recording again or use the text input instead.",

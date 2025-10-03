@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTotalPriceDollars } from '@/lib/pricing';
 import { validateEmailWithSuggestion, normalizeEmail } from '@/lib/emailUtils';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
 type RecipientSelection = 'rep-only' | 'all-three' | 'custom';
 export function CheckoutScreen() {
   const {
@@ -298,7 +299,17 @@ export function CheckoutScreen() {
           }
         }
       });
-      if (error) throw error;
+      
+      if (error) {
+        captureEdgeFunctionError(error, 'create-payment', {
+          email,
+          zipCode: userInfo?.zipCode,
+          representative: rep?.name,
+          sendOption,
+          step: 'checkout'
+        });
+        throw error;
+      }
 
       // Update app state 
       dispatch({
@@ -324,6 +335,14 @@ export function CheckoutScreen() {
       setShowCheckout(true);
     } catch (error) {
       console.error('Payment error:', error);
+      captureEdgeFunctionError(error, 'create-payment', {
+        email,
+        zipCode: userInfo?.zipCode,
+        representative: rep?.name,
+        sendOption: getSendOption(),
+        step: 'checkout',
+        errorContext: 'catch_block'
+      });
       setEmailError('Payment failed. Please try again.');
     } finally {
       setIsProcessing(false);
