@@ -10,6 +10,9 @@ const corsHeaders = {
 };
 
 const handler = async (req) => {
+  // Version marker - Updated 2025-10-03
+  console.log('[send-order-confirmation v2] Function invoked');
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
