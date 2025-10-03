@@ -11,15 +11,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DynamicSvg } from '@/components/DynamicSvg';
 import { MetaTags } from '@/components/MetaTags';
 import { generateReferralUrl, copyShareContent, shareContent, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
-
-
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [shareableLink, setShareableLink] = useState('');
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
 
   // Get representative data from localStorage
   const getRepresentativeData = () => {
@@ -43,19 +42,19 @@ export default function PaymentSuccess() {
     const today = new Date();
     let businessDays = 0;
     let currentDate = new Date(today);
-
-    while (businessDays < 4) { // 4 business days average
+    while (businessDays < 4) {
+      // 4 business days average
       currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
       const dayOfWeek = currentDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not weekend
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Not weekend
         businessDays++;
       }
     }
-
-    return currentDate.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
+    return currentDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -65,19 +64,18 @@ export default function PaymentSuccess() {
     const actualMailingDate = location.state?.actualMailingDate;
     if (actualMailingDate) {
       const date = new Date(actualMailingDate);
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric'
       });
     }
-    
+
     // Fallback: 5 days from now
     const today = new Date();
     const mailingDate = new Date(today);
     mailingDate.setDate(mailingDate.getDate() + 5);
-    
-    return mailingDate.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return mailingDate.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric'
     });
   };
@@ -87,13 +85,12 @@ export default function PaymentSuccess() {
     // Get order ID from navigation state (passed from PaymentReturn)
     const orderId = location.state?.orderId;
     const orderNumber = orderId ? formatOrderNumber(orderId) : 'CC000000';
-    
     try {
       const storedData = localStorage.getItem('postcardData');
       if (storedData) {
         const data = JSON.parse(storedData);
         const recipients = [];
-        
+
         // Helper function to format representative name with title
         interface Representative {
           type: string;
@@ -105,7 +102,7 @@ export default function PaymentSuccess() {
           const title = rep.type === 'senator' ? 'Sen.' : 'Rep.';
           return `${title} ${rep.name}`;
         };
-        
+
         // Get actual recipients based on send option
         if (data.sendOption === 'single' && data.representative) {
           recipients.push(formatRepName(data.representative));
@@ -114,7 +111,6 @@ export default function PaymentSuccess() {
         } else if (data.sendOption === 'triple' && data.representative && data.senators?.length >= 2) {
           recipients.push(formatRepName(data.representative), formatRepName(data.senators[0]), formatRepName(data.senators[1]));
         }
-        
         return {
           orderNumber,
           recipients: recipients.length > 0 ? recipients : ['Your Representative']
@@ -123,28 +119,24 @@ export default function PaymentSuccess() {
     } catch (error) {
       console.error('Error getting order data:', error);
     }
-    
     return {
       orderNumber,
       recipients: ['Your Representative']
     };
   };
-
   useEffect(() => {
     // Show confetti animation
     showConfetti();
-    
+
     // Set shareable link
     setShareableLink(shareableUrl);
   }, [shareableUrl]);
-
   const showConfetti = () => {
     const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
     for (let i = 0; i < 50; i++) {
       createConfettiPiece(colors[Math.floor(Math.random() * colors.length)]);
     }
   };
-
   const createConfettiPiece = (color: string) => {
     const confetti = document.createElement('div');
     confetti.style.cssText = `
@@ -159,7 +151,6 @@ export default function PaymentSuccess() {
       animation: confetti-fall ${Math.random() * 4 + 2.4}s linear forwards;
     `;
     document.body.appendChild(confetti);
-
     if (!document.querySelector('#confetti-style')) {
       const style = document.createElement('style');
       style.id = 'confetti-style';
@@ -173,39 +164,29 @@ export default function PaymentSuccess() {
       `;
       document.head.appendChild(style);
     }
-    
     setTimeout(() => confetti.remove(), 6000);
   };
-
   const copyShareableLink = async () => {
     if (shareableUrl) {
       await copyShareContent(shareableUrl);
     }
   };
-
   const shareViaTwitter = () => {
     const text = "I just sent a real, handwritten postcard to my representative. It takes 2 minutes and actually gets read.";
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareableLink)}`;
     window.open(url, '_blank');
   };
-
   const shareViaFacebook = () => {
     const text = "Did you know handwritten postcards to Congress get read first, while emails often go to spam? I just sent mine in under 2 minutes.";
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableLink)}&quote=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
-
   const representative = getRepresentativeData();
   const deliveryDate = getDeliveryDate();
   const mailingDate = getMailingDate();
   const orderData = getOrderData();
-
-  return (
-    <div className="min-h-screen bg-background">
-      <MetaTags 
-        title={SHARE_TITLE}
-        description={SHARE_DESCRIPTION}
-      />
+  return <div className="min-h-screen bg-background">
+      <MetaTags title={SHARE_TITLE} description={SHARE_DESCRIPTION} />
       <Header />
 
       {/* Main Content */}
@@ -213,9 +194,7 @@ export default function PaymentSuccess() {
         
         {/* Top section with checkmark and headlines */}
         <div className="text-center space-y-2 mb-0">
-          <h1 className="display-title">
-            Order Successful
-          </h1>
+          <h1 className="display-title">Order successful!</h1>
           
           <p className="subtitle mb-0">
             We're getting to work writing your postcard
@@ -225,11 +204,7 @@ export default function PaymentSuccess() {
         {/* Robot arm icon - positioned with minimal spacing */}
         <div className="flex justify-center my-1">
           <div className="w-full max-w-80 h-48 sm:h-56 md:h-64 flex items-center justify-center">
-            <DynamicSvg 
-              assetName="onboarding_icon_3.svg"
-              alt="Real handwriting with ink and pen"
-              className="w-full h-full object-contain"
-            />
+            <DynamicSvg assetName="onboarding_icon_3.svg" alt="Real handwriting with ink and pen" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -252,11 +227,9 @@ export default function PaymentSuccess() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="pt-4 space-y-2">
-                  {orderData.recipients.map((recipient, index) => (
-                    <div key={index} className="body-text">
+                  {orderData.recipients.map((recipient, index) => <div key={index} className="body-text">
                       {recipient}
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CollapsibleContent>
             </div>
@@ -274,7 +247,7 @@ export default function PaymentSuccess() {
         {/* Card 2 - What Happens Next */}
         <Card className="shadow-sm mb-6">
           <CardContent className="p-5">
-            <h3 className="subtitle mb-4">What Happens Next</h3>
+            <h3 className="subtitle mb-4">What happens next</h3>
             
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -296,19 +269,14 @@ export default function PaymentSuccess() {
         {/* Card 3 - Share section */}
         <Card className="shadow-sm">
           <CardContent className="p-5">
-            <h3 className="subtitle mb-2">Friends Listen To Friends</h3>
+            <h3 className="subtitle mb-2">Friends listen to friends</h3>
             
             <p className="body-text mb-4">
               Thanks for speaking up. Your postcard is part of a growing wave reaching leaders' desks.
             </p>
             
             <div className="space-y-4">
-              <Button 
-                variant="spotlight" 
-                size="lg"
-                className="w-full"
-                onClick={() => shareContent(shareableUrl)}
-              >
+              <Button variant="spotlight" size="lg" className="w-full" onClick={() => shareContent(shareableUrl)}>
                 <Share className="w-4 h-4 mr-2" />
                 Invite Others to Take Action
               </Button>
@@ -321,6 +289,5 @@ export default function PaymentSuccess() {
         </Card>
 
       </div>
-    </div>
-  );
+    </div>;
 }

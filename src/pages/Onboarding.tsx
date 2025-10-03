@@ -11,8 +11,8 @@ const TOTAL_SLIDES = 4;
 const slides = [
   {
     title: "Handwritten postcards are the gold standard in D.C.",
-    subtitle: "15× more likely to have influence than form emails*.",
-    finePrint: "* 2019 Congressional Management Foundation study",
+    subtitle: "96% of Capitol Hill staff say personalized letters influence undecided congressional votes.",
+    finePrint: "— Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation",
     iconPlaceholder: "ICON / WHY POSTCARDS",
     assetName: "onboarding_icon_1.svg",
     imageAlt: "Why postcards are effective in D.C."
@@ -26,8 +26,7 @@ const slides = [
   },
   {
     title: "Your words, written in real ink with a real pen.",
-    subtitle: "Indistinguishable from human handwriting. Authentic and personal.",
-    finePrint: "Written by a robot holding a blue ballpoint. Authentic & affordable",
+    subtitle: "Written by a robot holding a blue ballpoint, indistinguishable from human handwriting.",
     iconPlaceholder: "ICON / REAL INK HANDWRITING",
     assetName: "onboarding_icon_3.svg",
     imageAlt: "Real handwriting with ink and pen"

@@ -1,10 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const UserInfoSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  streetAddress: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(1).max(100).optional(),
+  state: z.string().trim().max(50).optional(),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional()
+});
+
+const RepresentativeSchema = z.object({
+  name: z.string().min(1).max(200),
+  district: z.string().max(100).optional(),
+  state: z.string().max(50).optional(),
+  id: z.string().optional(),
+  address: z.string().max(500).optional(),
+  contact: z.object({
+    address: z.string().max(500).optional()
+  }).optional()
+});
+
+const PostcardDataSchema = z.object({
+  userInfo: UserInfoSchema,
+  representative: RepresentativeSchema,
+  senators: z.array(RepresentativeSchema).optional(),
+  finalMessage: z.string().trim().min(10).max(1000),
+  sendOption: z.enum(['single', 'double', 'triple']),
+  email: z.string().trim().email().max(255)
+});
+
+const RequestSchema = z.object({
+  postcardData: PostcardDataSchema,
+  orderId: z.string().uuid(),
+  simulateFailure: z.number().int().min(0).max(1).optional(),
+  simulatedFailed: z.number().int().min(0).max(10).optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,12 +62,44 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData, orderId, simulateFailure, simulatedFailed } = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
     
-    // Check if we're on a lovable.app domain to enable simulation
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { postcardData, orderId, simulateFailure, simulatedFailed } = validation.data;
+    
+    // Check environment and origin to enable simulation - only in non-production
+    const environment = Deno.env.get('ENVIRONMENT') || 'development';
     const origin = req.headers.get('origin') || '';
     const isLovableDomain = origin.includes('.lovable.app') || origin.includes('lovable.app');
-    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed > 0;
+    
+    // Block simulation in production
+    if (environment === 'production' && (simulateFailure || simulatedFailed)) {
+      console.error('Simulation parameters not allowed in production');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed && simulatedFailed > 0;
     
     console.log('Simulation check:', {
       origin,
@@ -293,7 +362,7 @@ serve(async (req) => {
           deliveryStatus = 'submitted';
         }
       } catch (error) {
-        ignitepostError = error.message;
+        ignitepostError = (error as any).message;
         console.error(`Failed to create ${recipientType} postcard:`, error);
       }
 
@@ -371,7 +440,7 @@ serve(async (req) => {
         orderId: orderId, // Use database order ID, not IgnitePost ID
         status: 'success'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send representative postcard:', error);
       results.push({
         type: 'representative',
@@ -415,7 +484,7 @@ serve(async (req) => {
             type: 'senator',
             recipient: senator.name,
             status: 'error',
-            error: error.message
+            error: (error as any).message
           });
         }
       }
@@ -434,14 +503,32 @@ serve(async (req) => {
       shouldSendEmail: successCount > 0 && userEmail
     });
 
-    // Send confirmation email if any postcards succeeded and email is provided
-    if (successCount > 0 && userEmail) {
+    // Send confirmation email for all scenarios (success, partial failure, complete failure)
+    if (userEmail) {
       try {
-        console.log('Triggering order confirmation email...');
+        console.log('Triggering order confirmation email for all scenarios...');
         
-        // Calculate amount based on successful postcards only
-        const unitPrice = 5.00;
-        const amount = successCount === 2 ? 10.00 : successCount >= 3 ? 12.00 : unitPrice;
+        // Calculate refund information if there are failures
+        let refundInfo = undefined;
+        if (errorCount > 0) {
+          const unitPrice = 500; // $5.00 in cents
+          const totalPrice = results.length === 1 ? 500 : results.length === 2 ? 1000 : 1200;
+          let refundAmountCents: number;
+          
+          if (errorCount === results.length) {
+            // All failed - full refund
+            refundAmountCents = totalPrice;
+          } else {
+            // Partial failure - refund per failed postcard
+            refundAmountCents = errorCount * unitPrice;
+          }
+          
+          refundInfo = {
+            refundAmountCents,
+            refundId: 'PENDING', // Will be updated when actual refund is processed
+            totalAmountCents: totalPrice
+          };
+        }
         
         // Extract actual mailing date from first successful postcard
         let actualMailingDate = null;
@@ -481,15 +568,21 @@ serve(async (req) => {
             representative,
             senators,
             sendOption,
-            orderResults: results.filter(r => r.status === 'success').map(r => ({
-              ...r,
-              orderId: orderId // Use database order ID instead of IgnitePost ID
+            orderResults: results.map(r => ({
+              type: r.type,
+              recipient: r.recipient,
+              orderId: r.status === 'success' ? orderId : undefined, // Only include orderId for successful ones
+              status: r.status,
+              error: r.error
             })),
-            amount,
-            orderId,
-            paymentMethod: 'card',
             finalMessage,
-            actualMailingDate: actualMailingDate
+            actualMailingDate: actualMailingDate,
+            refundInfo: refundInfo,
+            summary: {
+              totalSent: successCount,
+              totalFailed: errorCount,
+              total: results.length
+            }
           }
         });
         
@@ -525,7 +618,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to send postcards',
-        details: error.message 
+        details: (error as any).message 
       }),
       { 
         status: 500, 

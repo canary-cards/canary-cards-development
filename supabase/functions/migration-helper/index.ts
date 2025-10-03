@@ -154,7 +154,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
           
-        } catch (error) {
+        } catch (error: any) {
           console.error('Connection validation failed:', error);
           return new Response(JSON.stringify({
             success: false,
@@ -189,7 +189,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
           
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error fetching RLS policies:', error);
           return new Response(JSON.stringify({
             success: false,
@@ -246,7 +246,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
           
-        } catch (error) {
+        } catch (error: any) {
           console.error('Database check failed:', error);
           return new Response(JSON.stringify({
             success: false,
@@ -374,11 +374,11 @@ serve(async (req) => {
               .from('deployment_logs')
               .update({
                 status: 'failed',
-                message: `Deployment failed: ${error.message}`,
+                message: `Deployment failed: ${(error as any).message}`,
                 completed_at: new Date().toISOString(),
                 details: {
-                  error: error.message,
-                  stack: error.stack,
+                  error: (error as any).message,
+                  stack: (error as any).stack,
                   timestamp: new Date().toISOString()
                 }
               })
@@ -389,7 +389,7 @@ serve(async (req) => {
 
           return new Response(JSON.stringify({
             success: false,
-            error: `Production deployment failed: ${error.message}`,
+            error: `Production deployment failed: ${(error as any).message}`,
             deployment_id,
             timestamp: new Date().toISOString()
           }), {
@@ -409,7 +409,7 @@ serve(async (req) => {
         });
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Migration Helper Error:', error);
     return new Response(JSON.stringify({
       success: false,

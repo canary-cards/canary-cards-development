@@ -9,8 +9,9 @@ const corsHeaders = {
 interface Source {
   url: string;
   outlet: string;
-  summary: string;
   headline: string;
+  relevanceScore?: number;
+  localPriority?: string;
 }
 
 interface ThemeAnalysis {
@@ -141,13 +142,13 @@ async function getLocationFromZip(zipCode: string): Promise<{ state: string; cit
   }
 }
 
-async function analyzeTheme({ concerns, personalImpact, zipCode }: {
+async function analyzeTheme({ concerns, personalImpact, location }: {
   concerns: string,
   personalImpact: string,
-  zipCode: string
+  location: { state: string; city: string; region: string }
 }): Promise<ThemeAnalysis> {
-  const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  // Use dedicated theme analysis key with fallback to main key
+  const apiKey = getApiKey('ANTHROPIC_THEME_KEY') || getApiKey('ANTHROPIC_KEY');
   
   const THEME_ANALYZER_PROMPT = `
 You are analyzing user concerns to identify the SINGLE most important theme for a congressional postcard.
@@ -186,8 +187,8 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 300,
       temperature: 0.1,
       system: THEME_ANALYZER_PROMPT,
       messages: [{ role: 'user', content: userMessage }]
@@ -205,9 +206,8 @@ Find the ONE most important theme and how it affects ${location.city}, ${locatio
   return JSON.parse(jsonMatch[0]);
 }
 
-async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): Promise<Source[]> {
-  const apiKey = getApiKey('perplexitykey');
-  const location = await getLocationFromZip(zipCode);
+async function discoverSources(themeAnalysis: ThemeAnalysis, location: { state: string; city: string; region: string }): Promise<Source[]> {
+  const apiKey = getApiKey('PERPLEXITY_KEY');
   
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
@@ -220,22 +220,29 @@ async function discoverSources(themeAnalysis: ThemeAnalysis, zipCode: string): P
       messages: [
         {
           role: 'system',
-          content: `You are a news research assistant specializing in local and state-level political news. When you cite sources, you MUST format each citation exactly like this:
+          content: `You are a news research assistant specializing in local and national political news. For each source, provide structured information in this EXACT format:
 
 **ARTICLE TITLE:** [The exact headline from the original article]
 **OUTLET:** [Publication name like "The Sacramento Bee" or "CNN"]
-**SUMMARY:** [Key points in 1-2 sentences]
+**RELEVANCE_SCORE:** [Rate 1-10 how relevant this source is to the user's concern]
+**LOCAL_PRIORITY:** [Classify as: local or national]
 
 CONTENT TYPE REQUIREMENTS:
 - ONLY return: news articles, government reports, policy analysis pieces, and official government announcements
 - STRICTLY EXCLUDE: All video content (YouTube, Vimeo, news videos, documentaries), PDFs, social media posts, academic papers, podcasts, and multimedia content
 - PRIORITIZE: Local newspapers > State publications > Government sources > National news with local angles
 
-Be extremely precise with article titles - use the actual headline, not a description or URL fragment. Always include the exact title that appears on the original article.`
+RELEVANCE SCORING GUIDE:
+- 9-10: Directly addresses the specific concern with local data
+- 7-8: Covers the topic with strong relevance to the region
+- 5-6: Related but not directly on topic
+- 1-4: Tangentially related or background info
+
+Be extremely precise with article titles - use the actual headline, not a description or URL fragment.`
         },
         {
           role: 'user',
-          content: `Find 3-4 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
+          content: `Find 4-5 recent news articles about "${themeAnalysis.primaryTheme}" affecting ${location.city}, ${location.state} or ${location.state} state.
 
 SOURCE DIVERSITY REQUIREMENT:
 - MAXIMUM 1 article per publication/outlet
@@ -243,10 +250,8 @@ SOURCE DIVERSITY REQUIREMENT:
 - Avoid multiple articles from the same news organization
 
 PRIORITIZATION ORDER (search in this order):
-1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites
-2. STATE: ${location.state} state newspapers, state government announcements, state agency reports
-3. REGIONAL: Regional publications covering ${location.state}
-4. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
+1. LOCAL: ${location.city} newspapers, local TV news websites, city government sites, ${location.state} state publications
+2. NATIONAL: Only if they have a specific ${location.state} or ${location.city} angle
 
 REQUIRED CONTENT TYPES:
 - News articles from established publications
@@ -254,15 +259,16 @@ REQUIRED CONTENT TYPES:
 - Policy analysis pieces
 - Legislative updates
 
-For each source you cite, provide:
+For each source you cite, provide in this EXACT format:
 **ARTICLE TITLE:** [Write the EXACT headline from the article - not a summary or description]  
 **OUTLET:** [Full publication name]
-**SUMMARY:** [Key details about ${themeAnalysis.primaryTheme} in ${location.state}]
+**RELEVANCE_SCORE:** [Rate 1-10 based on how well this source supports arguments about ${themeAnalysis.primaryTheme}]
+**LOCAL_PRIORITY:** [Classify as: local or national]
 
-Focus on news from the last 30 days. I need the actual article headlines, not generic descriptions.`
+Focus on news from the last 30 days. Provide relevance scores to help identify the most useful sources.`
         }
       ],
-      max_tokens: 800,
+      max_tokens: 500,
       temperature: 0.1,
       return_citations: true,
       search_recency_filter: 'month'
@@ -273,158 +279,191 @@ Focus on news from the last 30 days. I need the actual article headlines, not ge
   const searchContent = result.choices[0]?.message?.content || '';
   const citations = result.citations || [];
 
-  // Helper: fetch the actual page title for a URL (og:title > twitter:title > <title>)
-  const fetchPageTitle = async (targetUrl: string): Promise<string | null> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(targetUrl, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'user-agent': 'Mozilla/5.0 (LovableBot)' }
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) return null;
-      const html = await res.text();
-      const snippet = html.slice(0, 100000);
-      const og = snippet.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
-        || snippet.match(/<meta[^>]+name=["']og:title["'][^>]+content=["']([^"']+)["']/i);
-      const tw = snippet.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i);
-      const tt = snippet.match(/<title[^>]*>([^<]+)<\/title>/i);
-      let title = og?.[1] || tw?.[1] || tt?.[1];
-      if (title) {
-        title = title
-          .replace(/&amp;/g, '&')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&mdash;/g, '—')
-          .replace(/&ndash;/g, '–')
-          .replace(/\s+/g, ' ')
-          .trim();
-        return title.substring(0, 200);
-      }
-    } catch (err) {
-      console.log('fetchPageTitle error:', targetUrl, err?.message || err);
-    }
-    return null;
+  // Helper: Extract relevance score and local priority from Perplexity response
+  const extractSourceMetadata = (url: string, searchText: string): { relevanceScore: number; localPriority: string } => {
+    const urlIndex = searchText.indexOf(url);
+    if (urlIndex === -1) return { relevanceScore: 5, localPriority: 'national' };
+    
+    const beforeUrl = searchText.substring(Math.max(0, urlIndex - 500), urlIndex);
+    const afterUrl = searchText.substring(urlIndex, Math.min(searchText.length, urlIndex + 300));
+    const context = beforeUrl + afterUrl;
+    
+    // Extract relevance score
+    const scoreMatch = context.match(/\*\*RELEVANCE_SCORE:\*\*\s*(\d+)/i);
+    const relevanceScore = scoreMatch ? parseInt(scoreMatch[1], 10) : 5;
+    
+    // Extract local priority
+    const priorityMatch = context.match(/\*\*LOCAL_PRIORITY:\*\*\s*(local|national)/i);
+    const localPriority = priorityMatch ? priorityMatch[1].toLowerCase() : 'national';
+    
+    return { relevanceScore, localPriority };
   };
 
-  const sources: Source[] = [];
+  // Helper: Parse title from Perplexity response
+  const extractPerplexityTitle = (url: string, searchText: string): string => {
+    const urlIndex = searchText.indexOf(url);
+    if (urlIndex === -1) return '';
+    
+    const marker = '**ARTICLE TITLE:**';
+    const lastTitleIdx = searchText.lastIndexOf(marker, urlIndex);
+    if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
+      const afterTitle = searchText.substring(lastTitleIdx + marker.length, urlIndex);
+      const firstLine = afterTitle.split(/\r?\n/)[0].trim();
+      if (firstLine) return firstLine.replace(/^[*-]\s*/, '').trim();
+    }
+    
+    return '';
+  };
 
+  // Helper: Enhanced domain-based fallback titles
+  const getDomainBasedTitle = (url: string, themeAnalysis: ThemeAnalysis): string => {
+    const domain = new URL(url).hostname.replace('www.', '');
+    const pathParts = new URL(url).pathname.split('/').filter(p => p);
+    
+    // Government domains - enhanced with path analysis
+    if (domain.includes('congress.gov')) {
+      if (pathParts.includes('bill')) return 'Congressional Bill Information';
+      if (pathParts.includes('committee')) return 'Committee Report';
+      return 'Congressional Information';
+    }
+    if (domain.includes('census.gov')) return 'Census Data and Statistics';
+    if (domain.includes('bls.gov')) return 'Bureau of Labor Statistics Report';
+    if (domain.includes('ed.gov')) return 'Department of Education Report';
+    if (domain.includes('hhs.gov')) return 'Health and Human Services Report';
+    if (domain.includes('.gov')) return 'Government Report';
+    
+    // News domains - enhanced with better names
+    const newsDomains: { [key: string]: string } = {
+      'nytimes.com': 'New York Times Article',
+      'washingtonpost.com': 'Washington Post Article',
+      'cnn.com': 'CNN News Report',
+      'foxnews.com': 'Fox News Article',
+      'bbc.com': 'BBC News Article',
+      'reuters.com': 'Reuters Report',
+      'apnews.com': 'Associated Press Report',
+      'npr.org': 'NPR Report'
+    };
+    
+    if (newsDomains[domain]) return newsDomains[domain];
+    
+    // Generic news patterns
+    if (/(news|times|post|tribune|herald|gazette)/i.test(domain)) {
+      return 'News Article';
+    }
+    
+    // Theme-based fallback
+    return `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
+  };
+
+  // Step 1: Filter and parse all valid URLs with metadata
+  interface SourceCandidate {
+    url: string;
+    perplexityTitle: string;
+    relevanceScore: number;
+    localPriority: string;
+    outlet: string;
+  }
+
+  const sourceCandidates: SourceCandidate[] = [];
+  
   for (const citationUrl of citations as string[]) {
     const url = citationUrl as string;
     
-    // Filter out aggregation/listing pages
+    // Filter out aggregation/listing pages (be more specific to avoid false positives)
     const urlLower = url.toLowerCase();
+    const urlPath = new URL(url).pathname.toLowerCase();
+    
+    // Only filter if URL ends with these patterns (not just contains)
     if (
-      urlLower.includes('/tag/') || 
-      urlLower.includes('/tags/') ||
-      urlLower.includes('/category/') ||
-      urlLower.includes('/categories/') ||
-      urlLower.includes('/archive/') ||
-      urlLower.includes('/search/') ||
-      urlLower.includes('/latest-') ||
-      urlLower.includes('-news/') ||
-      urlLower.includes('today-latest-updates') ||
-      /\/\d+\/?$/.test(url) || // URLs ending with numbers (pagination)
-      urlLower.includes('/topics/') ||
-      urlLower.includes('/feeds/') ||
-      urlLower.includes('/rss/')
+      urlPath.endsWith('/tag/') || 
+      urlPath.endsWith('/tags/') ||
+      urlPath.endsWith('/category/') ||
+      urlPath.endsWith('/categories/') ||
+      urlPath.endsWith('/archive/') ||
+      urlPath.endsWith('/search/') ||
+      urlPath.endsWith('/topics/') ||
+      urlPath.endsWith('/feeds/') ||
+      urlPath.endsWith('/rss/') ||
+      urlPath.endsWith('/news/') ||
+      /\/\d+\/?$/.test(urlPath) || // URLs ending only with numbers
+      urlLower.includes('latest-updates') ||
+      urlLower.includes('breaking-news-live')
     ) {
       console.log('Filtered out aggregation page:', url);
       continue;
     }
     
-    const urlIndex = searchContent.indexOf(url);
-
-    // 1) Try to fetch the real page title directly (most reliable)
-    let headline = (await fetchPageTitle(url)) || '';
-
-    // 2) If unavailable, try to parse from Perplexity text near the URL
-    if (!headline && urlIndex !== -1) {
-      const marker = '**ARTICLE TITLE:**';
-      const lastTitleIdx = searchContent.lastIndexOf(marker, urlIndex);
-      if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
-        const afterTitle = searchContent.substring(lastTitleIdx + marker.length, urlIndex);
-        const firstLine = afterTitle.split(/\r?\n/)[0].trim();
-        if (firstLine) headline = firstLine.replace(/^[*-]\s*/, '').trim();
-      }
-      if (!headline) {
-        const before = searchContent.substring(Math.max(0, urlIndex - 400), urlIndex);
-        const lines = before.split(/\n/).map(l => l.trim()).filter(Boolean);
-        const titleLine = [...lines].reverse().find(l => /(\*\*ARTICLE TITLE:\*\*|\*\*TITLE:\*\*|^TITLE:|^Title:)/i.test(l));
-        if (titleLine) {
-          const cleaned = titleLine.replace(/\*\*/g, '');
-          const m = cleaned.match(/(?:ARTICLE TITLE:|TITLE:)\s*(.+)/i);
-          if (m) headline = m[1].trim();
-        }
-        // Ultra-fallback: previous non-empty line as title
-        if (!headline && lines.length) {
-          headline = lines[lines.length - 1].replace(/^[\-*\d.]+\s*/, '').trim();
-        }
-      }
-    }
-
-    // 3) Domain-based fallback if still missing
-    if (!headline) {
-      const domain = new URL(url).hostname.replace('www.', '');
-      if (domain.includes('congress.gov')) headline = 'Congressional Information';
-      else if (domain.includes('census.gov')) headline = 'Census Data and Statistics';
-      else if (domain.includes('bls.gov')) headline = 'Bureau of Labor Statistics Report';
-      else if (domain.includes('youtube.com')) headline = 'Video Content';
-      else if (domain.includes('rentcafe.com')) headline = 'Cost of Living Analysis';
-      else if (domain.includes('oysterlink.com')) headline = 'Local Economic Data';
-      else if (domain.includes('.gov')) headline = 'Government Report';
-      else if (/(news|times|post)/i.test(domain)) headline = 'News Article';
-      else headline = `${themeAnalysis.primaryTheme.replace(/\b\w/g, l => l.toUpperCase())} Information`;
-    }
-
-    // Outlet from URL
+    const metadata = extractSourceMetadata(url, searchContent);
+    const perplexityTitle = extractPerplexityTitle(url, searchContent);
+    
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace('www.', '');
     const outlet = domain.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+    
+    sourceCandidates.push({
+      url,
+      perplexityTitle,
+      relevanceScore: metadata.relevanceScore,
+      localPriority: metadata.localPriority,
+      outlet
+    });
+  }
 
-    // Summary extraction near URL
-    let summary = '';
-    if (urlIndex !== -1) {
-      const beforeUrl = searchContent.substring(Math.max(0, urlIndex - 500), urlIndex);
-      const afterUrl = searchContent.substring(urlIndex, Math.min(searchContent.length, urlIndex + 500));
-      const summaryMatch = (beforeUrl + afterUrl).match(/\*\*SUMMARY:\*\*\s*([^*\n]+)/i);
-      if (summaryMatch) {
-        summary = summaryMatch[1].trim();
-      } else {
-        const contextSentences = (beforeUrl + afterUrl).split(/[.!?]+/);
-        let meaningful = contextSentences.filter(s => s.length > 30 && s.length < 300 &&
-          !/Here are recent|\*\*ARTICLE TITLE:\*\*|\*\*OUTLET:\*\*|Find recent/i.test(s));
-        let best = meaningful.find(s => s.toLowerCase().includes(themeAnalysis.primaryTheme.toLowerCase()) ||
-          themeAnalysis.urgencyKeywords.some(k => s.toLowerCase().includes(k.toLowerCase())));
-        if (!best && meaningful.length) best = meaningful[0];
-        if (best) summary = best.trim();
-      }
+  // Step 2: Rank sources by relevance and local priority
+  const priorityWeight: { [key: string]: number } = {
+    'local': 2,
+    'national': 1
+  };
+
+  sourceCandidates.sort((a, b) => {
+    // Primary: relevance score (higher is better)
+    if (b.relevanceScore !== a.relevanceScore) {
+      return b.relevanceScore - a.relevanceScore;
     }
-    if (!summary) summary = 'Recent developments in this policy area.';
+    // Secondary: local priority (local > state > regional > national)
+    const aPriority = priorityWeight[a.localPriority] || 0;
+    const bPriority = priorityWeight[b.localPriority] || 0;
+    return bPriority - aPriority;
+  });
+
+  console.log(`Ranked ${sourceCandidates.length} sources by relevance and local priority`);
+
+  // Step 3: Select top 4 sources - return with Perplexity titles or domain fallbacks
+  const top4Candidates = sourceCandidates.slice(0, 4);
+  const sources: Source[] = [];
+
+  for (const candidate of top4Candidates) {
+    // Use Perplexity title if available and non-empty, otherwise use domain-based fallback
+    let headline = candidate.perplexityTitle?.trim() || '';
+    
+    // Use domain-based fallback if no title from Perplexity
+    if (!headline || headline.length < 5) {
+      headline = getDomainBasedTitle(candidate.url, themeAnalysis);
+      console.log(`Using domain fallback title for ${candidate.url}: "${headline}"`);
+    }
 
     sources.push({
-      url,
-      outlet,
-      summary: summary.substring(0, 250) + (summary.length > 250 ? '...' : ''),
-      headline
+      url: candidate.url,
+      outlet: candidate.outlet,
+      headline,
+      relevanceScore: candidate.relevanceScore,
+      localPriority: candidate.localPriority
     });
   }
   
-  return sources.slice(0, 4); // Return top 4 sources
+  console.log(`Selected top 4 sources with relevance scores: ${sources.map(s => s.relevanceScore).join(', ')}`);
+  return sources;
 }
 
-async function draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative }: {
+async function draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative }: {
   concerns: string,
   personalImpact: string,
-  zipCode: string,
+  location: { state: string; city: string; region: string },
   themeAnalysis: ThemeAnalysis,
   sources: Source[],
   representative: any
 }): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+  const apiKey = getApiKey('ANTHROPIC_KEY');
   
   const repLastName = extractRepresentativeLastName(representative.name);
   const greeting = `Rep. ${repLastName},\n`;
@@ -478,9 +517,9 @@ Location: ${location.city}, ${location.state}
 Representative: ${representative.name} (${representative.party}, ${representative.type})
 Theme analysis: ${JSON.stringify(themeAnalysis, null, 2)}
 Selected sources:
-${sources.map((s, i) => `  ${i+1}. Title: ${s.url.split('/').pop()?.replace(/-/g, ' ') || 'Article'}
+${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
      Outlet: ${s.outlet}
-     Summary: ${s.summary}
+     Relevance: ${s.relevanceScore}/10 (${s.localPriority} priority)
      URL: ${s.url}`).join('\n')}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -532,9 +571,26 @@ function smartTruncate(text: string, maxLength: number = 300): string {
   return text.substring(0, maxLength - 50) + '...';
 }
 
-async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, zipCode: string, representative: any): Promise<string> {
-  const apiKey = getApiKey('anthropickey');
-  const location = await getLocationFromZip(zipCode);
+async function shortenPostcard(originalPostcard: string, concerns: string, personalImpact: string, location: { state: string; city: string; region: string }, representative: any): Promise<string> {
+  // Shortening API keys for better rate limit handling
+  const shorteningKeys = ['ANTHROPIC_SHORTENING_KEY_1', 'ANTHROPIC_SHORTENING_KEY_2', 'ANTHROPIC_SHORTENING_KEY_3'];
+  let apiKey: string | null = null;
+  
+  // Try each shortening key until we find one that works
+  for (const keyName of shorteningKeys) {
+    const key = getApiKey(keyName);
+    if (key) {
+      apiKey = key;
+      console.log(`Using shortening key: ${keyName}`);
+      break;
+    }
+  }
+  
+  // Fallback to main key if no shortening keys available
+  if (!apiKey) {
+    console.log('No dedicated shortening keys found, falling back to main ANTHROPIC_KEY');
+    apiKey = getApiKey('ANTHROPIC_KEY');
+  }
   
   // Extract greeting from original postcard to maintain consistency
   const repLastName = extractRepresentativeLastName(representative.name);
@@ -548,73 +604,108 @@ async function shortenPostcard(originalPostcard: string, concerns: string, perso
   
   const contentMaxLength = 300 - greetingLength;
   
-  const SHORTENING_PROMPT = `You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
+  const SHORTENING_PROMPT = `🚨 CRITICAL CHARACTER LIMIT WARNING 🚨
+You are an expert at shortening congressional postcards while maintaining their impact and authenticity.
 
-TASK: Shorten this postcard content to under ${contentMaxLength} characters while keeping it excellent.
+⚠️ MANDATORY TECHNICAL CONSTRAINT ⚠️
+The postcard content ABSOLUTELY MUST BE UNDER ${contentMaxLength} characters. This is a HARD SYSTEM LIMIT - not a suggestion!
 
-STRATEGY:
-- If the postcard makes multiple points, choose the STRONGEST one and focus on it
-- Remove secondary arguments - don't try to cram everything in
-- Keep the personal connection and emotional impact
-- Maintain the authentic voice and conversational tone
-- Include a call to action 
-- NO salutation or signature - the greeting "Rep. ${repLastName}," will be added automatically
+💀 CONSEQUENCES OF EXCEEDING LIMIT:
+- Postcards over ${contentMaxLength} characters will be AUTOMATICALLY TRUNCATED
+- This DESTROYS the message and makes it unreadable
+- The postcard will be CUT OFF mid-sentence without warning
+- THERE IS NO RECOVERY if you exceed this limit
 
-FORMAT REQUIREMENTS:
-- DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
-- Start directly with your message content  
-- DO NOT end with "Sincerely, [name]" or any signature line
-- Keep the message focused and direct
+🎯 YOUR MISSION: Shorten this postcard content to WELL UNDER ${contentMaxLength} characters while keeping it excellent.
 
-⚠️ CRITICAL OUTPUT RULE:
-- DO NOT include "[Character count: X]" or any character counting information in your response
-- DO NOT include "(X characters)" or similar meta-information  
-- Character limits are for internal validation only - never output them
-- Your response should ONLY contain the shortened postcard message content
+STRATEGY (IN ORDER OF IMPORTANCE):
+1. 🔥 PICK ONE STRONG POINT - Don't try to include everything
+2. 🗑️ RUTHLESSLY CUT secondary arguments 
+3. ❤️ Keep the personal connection and emotional impact
+4. 🗣️ Maintain authentic, conversational voice
+5. 📢 Include ONE clear call to action
+6. ⛔ NO salutation/signature - "Rep. ${repLastName}," is added automatically
+
+FORMAT REQUIREMENTS - NON-NEGOTIABLE:
+- ⛔ DO NOT include "Rep. Name," or "Dear Rep." - added automatically
+- ✅ Start DIRECTLY with your message content  
+- ⛔ DO NOT end with "Sincerely, [name]" or any signature
+- 🎯 Keep focused and direct
+
+🚨 CRITICAL OUTPUT RULES - ZERO TOLERANCE:
+- ⛔ DO NOT include "[Character count: X]" or counting info in response
+- ⛔ DO NOT include "(X characters)" or meta-information  
+- ⛔ Character limits are internal only - NEVER output them
+- ✅ Response should ONLY contain the shortened message content
+- 🔢 FINAL LENGTH MUST BE UNDER ${contentMaxLength} characters INCLUDING newlines
 
 QUALITY STANDARDS:
-- The shortened version should be a complete, compelling postcard on its own
-- Better to make one point well than multiple points poorly
-- Keep contractions and natural language
-- Don't sacrifice authenticity for brevity
+- 💯 Shortened version must be complete and compelling standalone
+- 🎯 One strong point beats multiple weak points
+- 💬 Keep contractions and natural language
+- 🚫 NEVER sacrifice authenticity for brevity
 
-ABSOLUTE REQUIREMENTS:
-- Must be under ${contentMaxLength} characters for content (including newlines)
-- No salutation, no signature - just direct message content
-- Must sound like a real person, not a form letter
-- The greeting "Rep. ${repLastName}," will be automatically added (${greetingLength} chars)
+🚨 ABSOLUTE NON-NEGOTIABLE REQUIREMENTS 🚨
+- ✅ MUST be WELL UNDER ${contentMaxLength} characters (aim for ${Math.max(200, contentMaxLength - 20)})
+- ⛔ No salutation, no signature - just message content
+- 💭 Must sound like a real person, not a form letter
+- 📏 Total with greeting "Rep. ${repLastName}," (${greetingLength} chars) CANNOT exceed 300 chars
+- ⚠️ IF IN DOUBT, MAKE IT SHORTER - truncation is worse than brevity
 
 Original postcard content to shorten:
 ${contentToShorten}
 
-Write the shortened version that focuses on the most compelling point:`;
+🎯 WRITE THE SHORTENED VERSION - FOCUS ON THE MOST COMPELLING POINT:
+⚠️ REMEMBER: MUST BE WELL UNDER ${contentMaxLength} CHARACTERS OR IT WILL BE DESTROYED BY TRUNCATION ⚠️`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      temperature: 0.1,
-      system: SHORTENING_PROMPT,
-      messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
-    })
-  });
+  try {
+    console.log(`Attempting to shorten postcard from ${originalPostcard.length} to under 300 characters`);
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 300,
+        temperature: 0.1,
+        system: SHORTENING_PROMPT,
+        messages: [{ role: 'user', content: `User context: ${concerns} | Personal impact: ${personalImpact} | Location: ${location.city}, ${location.state}` }]
+      })
+    });
 
-  const result = await response.json();
-  const rawShortenedText = result.content[0]?.text?.trim() || '';
-  
-  // Clean the AI response to remove any character count debugging info
-  const shortenedText = cleanAIResponse(rawShortenedText);
-  
-  // Prepend the greeting to the shortened content
-  const finalShortened = greeting + shortenedText;
-  
-  return finalShortened;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Shortening API error (${response.status}): ${errorText}`);
+      throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    const rawShortenedText = result.content?.[0]?.text?.trim() || '';
+    
+    if (!rawShortenedText) {
+      console.error('Shortening API returned empty response');
+      throw new Error('Empty response from shortening API');
+    }
+    
+    // Clean the AI response to remove any character count debugging info
+    const shortenedText = cleanAIResponse(rawShortenedText);
+    
+    // Prepend the greeting to the shortened content
+    const finalShortened = greeting + shortenedText;
+    
+    console.log(`✅ Successfully shortened postcard: ${originalPostcard.length} → ${finalShortened.length} characters`);
+    return finalShortened;
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Shortening API failed: ${errorMessage}`);
+    // Return original postcard - caller will handle fallback
+    throw error;
+  }
 }
 
 async function generatePostcardAndSources({ zipCode, concerns, personalImpact, representative }: {
@@ -622,33 +713,44 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   concerns: string,
   personalImpact: string,
   representative: any
-}): Promise<{ postcard: string, sources: Source[] }> {
+}): Promise<{ postcard: string, sources: Source[], isFallbackPlaceholder?: boolean }> {
   try {
     console.log(`Generating postcard for "${concerns}" in ${zipCode}`);
     
+    // Cache location lookup to avoid multiple API calls
+    const location = await getLocationFromZip(zipCode);
+    console.log(`Location resolved: ${location.city}, ${location.state}`);
+    
     // Step 1: Analyze theme
-    const themeAnalysis = await analyzeTheme({ concerns, personalImpact, zipCode });
+    const themeAnalysis = await analyzeTheme({ concerns, personalImpact, location });
     console.log(`Theme identified: ${themeAnalysis.primaryTheme}`);
     
     // Step 2: Discover sources (Perplexity API search)
-    const sources = await discoverSources(themeAnalysis, zipCode);
+    const sources = await discoverSources(themeAnalysis, location);
     console.log(`Found ${sources.length} sources`);
     
     // Step 3: Draft postcard
-    let postcard = await draftPostcard({ concerns, personalImpact, zipCode, themeAnalysis, sources, representative });
+    let postcard = await draftPostcard({ concerns, personalImpact, location, themeAnalysis, sources, representative });
     console.log(`Generated postcard: ${postcard.length} characters`);
     
-    // Step 4: Shorten if needed
+    // Step 4: Shorten if needed (hard limit at 300 characters)
     if (postcard.length > 300) {
-      console.log(`Postcard too long (${postcard.length} chars), shortening...`);
-      const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, zipCode, representative);
-      console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+      console.log(`Postcard over 300 character limit (${postcard.length} chars), attempting shortening...`);
       
-      // Use shortened version if it's actually shorter and under limit
-      if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
-        postcard = shortenedPostcard;
-      } else {
-        // If shortening failed, try smart truncation as last resort
+      try {
+        const shortenedPostcard = await shortenPostcard(postcard, concerns, personalImpact, location, representative);
+        console.log(`Shortened postcard: ${shortenedPostcard.length} characters`);
+        
+        // Use shortened version if it's actually shorter and under limit
+        if (shortenedPostcard.length < postcard.length && shortenedPostcard.length <= 300) {
+          postcard = shortenedPostcard;
+          console.log(`✅ Shortening successful, using shortened version`);
+        } else {
+          console.log(`Shortening didn't improve length sufficiently, using smart truncation`);
+          postcard = smartTruncate(postcard);
+        }
+      } catch (error) {
+        // If shortening failed, try smart truncation as fallback
         console.log('Shortening API failed, using smart truncation fallback');
         postcard = smartTruncate(postcard);
       }
@@ -659,45 +761,13 @@ async function generatePostcardAndSources({ zipCode, concerns, personalImpact, r
   } catch (error) {
     console.error("Error generating postcard:", error);
     
-    // Fallback simple postcard with greeting
-    const { state } = await getLocationFromZip(zipCode);
-    const repLastName = extractRepresentativeLastName(representative.name);
-    const greeting = `Rep. ${repLastName},\n`;
-    let fallbackContent = `${personalImpact} Please address ${concerns} affecting ${state} families.`;
+    // Friendly fallback message
+    const fallbackMessage = "Canary just returned from a long flight and is resting, please draft the postcard yourself. Our robots will be happy to write it and send it on your behalf. Sorry for the inconvenience!";
     
-    // Clean the fallback content as well in case it contains debugging info
-    fallbackContent = cleanAIResponse(fallbackContent);
-    let fallbackPostcard = greeting + fallbackContent;
-
-    // Apply shortening to fallback postcard if needed
-    if (fallbackPostcard.length > 300) {
-      console.log(`Fallback postcard too long (${fallbackPostcard.length} chars), shortening...`);
-      try {
-        const shortenedFallback = await shortenPostcard(fallbackPostcard, concerns, personalImpact, zipCode, representative);
-        if (shortenedFallback.length < fallbackPostcard.length && shortenedFallback.length <= 300) {
-          fallbackPostcard = shortenedFallback;
-          console.log(`Used shortened fallback: ${fallbackPostcard.length} characters`);
-        } else {
-          // Smart truncation as last resort
-          fallbackPostcard = smartTruncate(fallbackPostcard);
-          console.log(`Used truncated fallback: ${fallbackPostcard.length} characters`);
-        }
-      } catch (shorteningError) {
-        console.error("Fallback shortening failed:", shorteningError);
-        // Smart truncation as last resort
-        fallbackPostcard = smartTruncate(fallbackPostcard);
-        console.log(`Used truncated fallback after shortening error: ${fallbackPostcard.length} characters`);
-      }
-    }
-
     return { 
-      postcard: fallbackPostcard, 
-      sources: [{ 
-        url: "https://congress.gov", 
-        outlet: "Congress.gov", 
-        summary: "Congressional information", 
-        headline: "Congressional Information" 
-      }] 
+      postcard: fallbackMessage, 
+      sources: [],
+      isFallbackPlaceholder: true
     };
   }
 }
@@ -754,7 +824,7 @@ serve(async (req) => {
       });
     }
 
-    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}> };
+    let finalResult = { postcard: '', sources: [] as Array<{description: string, url: string, dataPointCount: number}>, isFallbackPlaceholder: undefined as boolean | undefined };
     let apiStatusCode = 200;
     let apiStatusMessage = 'Success';
     let generationStatus = 'success';
@@ -784,17 +854,27 @@ serve(async (req) => {
       
       finalResult = {
         postcard: cleanedPostcard,
-        sources: appSources
+        sources: appSources.map(source => ({
+          description: source.description,
+          url: source.url,
+          dataPointCount: 0
+        })),
+        isFallbackPlaceholder: result.isFallbackPlaceholder || false
       };
       
       console.log(`✅ Generated postcard (${cleanedPostcard.length} chars) with ${result.sources.length} sources`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI generation error:', error);
       generationStatus = 'error';
       apiStatusCode = 500;
       apiStatusMessage = error.message || 'AI generation failed';
-      // finalResult remains empty but we continue to save the record
+      // Set friendly fallback message instead of leaving empty
+      finalResult = {
+        postcard: "Canary just returned from a long flight and is resting, please draft the postcard yourself. Our robots will be happy to write it and send it on your behalf. Sorry for the inconvenience!",
+        sources: [],
+        isFallbackPlaceholder: true
+      };
     }
 
     // Update the postcard draft with results (success or failure)
@@ -844,11 +924,14 @@ serve(async (req) => {
     }
     
     // Return in app's expected format with draft ID (even if AI generation failed)
+    console.log(`✅ Generated postcard (${finalResult.postcard?.length || 0} chars) with ${finalResult.sources?.length || 0} sources${finalResult.isFallbackPlaceholder ? ' [FALLBACK]' : ''}`);
+    
 return new Response(JSON.stringify({ 
       draftMessage: finalResult.postcard,
       postcard: finalResult.postcard,
       sources: finalResult.sources,
-      draftId: postcardDraft.id
+      draftId: postcardDraft.id,
+      isFallbackPlaceholder: finalResult.isFallbackPlaceholder || false
     }), {
       headers: {
         ...corsHeaders,
@@ -856,7 +939,7 @@ return new Response(JSON.stringify({
       }
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in function:', error);
     return new Response(JSON.stringify({
       error: `Generation failed: ${error.message}`

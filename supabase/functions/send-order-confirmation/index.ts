@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -33,11 +33,22 @@ interface OrderConfirmationRequest {
   orderResults: Array<{
     type: string;
     recipient: string;
-    orderId: string;
-    status: string;
+    orderId?: string;
+    status: 'success' | 'error';
+    error?: string;
   }>;
   finalMessage?: string;
   actualMailingDate?: string;
+  refundInfo?: {
+    refundAmountCents: number;
+    refundId: string;
+    totalAmountCents: number;
+  };
+  summary?: {
+    totalSent: number;
+    totalFailed: number;
+    total: number;
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -47,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userInfo, representative, senators, sendOption, orderResults, finalMessage, actualMailingDate }: OrderConfirmationRequest = await req.json();
+    const { userInfo, representative, senators, sendOption, orderResults, finalMessage, actualMailingDate, refundInfo, summary }: OrderConfirmationRequest = await req.json();
 
     if (!userInfo.email) {
       return new Response(JSON.stringify({ message: 'No email provided' }), {
@@ -72,6 +83,21 @@ const handler = async (req: Request): Promise<Response> => {
     
 
     const successfulOrders = orderResults.filter(order => order.status === 'success');
+    const failedOrders = orderResults.filter(order => order.status === 'error');
+    
+    // Determine email type based on results
+    const totalOrders = orderResults.length;
+    const successCount = successfulOrders.length;
+    const failedCount = failedOrders.length;
+    
+    let emailType: 'complete_success' | 'partial_failure' | 'complete_failure';
+    if (failedCount === 0) {
+      emailType = 'complete_success';
+    } else if (successCount === 0) {
+      emailType = 'complete_failure';  
+    } else {
+      emailType = 'partial_failure';
+    }
     
     // Calculate current date and expected dates for email
     const orderPlacedDate = new Date().toLocaleDateString('en-US', { 
@@ -105,25 +131,64 @@ const handler = async (req: Request): Promise<Response> => {
       return uuid.replace(/-/g, '').slice(-8).toUpperCase();
     };
     
-    const orderNumber = successfulOrders.length > 0 ? formatOrderNumber(successfulOrders[0].orderId) : 'CC000000';
+    const orderNumber = successfulOrders.length > 0 && successfulOrders[0].orderId ? formatOrderNumber(successfulOrders[0].orderId) : 'CC000000';
     console.log('Formatting order number from:', successfulOrders[0]?.orderId, 'Result:', orderNumber);
     
-    // Calculate total amount based on number of successful postcards
+    // Calculate amounts and handle refunds
     const unitPrice = 5.00;
-    const successCount = successfulOrders.length;
-    let totalAmount;
-    if (successCount === 1) {
-      totalAmount = '$5.00';
-    } else if (successCount === 2) {
-      totalAmount = '$10.00';
-    } else if (successCount >= 3) {
-      totalAmount = '$12.00';
+    let totalAmount, originalAmount, refundAmount;
+    
+    if (emailType === 'complete_success') {
+      // Standard success pricing
+      if (successCount === 1) {
+        totalAmount = '$5.00';
+      } else if (successCount === 2) {
+        totalAmount = '$10.00';
+      } else if (successCount >= 3) {
+        totalAmount = '$12.00';
+      }
+      originalAmount = totalAmount;
     } else {
-      totalAmount = '$5.00'; // fallback
+      // Handle refund scenarios
+      if (refundInfo) {
+        originalAmount = `$${(refundInfo.totalAmountCents / 100).toFixed(2)}`;
+        refundAmount = `$${(refundInfo.refundAmountCents / 100).toFixed(2)}`;
+        if (successCount > 0) {
+          const finalAmountCents = refundInfo.totalAmountCents - refundInfo.refundAmountCents;
+          totalAmount = `$${(finalAmountCents / 100).toFixed(2)}`;
+        } else {
+          totalAmount = '$0.00';
+        }
+      } else {
+        // Fallback calculations
+        originalAmount = totalOrders === 1 ? '$5.00' : totalOrders === 2 ? '$10.00' : '$12.00';
+        if (successCount > 0) {
+          totalAmount = successCount === 1 ? '$5.00' : successCount === 2 ? '$10.00' : '$12.00';
+          const originalCents = totalOrders === 1 ? 500 : totalOrders === 2 ? 1000 : 1200;
+          const finalCents = successCount === 1 ? 500 : successCount === 2 ? 1000 : 1200;
+          refundAmount = `$${((originalCents - finalCents) / 100).toFixed(2)}`;
+        } else {
+          totalAmount = '$0.00';
+          refundAmount = originalAmount;
+        }
+      }
     }
     
     const cardCount = successfulOrders.length;
     
+    // Adaptive header messaging based on email type
+    let headerTitle, headerSubtitle;
+    if (emailType === 'complete_success') {
+      headerTitle = 'Order confirmed';
+      headerSubtitle = 'Your message is in motion';
+    } else if (emailType === 'partial_failure') {
+      headerTitle = 'Order partially processed';
+      headerSubtitle = `${successCount} of ${totalOrders} postcards sent • Refund issued`;
+    } else {
+      headerTitle = 'Order refunded';
+      headerSubtitle = 'Unable to send postcards • Full refund processed';
+    }
+
     // Dynamic recipient rendering with proper title formatting
     const formatRepresentativeName = (rep: any, fullName: string) => {
       const nameParts = fullName.split(' ');
@@ -131,19 +196,40 @@ const handler = async (req: Request): Promise<Response> => {
       return rep.type === 'representative' ? `Rep. ${lastName}` : `Sen. ${lastName}`;
     };
     
-    let recipientList;
-    if (successfulOrders.length === 1) {
-      const orderRep = successfulOrders[0].type === 'representative' ? representative : senators?.find(s => s.name === successfulOrders[0].recipient);
-      const formattedName = orderRep ? formatRepresentativeName(orderRep, successfulOrders[0].recipient) : successfulOrders[0].recipient;
-      recipientList = `<span style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6;">${formattedName}</span>`;
-    } else {
-      recipientList = `<ul class="unordered-list" style="padding-left: 1.5rem; margin: 0; list-style-type: disc;">
-        ${successfulOrders.map(order => {
-          const orderRep = order.type === 'representative' ? representative : senators?.find(s => s.name === order.recipient);
-          const formattedName = orderRep ? formatRepresentativeName(orderRep, order.recipient) : order.recipient;
-          return `<li style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6; margin-bottom: 0.5rem;">${formattedName}</li>`;
-        }).join('')}
-      </ul>`;
+    // Build successful recipients list
+    let successfulRecipientList = '';
+    if (successfulOrders.length > 0) {
+      if (successfulOrders.length === 1) {
+        const orderRep = successfulOrders[0].type === 'representative' ? representative : senators?.find(s => s.name === successfulOrders[0].recipient);
+        const formattedName = orderRep ? formatRepresentativeName(orderRep, successfulOrders[0].recipient) : successfulOrders[0].recipient;
+        successfulRecipientList = `<span style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6;">${formattedName}</span>`;
+      } else {
+        successfulRecipientList = `<ul class="unordered-list" style="padding-left: 1.5rem; margin: 0; list-style-type: disc;">
+          ${successfulOrders.map(order => {
+            const orderRep = order.type === 'representative' ? representative : senators?.find(s => s.name === order.recipient);
+            const formattedName = orderRep ? formatRepresentativeName(orderRep, order.recipient) : order.recipient;
+            return `<li style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6; margin-bottom: 0.5rem;">${formattedName}</li>`;
+          }).join('')}
+        </ul>`;
+      }
+    }
+    
+    // Build failed recipients list
+    let failedRecipientList = '';
+    if (failedOrders.length > 0) {
+      if (failedOrders.length === 1) {
+        const orderRep = failedOrders[0].type === 'representative' ? representative : senators?.find(s => s.name === failedOrders[0].recipient);
+        const formattedName = orderRep ? formatRepresentativeName(orderRep, failedOrders[0].recipient) : failedOrders[0].recipient;
+        failedRecipientList = `<span style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #B25549; font-size: 1rem; line-height: 1.6;">${formattedName}${failedOrders[0].error ? ` (${failedOrders[0].error})` : ''}</span>`;
+      } else {
+        failedRecipientList = `<ul class="unordered-list" style="padding-left: 1.5rem; margin: 0; list-style-type: disc;">
+          ${failedOrders.map(order => {
+            const orderRep = order.type === 'representative' ? representative : senators?.find(s => s.name === order.recipient);
+            const formattedName = orderRep ? formatRepresentativeName(orderRep, order.recipient) : order.recipient;
+            return `<li style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #B25549; font-size: 1rem; line-height: 1.6; margin-bottom: 0.5rem;">${formattedName}${order.error ? ` (${order.error})` : ''}</li>`;
+          }).join('')}
+        </ul>`;
+      }
     }
     
     // Build postcard messages section
@@ -156,7 +242,7 @@ const handler = async (req: Request): Promise<Response> => {
       postcardMessagesSection = representativesToShow.map((rep, index) => {
         const nameParts = rep.name.split(' ');
         const lastName = nameParts[nameParts.length - 1];
-        const shortTitle = rep.type === 'representative' ? 'Rep.' : 'Sen.';
+        const shortTitle = 'Rep.'; // Default since we don't have type info
         
         return `
         <div style="background-color: #ffffff; padding: 1.5rem; border-radius: 12px; border: 1px solid #E8DECF; margin-bottom: 1rem;">
@@ -464,8 +550,8 @@ const handler = async (req: Request): Promise<Response> => {
         
         <!-- Email Header -->
         <div style="text-align: center; margin-bottom: 2rem;">
-          <h1 style="font-family: 'Spectral', Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: #2F4156; margin: 0 0 0.5rem 0;">Order confirmed</h1>
-          <h3 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 1.25rem; line-height: 1.3; color: #B25549; margin: 0 0 1rem 0;">Your message is in motion</h3>
+          <h1 style="font-family: 'Spectral', Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 2rem; line-height: 1.2; color: #2F4156; margin: 0 0 0.5rem 0;">${headerTitle}</h1>
+          <h3 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 1.25rem; line-height: 1.3; color: #B25549; margin: 0 0 1rem 0;">${headerSubtitle}</h3>
         </div>
         
         <!-- Order Details Section -->
@@ -483,21 +569,46 @@ const handler = async (req: Request): Promise<Response> => {
                 </span>
               </div>
               
-              <!-- Top line: Order Number (H2, Ink Blue, strong) -->
-              <h2 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 1.5rem; line-height: 1.25; color: #2F4156; margin: 0 0 0.5rem 0;">Order #${orderNumber}</h2>
+               <!-- Top line: Order Number (H2, Ink Blue, strong) -->
+               <h2 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 1.5rem; line-height: 1.25; color: #2F4156; margin: 0 0 0.5rem 0;">Order #${orderNumber}</h2>
 
                <!-- Subline: Card count and date (H3, neutral) -->
-               <h3 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 400; font-size: 1.125rem; line-height: 1.3; color: #222222; margin: 0 0 1rem 0;">${cardCount} postcards • Placed ${orderPlacedDate}</h3>
+               <h3 style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 400; font-size: 1.125rem; line-height: 1.3; color: #222222; margin: 0 0 1rem 0;">${emailType === 'complete_success' ? cardCount : totalOrders} postcards • Placed ${orderPlacedDate}</h3>
 
                <!-- Key meta (small, muted, stacked) -->
-               <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Total charged: ${totalAmount}</p>
-               <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 1.5rem;">Expected mailing date: ${expectedMailingDate}</p>
+               ${emailType === 'complete_success' ? `
+                 <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Total charged: ${totalAmount}</p>
+                 <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 1.5rem;">Expected mailing date: ${expectedMailingDate}</p>
+               ` : `
+                 <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Original amount: ${originalAmount}</p>
+                 ${refundAmount && refundAmount !== '$0.00' ? `<p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #B25549; line-height: 1.5; margin-bottom: 0.5rem;">Refund issued: ${refundAmount}</p>` : ''}
+                 ${totalAmount && totalAmount !== '$0.00' ? `<p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Final charge: ${totalAmount}</p>` : ''}
+                 ${successfulOrders.length > 0 ? `<p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 1.5rem;">Expected mailing date: ${expectedMailingDate}</p>` : '<div style="margin-bottom: 1.5rem;"></div>'}
+               `}
 
-               <!-- Recipients section -->
-               <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Postcards sent to:</p>
-               <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6;">
-                 ${recipientList}
-               </div>
+               ${successfulOrders.length > 0 ? `
+                 <!-- Recipients section -->
+                 <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #9A9289; line-height: 1.5; margin-bottom: 0.5rem;">Postcards sent to:</p>
+                 <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222222; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                   ${successfulRecipientList}
+                 </div>
+               ` : ''}
+               
+               ${failedOrders.length > 0 ? `
+                 <!-- Failed postcards section -->
+                 <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #B25549; line-height: 1.5; margin-bottom: 0.5rem;">${emailType === 'complete_failure' ? 'Unable to send postcards to:' : 'Could not send postcards to:'}</p>
+                 <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #B25549; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                   ${failedRecipientList}
+                 </div>
+                 
+                 ${emailType !== 'complete_success' && refundInfo ? `
+                   <div style="background-color: #FFF7F7; border: 1px solid #F0C8C8; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                     <p style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.875rem; color: #B25549; line-height: 1.5; margin: 0; font-weight: 500;">
+                       ${emailType === 'complete_failure' ? 'Full refund processed' : 'Partial refund processed'} • Refund ID: ${refundInfo.refundId}
+                     </p>
+                   </div>
+                 ` : ''}
+               ` : ''}
                
             </td>
           </tr>

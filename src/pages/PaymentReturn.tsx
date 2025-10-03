@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/AppContext';
 import { getUnitPriceCents, getTotalPriceCents } from '@/lib/pricing';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
 
 export default function PaymentReturn() {
   const [searchParams] = useSearchParams();
@@ -171,6 +172,17 @@ export default function PaymentReturn() {
             
             if (refundError) {
               console.error("Refund failed:", refundError);
+              captureEdgeFunctionError(refundError, 'refund-payment', {
+                sessionId,
+                email: state.postcardData?.email,
+                zipCode: state.postcardData?.zipCode,
+                representative: state.postcardData?.representative?.name,
+                sendOption: state.postcardData?.sendOption,
+                step: 'payment_return',
+                refundAmount: refundAmountCents,
+                totalFailed,
+                totalRecipients
+              });
             } else {
               console.log("Partial refund successful:", refundData);
             }
@@ -189,6 +201,18 @@ export default function PaymentReturn() {
             return;
           } catch (refundError) {
             console.error("Error during partial refund process:", refundError);
+            captureEdgeFunctionError(refundError, 'refund-payment', {
+              sessionId,
+              email: state.postcardData?.email,
+              zipCode: state.postcardData?.zipCode,
+              representative: state.postcardData?.representative?.name,
+              sendOption: state.postcardData?.sendOption,
+              step: 'payment_return',
+              refundAmount: refundAmountCents,
+              totalFailed,
+              totalRecipients,
+              errorContext: 'catch_block'
+            });
           }
         }
         
@@ -230,6 +254,14 @@ export default function PaymentReturn() {
       });
       
       if (verificationError) {
+        captureEdgeFunctionError(verificationError, 'verify-payment', {
+          sessionId,
+          email: state.postcardData?.email,
+          zipCode: state.postcardData?.zipCode,
+          representative: state.postcardData?.representative?.name,
+          sendOption: state.postcardData?.sendOption,
+          step: 'payment_verification'
+        });
         throw new Error('Failed to verify payment status');
       }
       
@@ -305,6 +337,15 @@ export default function PaymentReturn() {
       setStatus('error');
       // Clear global payment loading on error
       dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
+      captureEdgeFunctionError(error, 'verify-payment', {
+        sessionId,
+        email: state.postcardData?.email,
+        zipCode: state.postcardData?.zipCode,
+        representative: state.postcardData?.representative?.name,
+        sendOption: state.postcardData?.sendOption,
+        step: 'payment_verification',
+        errorContext: 'catch_block'
+      });
       toast({
         title: "Payment verification failed",
         description: "Unable to verify payment. Please try again or contact support.",

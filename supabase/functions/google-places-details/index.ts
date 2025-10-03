@@ -107,7 +107,7 @@ serve(async (req) => {
         } 
       }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Edge function error:', error)
     return new Response(
       JSON.stringify({ 

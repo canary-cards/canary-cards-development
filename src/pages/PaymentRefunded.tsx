@@ -101,24 +101,26 @@ export default function PaymentRefunded() {
         </div>
 
         {/* Refund Card */}
-        <Card className="bg-green-50 border-green-200 mb-8">
+        <Card className="card-warm mb-8">
           <CardContent className="p-6">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <p className="text-sm font-medium text-green-800">
-                Refund issued: ${displayRefundAmount}
-              </p>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">
+                  Refund issued: ${displayRefundAmount}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Expected in 5–10 business days
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-green-600 text-center">
-              Expected in 5–10 business days
-            </p>
             {displayRefundId && (
-              <div className="mt-3 pt-3 border-t border-green-200 text-center">
-                <p className="text-xs text-green-700">
+              <div className="mt-3 pt-3 border-t border-border ml-7">
+                <p className="text-xs text-muted-foreground">
                   <span className="font-medium">Refund ID:</span> {displayRefundId}
                 </p>
                 {orderId && (
-                  <p className="text-xs text-green-700 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     <span className="font-medium">Order:</span> #{formatOrderNumber(orderId)}
                   </p>
                 )}

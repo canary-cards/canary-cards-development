@@ -46,7 +46,8 @@ class ApiKeyManager {
       'ANTHROPIC_SHORTENING_KEY_2', 
       'ANTHROPIC_SHORTENING_KEY_3',
     ] : [
-      'anthropickey', // This appears to be the actual secret name in your Supabase
+      'ANTHROPIC_KEY', // Primary key (uppercase format)
+      'anthropickey', // Legacy support
       'ANTHROPIC_API_KEY_1',
       'ANTHROPIC_API_KEY_2', 
       'ANTHROPIC_API_KEY_3',
@@ -1182,7 +1183,7 @@ serve(async (req) => {
       });
     }
 
-    let finalResult = { postcard: '', sources: [] };
+    let finalResult: { postcard: string; sources: { description: string; url: string; dataPointCount: number; }[] } = { postcard: '', sources: [] };
     let apiStatusCode = 200;
     let apiStatusMessage = 'Success';
     let generationStatus = 'success';
@@ -1228,7 +1229,7 @@ serve(async (req) => {
       
       console.log(`Final message (${finalResult.postcard.length} chars):`, finalResult.postcard);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI generation error:', error);
       generationStatus = 'error';
       apiStatusCode = 500;
@@ -1294,7 +1295,7 @@ serve(async (req) => {
       }
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in function:', error);
     return new Response(JSON.stringify({
       error: `Generation failed: ${error.message}`

@@ -36,7 +36,13 @@ serve(async (req) => {
         ANTHROPIC_API_KEY_3: Deno.env.get("ANTHROPIC_API_KEY_3") ? "✓ Present" : "✗ Missing",
         ANTHROPIC_API_KEY_4: Deno.env.get("ANTHROPIC_API_KEY_4") ? "✓ Present" : "✗ Missing",
         ANTHROPIC_API_KEY_5: Deno.env.get("ANTHROPIC_API_KEY_5") ? "✓ Present" : "✗ Missing",
-        anthropickey: Deno.env.get("anthropickey") ? "✓ Present (alt name)" : "✗ Missing (alt name)",
+        ANTHROPIC_KEY: Deno.env.get("ANTHROPIC_KEY") ? "✓ Present" : "✗ Missing",
+        ANTHROPIC_THEME_KEY: Deno.env.get("ANTHROPIC_THEME_KEY") ? "✓ Present" : "✗ Missing",
+        anthropickey: Deno.env.get("anthropickey") ? "✓ Present (legacy)" : "✗ Missing (legacy)",
+        
+        // Perplexity
+        PERPLEXITY_KEY: Deno.env.get("PERPLEXITY_KEY") ? "✓ Present" : "✗ Missing",
+        perplexitykey: Deno.env.get("perplexitykey") ? "✓ Present (legacy)" : "✗ Missing (legacy)",
         
         // News APIs
         CONGRESS_API_KEY: Deno.env.get("CONGRESS_API_KEY") ? "✓ Present" : "✗ Missing",
@@ -74,7 +80,7 @@ serve(async (req) => {
         apiTests.stripe = testResponse.ok;
         console.log(`Stripe API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log(`Stripe API test failed: ${e.message}`);
     }
 
@@ -96,13 +102,13 @@ serve(async (req) => {
         apiTests.google = testResponse.ok;
         console.log(`Google Places API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log(`Google Places API test failed: ${e.message}`);
     }
 
     // Test Anthropic
     try {
-      const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY_1") || Deno.env.get("anthropickey");
+      const anthropicKey = Deno.env.get("ANTHROPIC_KEY") || Deno.env.get("ANTHROPIC_API_KEY_1") || Deno.env.get("anthropickey");
       if (anthropicKey) {
         const testResponse = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -120,7 +126,7 @@ serve(async (req) => {
         apiTests.anthropic = testResponse.ok;
         console.log(`Anthropic API test: ${testResponse.ok ? "✓ Success" : "✗ Failed"} (${testResponse.status})`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log(`Anthropic API test failed: ${e.message}`);
     }
 
@@ -131,7 +137,7 @@ serve(async (req) => {
         criticalSecrets: [
           diagnostics.secrets.STRIPE_SECRET_KEY,
           diagnostics.secrets.Google,
-          diagnostics.secrets.ANTHROPIC_API_KEY_1
+          diagnostics.secrets.ANTHROPIC_KEY
         ].filter(s => s.includes("✓")).length + "/3 critical secrets present",
         workingApis: Object.values(apiTests).filter(Boolean).length + "/3 APIs working"
       }
@@ -143,7 +149,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Diagnostics error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

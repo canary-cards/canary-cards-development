@@ -4,26 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { getStripePublishableKey } from '@/lib/environment';
-
 const stripePromise = loadStripe(getStripePublishableKey());
 
 // Global instance tracker to prevent multiple embedded checkouts
 let globalCheckoutInstance: unknown = null;
 let isInitializing = false;
-
 interface EmbeddedCheckoutProps {
   clientSecret: string;
   onBack: () => void;
   sendOption: 'single' | 'double' | 'triple';
   amount: number;
 }
-
-export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: EmbeddedCheckoutProps) {
+export function EmbeddedCheckout({
+  clientSecret,
+  onBack,
+  sendOption,
+  amount
+}: EmbeddedCheckoutProps) {
   const [checkout, setCheckout] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFallback, setShowFallback] = useState(false);
-
   useEffect(() => {
     let isMounted = true;
     let checkoutInstance: unknown = null;
@@ -35,18 +36,17 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-
     const initializeCheckout = async () => {
       try {
         console.log('EmbeddedCheckout: Starting initialization with clientSecret:', clientSecret ? 'present' : 'missing');
-        
+
         // Prevent multiple simultaneous initializations
         if (isInitializing) {
           console.log('EmbeddedCheckout: Already initializing, aborting');
           return;
         }
         isInitializing = true;
-        
+
         // Clean up any existing global instance first
         if (globalCheckoutInstance) {
           console.log('EmbeddedCheckout: Cleaning up existing global instance');
@@ -57,19 +57,17 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
             console.log('EmbeddedCheckout: Error cleaning up global instance:', error);
           }
           globalCheckoutInstance = null;
-          
+
           // Wait for cleanup to complete
           await new Promise(resolve => setTimeout(resolve, 500));
         }
-        
+
         // Also clear any existing Stripe elements from DOM
         const existingElements = document.querySelectorAll('[data-testid="embedded-checkout"]');
         existingElements.forEach(el => el.remove());
-        
         if (!clientSecret) {
           throw new Error('Client secret is missing');
         }
-
         const stripe = await stripePromise;
         if (!stripe) {
           throw new Error('Stripe failed to load');
@@ -81,7 +79,6 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
           console.log('EmbeddedCheckout: Component unmounted, aborting initialization');
           return;
         }
-
         console.log('EmbeddedCheckout: Initializing embedded checkout...');
         checkoutInstance = await stripe.initEmbeddedCheckout({
           clientSecret,
@@ -107,14 +104,13 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         globalCheckoutInstance = checkoutInstance;
         isInitializing = false;
         setLoading(false);
-        
+
         // Mount after state is updated and component re-renders
         setTimeout(() => {
           if (!isMounted || !checkoutInstance) {
             console.log('EmbeddedCheckout: Component unmounted or no instance, skipping mount');
             return;
           }
-          
           const checkoutElement = document.getElementById('embedded-checkout');
           if (checkoutElement) {
             (checkoutInstance as any).mount('#embedded-checkout');
@@ -124,7 +120,6 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
             setError('Failed to mount payment form');
           }
         }, 50);
-        
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         console.error('EmbeddedCheckout: Failed to initialize Stripe checkout:', err);
@@ -135,11 +130,10 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
         }
       }
     };
-
     console.log('EmbeddedCheckout: useEffect triggered, clientSecret:', clientSecret ? 'present' : 'missing');
     if (clientSecret) {
       initializeCheckout();
-      
+
       // Set up a fallback timeout in case embedded checkout fails silently
       const fallbackTimeout = setTimeout(() => {
         if (isMounted && loading) {
@@ -147,12 +141,12 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
           setShowFallback(true);
         }
       }, 15000); // 15 seconds
-      
+
       return () => {
         clearTimeout(fallbackTimeout);
         isMounted = false;
         isInitializing = false;
-        
+
         // Clean up local instance
         if (checkoutInstance) {
           console.log('EmbeddedCheckout: Unmounting checkout instance');
@@ -164,7 +158,7 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
           }
           checkoutInstance = null;
         }
-        
+
         // Clean up state instance if different
         if (checkout && checkout !== checkoutInstance) {
           console.log('EmbeddedCheckout: Unmounting stored checkout instance');
@@ -175,7 +169,7 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
             console.log('EmbeddedCheckout: Error unmounting stored checkout:', error);
           }
         }
-        
+
         // Clear global instance if it matches this component's instance
         if (globalCheckoutInstance === checkoutInstance || globalCheckoutInstance === checkout) {
           console.log('EmbeddedCheckout: Clearing global checkout instance');
@@ -193,32 +187,26 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
   }, [clientSecret]); // Removed 'loading' dependency to prevent loops
 
   if (loading) {
-    return (
-      <Card className="card-warm">
+    return <Card className="card-warm">
         <CardContent className="p-8">
           <div className="text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
             <h2 className="text-xl font-semibold">Loading Payment Form...</h2>
             <h3 className="subtitle text-base">Setting up secure payment for your postcards</h3>
-            {showFallback && (
-              <div className="mt-6 p-4 bg-muted rounded-lg">
+            {showFallback && <div className="mt-6 p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground mb-3">
                   Payment form is taking longer than expected.
                 </p>
                 <Button onClick={onBack} variant="outline" size="sm">
                   Go Back and Try Again
                 </Button>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (error) {
-    return (
-      <Card className="card-warm">
+    return <Card className="card-warm">
         <CardContent className="p-8">
           <div className="text-center space-y-4">
             <div className="text-destructive text-2xl">⚠️</div>
@@ -230,41 +218,30 @@ export function EmbeddedCheckout({ clientSecret, onBack, sendOption, amount }: E
             </Button>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <div className="space-y-6" style={{ scrollBehavior: 'auto' }}>
+  return <div className="space-y-6" style={{
+    scrollBehavior: 'auto'
+  }}>
       <Card className="card-warm">
         <CardContent className="p-6">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold mb-2">Complete Your Payment</h2>
+            <h1 className="display-title mb-2">Complete your payment</h1>
             <p className="text-muted-foreground mb-4">
-              {sendOption === 'single' ? 'Single postcard package' : 
-               sendOption === 'double' ? 'Double postcard package' : 
-               'Triple postcard package'} - ${amount}
+              {sendOption === 'single' ? 'Single postcard package' : sendOption === 'double' ? 'Double postcard package' : 'Triple postcard package'} - ${amount}
             </p>
           </div>
           
           {/* Stripe Embedded Checkout will mount here */}
-          <div 
-            id="embedded-checkout" 
-            className="min-h-[500px] w-full"
-          />
+          <div id="embedded-checkout" className="min-h-[500px] w-full" />
           
           <div className="mt-6 pt-4 border-t">
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={onBack}
-            >
+            <Button type="button" variant="secondary" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Review
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }

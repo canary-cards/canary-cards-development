@@ -1,10 +1,39 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schemas
+const UserInfoSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  streetAddress: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(1).max(100).optional(),
+  state: z.string().trim().max(50).optional(),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional()
+});
+
+const PostcardDataSchema = z.object({
+  userInfo: UserInfoSchema.optional(),
+  finalMessage: z.string().trim().min(10).max(1000).optional(),
+  sendOption: z.enum(['single', 'double', 'triple']).optional(),
+  email: z.string().trim().email().max(255).optional(),
+  draftId: z.string().uuid().optional(),
+  representative: z.any().optional(),
+  senators: z.any().optional()
+});
+
+const RequestSchema = z.object({
+  sendOption: z.enum(['single', 'double', 'triple']),
+  email: z.string().trim().email().max(255),
+  fullName: z.string().trim().min(1).max(100),
+  postcardData: PostcardDataSchema.optional(),
+  simulateFailure: z.boolean().optional(),
+  simulatedFailed: z.number().int().min(0).max(10).optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,16 +42,42 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
-    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = validation.data;
+    
+    // Block simulation parameters in production
+    const environment = Deno.env.get('ENVIRONMENT') || 'development';
+    if (environment === 'production' && (simulateFailure || simulatedFailed)) {
+      console.error('Simulation parameters not allowed in production');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
     
     console.log("=== CREATE PAYMENT DEBUG ===");
     console.log("Request data:", { sendOption, email, fullName });
     console.log("Postcard data received:", postcardData ? "Yes" : "No");
-    
-    if (!sendOption || !email) {
-      throw new Error("Missing required fields: sendOption and email");
-    }
 
     // Prepare postcard data for metadata storage
     let postcardMetadata = {};
@@ -70,14 +125,14 @@ serve(async (req) => {
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
+      apiVersion: "2024-06-20",
     });
 
     // Set pricing based on send option
     const pricing = {
-      single: { amount: 500, name: "Single Postcard" },
+      single: { amount: 500, name: "Single postcard" },
       double: { amount: 1000, name: "Double Postcard Package" },
-      triple: { amount: 1200, name: "Triple Postcard Package" } // $12 with bundle savings
+      triple: { amount: 1200, name: "Triple postcard package" } // $12 with bundle savings
     };
 
     const selectedPricing = pricing[sendOption as keyof typeof pricing];
@@ -138,7 +193,7 @@ serve(async (req) => {
     
     // Add simulation flags to return URL if provided
     if (simulateFailure) {
-      returnUrl += `&simulate_failure=1`;
+      returnUrl += `&simulate_failure=true`;
       if (simulatedFailed) {
         returnUrl += `&simulate_failed=${simulatedFailed}`;
       }
@@ -152,14 +207,13 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
-      payment_method_types: ['card', 'link'],
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: { 
               name: selectedPricing.name,
-              description: `Civic postcard delivery to your representative`
+              description: `Written and mailed on your behalf`
             },
             unit_amount: selectedPricing.amount,
           },
@@ -177,11 +231,11 @@ serve(async (req) => {
                                                     sendOption === 'double' ? Math.min(postcardData.senators.length + 1, 2) : 1) : 1,
         recipient_list: postcardData ? JSON.stringify([
           postcardData.representative?.name,
-          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map(s => s.name)
+          ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
         ].filter(Boolean)) : "[]",
         // Add simulation parameters for testing
-        simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
-        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0", 
+        simulateFailure: simulateFailure ? "true" : "false",
+        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0",
         ...postcardMetadata // Include all postcard data in session metadata
       }
     });
@@ -199,7 +253,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Payment creation error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { DynamicSvg } from '../DynamicSvg';
+import { useIsMobile } from '../../hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SlideProps {
   title: string;
@@ -13,20 +16,24 @@ interface SlideProps {
 }
 
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
+  const isMobile = useIsMobile();
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
+  
   return (
     <div className="relative h-full">
-      {/* Icon area - responsive height based on screen aspect ratio */}
+      {/* Icon area - fixed position, always same spot */}
       <div 
-        className="absolute top-0 left-0 right-0 flex items-center justify-center px-6"
+        className="absolute inset-x-0 flex items-center justify-center px-6"
         style={{
-          height: 'clamp(50%, calc(60% - 2rem), 70%)', // More flexible range
+          top: '5%',
+          height: '40%', // Fixed 40% height for icon area, ends at 45%
         }}
       >
         <div 
           className="flex items-center justify-center relative"
           style={{
-            width: 'clamp(200px, min(50vw, 50vh), 300px)', // Better responsive sizing
-            height: 'clamp(200px, min(50vw, 50vh), 300px)',
+            width: 'clamp(200px, min(40vw, 35vh), 280px)',
+            height: 'clamp(200px, min(40vw, 35vh), 280px)',
           }}
         >
           {/* Render all SVGs at once for smooth transitions */}
@@ -56,26 +63,38 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Responsive text area */}
+      {/* Text area - responsive spacing from icon */}
       <div 
-        className="absolute left-0 right-0 px-4 sm:px-6 text-center"
+        className="absolute inset-x-0 px-4 sm:px-6 text-center"
         style={{
-          top: 'clamp(40%, calc(50% - 2rem), 60%)', // Brought text closer to icon
-          bottom: 'max(env(safe-area-inset-bottom, 0px), 1.5rem)',
-          overflow: 'hidden', // Prevent text overflow
+          top: isMobile ? '48%' : '47%',
+          bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
         }}
       >
-        <div className="space-y-4 max-h-full">
-          <h2 className="text-2xl display-title leading-tight">
+        <div className="space-y-4">
+          <h2 className="display-title leading-tight">
             {title}
           </h2>
           <h3 className="subtitle text-base leading-relaxed">
             {subtitle}
           </h3>
           {finePrint && (
-            <p className="text-xs text-muted-foreground/70 mt-4 sm:mt-6">
-              {finePrint}
-            </p>
+            <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
+              <CollapsibleTrigger 
+                className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Source
+                <ChevronDown 
+                  className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                  {finePrint}
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
       </div>

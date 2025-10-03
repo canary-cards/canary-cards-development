@@ -41,6 +41,7 @@ export interface PostcardData {
   senators?: Representative[];
   sources?: Source[];
   draftId?: string; // UUID of the postcard draft in the database
+  isFallbackPlaceholder?: boolean; // Indicates if draftMessage is a fallback placeholder
 }
 
 export interface AppState {

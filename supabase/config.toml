@@ -4,13 +4,13 @@ project_id = "pugnjgvdisdbdkbofwrc"
 verify_jwt = false
 
 [functions.draft-postcard-message] 
-verify_jwt = false
+verify_jwt = true
 
 [functions.env-diagnostics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.geocodio-lookup]
-verify_jwt = false
+verify_jwt = true
 
 [functions.google-places-autocomplete]
 verify_jwt = false
@@ -43,7 +43,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.transcribe-audio]
-verify_jwt = false
+verify_jwt = true
 
 [functions.verify-payment]
+verify_jwt = false
+
+[functions.fetch-link-preview]
 verify_jwt = false
