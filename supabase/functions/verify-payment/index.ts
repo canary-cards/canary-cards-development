@@ -201,8 +201,16 @@ serve(async (req) => {
       if (isNewOrder) {
         try {
           // Extract simulation parameters from metadata
-          const simulateFailure = metadata.simulateFailure ? parseInt(metadata.simulateFailure) : 0;
+          // Convert string boolean "true"/"false" to number 1/0
+          const simulateFailure = metadata.simulateFailure === 'true' ? 1 : 0;
           const simulatedFailed = metadata.simulatedFailed ? parseInt(metadata.simulatedFailed) : 0;
+          
+          console.log('Parsing simulation parameters:', {
+            raw_simulateFailure: metadata.simulateFailure,
+            raw_simulatedFailed: metadata.simulatedFailed,
+            parsed_simulateFailure: simulateFailure,
+            parsed_simulatedFailed: simulatedFailed
+          });
           
           const sendResponse = await supabase.functions.invoke('send-postcard', {
             body: { 
