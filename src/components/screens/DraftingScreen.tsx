@@ -386,7 +386,7 @@ export function DraftingScreen() {
                         key={`layerA-${layerAAnimationIndex}`}
                         src={animationUrls[layerAAnimationIndex]}
                         autoplay
-                        loop={layerAAnimationIndex !== 1}
+                        loop
                         speed="1"
                         background="transparent"
                         style={{ 
@@ -411,7 +411,7 @@ export function DraftingScreen() {
                         key={`layerB-${layerBAnimationIndex}`}
                         src={animationUrls[layerBAnimationIndex]}
                         autoplay
-                        loop={layerBAnimationIndex !== 1}
+                        loop
                         speed="1"
                         background="transparent"
                         style={{ 
