@@ -69,7 +69,24 @@ export function DraftingScreen() {
   const layerARef = useRef<HTMLElement | null>(null);
   const layerBRef = useRef<HTMLElement | null>(null);
   const preloadedReadyRef = useRef(false);
-
+  
+  // Playback/crossfade helpers to prevent ghosting
+  const CROSSFADE_MS = 600; // must match CSS duration-600
+  const stopAndHideLayer = (layer: 'A' | 'B') => {
+    const el = layer === 'A' ? layerARef.current : layerBRef.current;
+    try {
+      (el as any)?.stop?.();
+      if (el) (el as HTMLElement).style.visibility = 'hidden';
+    } catch {}
+  };
+  const showAndPlayLayer = (layer: 'A' | 'B') => {
+    const el = layer === 'A' ? layerARef.current : layerBRef.current;
+    try {
+      if (el) (el as HTMLElement).style.visibility = 'visible';
+      (el as any)?.play?.();
+    } catch {}
+  };
+  
   // Update message based on current animation
   useEffect(() => {
     // Map animation indices to message indices (skip messages for transition animations at index 1 and 3)
@@ -87,6 +104,8 @@ export function DraftingScreen() {
       setShowTypewriter(false);
       setTimeout(() => {
         setCurrentMessage(newMessage);
+        // Ensure the now-active layer is visible in case visibility was hidden
+        showAndPlayLayer(activeLayerRef.current);
         setShowTypewriter(true);
       }, 200);
     }
@@ -115,6 +134,8 @@ export function DraftingScreen() {
     setTimeout(() => {
       const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
       if (!hiddenEl) return;
+      // Ensure hidden layer is visible (but opacity 0) before upcoming crossfade
+      (hiddenEl as HTMLElement).style.visibility = 'visible';
       const onReady = () => {
         preloadedReadyRef.current = true;
         hiddenEl.removeEventListener('ready', onReady as any);
@@ -130,7 +151,12 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    if (activeLayerRef.current === 'A') {
+    const prev = activeLayerRef.current;
+    const next: 'A' | 'B' = prev === 'A' ? 'B' : 'A';
+    // Make sure the incoming layer is visible and playing before fade-in
+    showAndPlayLayer(next);
+
+    if (prev === 'A') {
       setLayerAVisible(false); // Crossfade to Layer B
       setActiveLayer('B');
     } else {
@@ -138,6 +164,9 @@ export function DraftingScreen() {
       setActiveLayer('A');
     }
     setCurrentAnimationIndex(targetIndex);
+
+    // After fade completes, fully stop and hide the previous layer to avoid ghosting
+    setTimeout(() => stopAndHideLayer(prev), CROSSFADE_MS + 50);
 
     // Release the lock shortly after state updates
     setTimeout(() => {
@@ -152,20 +181,30 @@ export function DraftingScreen() {
 
     console.log(`🎬 Transitioning from animation ${currentAnimationIndex} to ${targetIndex}, active layer: ${activeLayerRef.current}`);
 
-    if (activeLayerRef.current === 'A') {
+    const prev = activeLayerRef.current;
+
+    if (prev === 'A') {
       setLayerBAnimationIndex(targetIndex);
       setTimeout(() => {
+        // Prepare incoming layer before crossfade
+        showAndPlayLayer('B');
         setLayerAVisible(false);
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
+        // Cleanup previous after fade
+        setTimeout(() => stopAndHideLayer('A'), CROSSFADE_MS + 50);
         transitionInProgress.current = false;
       }, 300);
     } else {
       setLayerAAnimationIndex(targetIndex);
       setTimeout(() => {
+        // Prepare incoming layer before crossfade
+        showAndPlayLayer('A');
         setLayerAVisible(true);
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
+        // Cleanup previous after fade
+        setTimeout(() => stopAndHideLayer('B'), CROSSFADE_MS + 50);
         transitionInProgress.current = false;
       }, 300);
     }
@@ -482,7 +521,9 @@ export function DraftingScreen() {
                       className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 1 : 0,
-                        willChange: 'opacity'
+                        willChange: 'opacity',
+                        zIndex: layerAVisible ? 2 : 1,
+                        contain: 'paint'
                       }}
                     >
                       <lottie-player
@@ -508,7 +549,9 @@ export function DraftingScreen() {
                       className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 0 : 1,
-                        willChange: 'opacity'
+                        willChange: 'opacity',
+                        zIndex: layerAVisible ? 1 : 2,
+                        contain: 'paint'
                       }}
                     >
                       <lottie-player
@@ -538,6 +581,7 @@ export function DraftingScreen() {
                           autoplay={false}
                           loop={false}
                           background="transparent"
+                          style={{ visibility: 'hidden' }}
                         />
                       ))}
                     </div>
