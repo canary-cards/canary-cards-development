@@ -50,7 +50,7 @@ export function DraftingScreen() {
   const { toast } = useToast();
   const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
   const [layerAAnimationIndex, setLayerAAnimationIndex] = useState(0);
-  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(1); // Pre-load next animation
+  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(0); // Start same as A, will change on first transition
   const [layerAVisible, setLayerAVisible] = useState(true);
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
