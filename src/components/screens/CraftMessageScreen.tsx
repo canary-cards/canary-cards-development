@@ -387,7 +387,7 @@ export function CraftMessageScreen() {
                       });
                     }} className="input-warm min-h-[70px] max-h-[120px] resize-none w-full overflow-y-auto" data-attr="input-craft-impact" />
 
-                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base font-medium leading-relaxed text-muted-foreground/70" onMouseDown={e => {
+                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base text-muted-foreground" onMouseDown={e => {
                       const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
                       ta?.focus();
                       e.preventDefault();
