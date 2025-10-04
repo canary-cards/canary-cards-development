@@ -159,7 +159,7 @@ export function DraftingScreen() {
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 300);
+      }, 200);
     } else {
       setLayerAAnimationIndex(targetIndex);
       setTimeout(() => {
@@ -167,7 +167,7 @@ export function DraftingScreen() {
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 300);
+      }, 200);
     }
   };
 
@@ -479,9 +479,11 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 1 : 0,
+                        visibility: layerAVisible ? 'visible' : 'hidden',
+                        pointerEvents: layerAVisible ? 'auto' : 'none',
                         willChange: 'opacity'
                       }}
                     >
@@ -505,9 +507,11 @@ export function DraftingScreen() {
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 0 : 1,
+                        visibility: layerAVisible ? 'hidden' : 'visible',
+                        pointerEvents: layerAVisible ? 'none' : 'auto',
                         willChange: 'opacity'
                       }}
                     >
