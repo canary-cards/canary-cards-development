@@ -418,9 +418,9 @@ export function DraftingScreen() {
           return;
         }
 
-        // Ensure minimum 20 second display time for better UX
+        // Ensure minimum 24 second display time for better UX
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, 20000 - elapsedTime);
+        const remainingTime = Math.max(0, 24000 - elapsedTime);
 
         setTimeout(() => {
           // Log the data for debugging
