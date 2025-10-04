@@ -49,6 +49,10 @@ export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
+  const [nextAnimationIndex, setNextAnimationIndex] = useState(1);
+  const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
+  const [layerAOpacity, setLayerAOpacity] = useState(1);
+  const [layerBOpacity, setLayerBOpacity] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -58,6 +62,7 @@ export function DraftingScreen() {
   const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
+  const transitionInProgress = useRef(false);
 
   // Update message based on current animation
   useEffect(() => {
@@ -91,19 +96,50 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex]);
 
+  // Smooth crossfade transition between animations
+  const transitionToAnimation = (targetIndex: number) => {
+    if (transitionInProgress.current) return;
+    transitionInProgress.current = true;
+
+    // Prepare next layer with target animation
+    if (activeLayer === 'A') {
+      setNextAnimationIndex(targetIndex);
+      // Crossfade: fade out A, fade in B
+      setLayerAOpacity(0);
+      setLayerBOpacity(1);
+      
+      setTimeout(() => {
+        setCurrentAnimationIndex(targetIndex);
+        setActiveLayer('B');
+        transitionInProgress.current = false;
+      }, 400);
+    } else {
+      setNextAnimationIndex(targetIndex);
+      // Crossfade: fade out B, fade in A
+      setLayerBOpacity(0);
+      setLayerAOpacity(1);
+      
+      setTimeout(() => {
+        setCurrentAnimationIndex(targetIndex);
+        setActiveLayer('A');
+        transitionInProgress.current = false;
+      }, 400);
+    }
+  };
+
   // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
   useEffect(() => {
     // Show first animation for 6 seconds
     const firstTimeout = setTimeout(() => {
-      setCurrentAnimationIndex(1); // Transition animation
+      transitionToAnimation(1); // Transition animation
       
       // Show transition for 2 seconds
       const transitionTimeout = setTimeout(() => {
-        setCurrentAnimationIndex(2); // Second animation
+        transitionToAnimation(2); // Second animation
         
         // Show second animation for 8 seconds, then switch to third
         const secondTimeout = setTimeout(() => {
-          setCurrentAnimationIndex(3); // Final animation
+          transitionToAnimation(3); // Final animation
         }, 8000);
         
         return () => clearTimeout(secondTimeout);
@@ -334,22 +370,61 @@ export function DraftingScreen() {
                     <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                   </div>
                 }>
-                  <div className="w-[95%] h-[95%] flex items-center justify-center">
-                    <lottie-player
-                      src={animationUrls[currentAnimationIndex]}
-                      autoplay
-                      loop
-                      speed="1"
-                      background="transparent"
-                      style={{ 
-                        width: '100%', 
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      key={currentAnimationIndex}
-                    />
+                  <div className="w-[95%] h-[95%] relative flex items-center justify-center">
+                    {/* Layer A */}
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400"
+                      style={{ opacity: layerAOpacity }}
+                    >
+                      <lottie-player
+                        src={animationUrls[activeLayer === 'A' ? currentAnimationIndex : nextAnimationIndex]}
+                        autoplay
+                        loop
+                        speed="1"
+                        background="transparent"
+                        style={{ 
+                          width: '100%', 
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Layer B */}
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400"
+                      style={{ opacity: layerBOpacity }}
+                    >
+                      <lottie-player
+                        src={animationUrls[activeLayer === 'B' ? currentAnimationIndex : nextAnimationIndex]}
+                        autoplay
+                        loop
+                        speed="1"
+                        background="transparent"
+                        style={{ 
+                          width: '100%', 
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Preload all animations (hidden) */}
+                    <div className="absolute opacity-0 pointer-events-none" style={{ width: 0, height: 0 }}>
+                      {animationUrls.map((url, i) => (
+                        <lottie-player
+                          key={i}
+                          src={url}
+                          autoplay={false}
+                          loop={false}
+                          background="transparent"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </Suspense>
               ) : (
