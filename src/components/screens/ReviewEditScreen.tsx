@@ -197,7 +197,7 @@ ${userInfo?.fullName}`;
                   </span>
                 </div>
                 <div className="relative">
-                  <Textarea ref={textareaRef} value={editedMessage} onChange={e => setEditedMessage(e.target.value)} className="input-warm h-[300px] md:h-[150px] resize-none pr-12 overflow-y-auto" maxLength={maxChars} placeholder={placeholderText} />
+                  <Textarea ref={textareaRef} value={editedMessage} onChange={e => setEditedMessage(e.target.value)} className="input-warm h-[300px] md:h-[150px] resize-none pr-12 overflow-y-auto" maxLength={maxChars} placeholder={placeholderText} data-attr="input-review-edit-message" />
                   <button onClick={handleEditClick} className="absolute bottom-3 right-3 bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation" style={{
                   width: '40px',
                   height: '40px',
@@ -216,11 +216,11 @@ ${userInfo?.fullName}`;
               <div className="space-y-3 pt-4">
                 <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars} className={`w-full h-12 text-base ${isUpdating ? 'bg-[hsl(var(--primary-pressed))] hover-safe:bg-[hsl(var(--primary-pressed))] active:bg-[hsl(var(--primary-pressed))]' : ''}`} style={isUpdating ? {
                 pointerEvents: 'none'
-              } : undefined}>
+              } : undefined} data-attr="submit-review-edit-continue">
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
                 </Button>
                 
-                <Button type="button" variant="secondary" onClick={goBack} className="w-full h-12 text-base">
+                <Button type="button" variant="secondary" onClick={goBack} className="w-full h-12 text-base" data-attr="click-review-edit-back">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Back</span>
                 </Button>

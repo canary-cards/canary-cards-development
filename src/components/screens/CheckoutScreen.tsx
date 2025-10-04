@@ -549,7 +549,7 @@ export function CheckoutScreen() {
               <div className="space-y-2">
                 <span className="display-title text-lg">Your Email</span>
                 <div className="relative">
-                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} onBlur={handleEmailBlur} className={`bg-white pr-10 ${emailError ? 'border-destructive focus-visible:border-destructive' : ''}`} />
+                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} onBlur={handleEmailBlur} className={`bg-white pr-10 ${emailError ? 'border-destructive focus-visible:border-destructive' : ''}`} data-attr="input-checkout-email" />
                   {emailValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
                 </div>
                 {emailError && <div className="text-sm text-destructive">
@@ -560,7 +560,7 @@ export function CheckoutScreen() {
 
               {/* Navigation */}
               <div className="flex gap-2 sm:gap-4 pt-4 border-t">
-                <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4">
+                <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4" data-attr="click-checkout-back">
                   <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="text-sm sm:text-base">Back</span>
                 </Button>
@@ -572,7 +572,7 @@ export function CheckoutScreen() {
         {/* Sticky CTA for Both Mobile and Desktop */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40 space-y-2 pb-[env(safe-area-inset-bottom)]">
           <div className="max-w-2xl mx-auto">
-            <Button onClick={handlePayment} disabled={!email || !emailValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium">
+            <Button onClick={handlePayment} disabled={!email || !emailValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium" data-attr="submit-checkout-payment">
               {isProcessing ? <>
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
                   <span>Loading...</span>

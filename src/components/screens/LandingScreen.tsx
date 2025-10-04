@@ -154,7 +154,7 @@ export function LandingScreen() {
                   Enter your zip code to get started
                 </Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                    <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="12345" value={zipCode} onChange={e => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
                     setZipCode(value);
@@ -163,7 +163,7 @@ export function LandingScreen() {
                     textAlign: 'center',
                     paddingLeft: '2.5rem',
                     paddingRight: '2.5rem'
-                  }} maxLength={5} />
+                  }} maxLength={5} data-attr="input-zip-code" />
                 </div>
                 {searchError && <p className="text-sm text-destructive">
                     {searchError}
@@ -171,7 +171,7 @@ export function LandingScreen() {
                   </p>}
               </div>
               
-              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode}>
+              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode} data-attr="submit-zip-code">
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     Finding Your Rep...
@@ -204,6 +204,7 @@ export function LandingScreen() {
                   setOpenResearchMenu(true);
                 }}
                 className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                data-attr="click-landing-research"
               >
                 Learn More
                 <ChevronRight className="w-3 h-3" />
@@ -266,6 +267,7 @@ export function LandingScreen() {
               ref={continueButtonRef}
               onClick={handleContinue} 
               className="w-full h-12 text-base font-medium"
+              data-attr="submit-landing-continue"
             >
               Continue
               <ArrowRight className="w-4 h-4 ml-2" />

@@ -36,6 +36,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
            onClick={handleLogoClick}
            className="flex items-center space-x-3 hover-safe:opacity-80 transition-opacity"
            aria-label="Go to home"
+           data-attr="click-header-logo"
          >
           <Logo className="h-10" />
           <div className="hidden">

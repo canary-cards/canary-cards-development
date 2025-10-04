@@ -28,6 +28,7 @@ export function RepresentativeCard({
           : 'border-border hover:shadow-md hover:border-primary/50'
       } ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onClick}
+      data-attr="click-select-representative"
     >
       <CardContent className={`${isCompact ? 'p-3' : 'p-6'}`}>
         <div className="space-y-3">
