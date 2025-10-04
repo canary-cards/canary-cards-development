@@ -33,8 +33,9 @@ if (typeof window !== 'undefined' && !customElements.get('lottie-player')) {
 // CDN-hosted animations for better load times
 const animationUrls = [
   "https://cdn.lottielab.com/l/DpA7DrGV7NdExu.json",
-  "https://cdn.lottielab.com/l/2hxdso7kaDCFVy.json", // Transition animation
+  "https://cdn.lottielab.com/l/2hxdso7kaDCFVy.json", // Transition 1
   "https://cdn.lottielab.com/l/2FdfJEUKxUWhCF.json",
+  "https://cdn.lottielab.com/l/5F5FU8Pgc7urZh.json", // Transition 2
   "https://cdn.lottielab.com/l/3Q5fRmtNUXVCDz.json"
 ];
 
@@ -71,11 +72,12 @@ export function DraftingScreen() {
 
   // Update message based on current animation
   useEffect(() => {
-    // Map animation indices to message indices (skip message for transition animation at index 1)
+    // Map animation indices to message indices (skip messages for transition animations at index 1 and 3)
     const messageIndex = currentAnimationIndex === 0 ? 0 
-                       : currentAnimationIndex === 1 ? 0 // Keep first message during transition
+                       : currentAnimationIndex === 1 ? 0 // Keep first message during transition 1
                        : currentAnimationIndex === 2 ? 1 
-                       : currentAnimationIndex === 3 && animation3LoopCount >= 3 ? 3 
+                       : currentAnimationIndex === 3 ? 2 // Keep third message during transition 2
+                       : currentAnimationIndex === 4 && animation3LoopCount >= 3 ? 3 
                        : 2;
     
     const newMessage = draftingMessages[messageIndex];
@@ -90,9 +92,9 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex, animation3LoopCount, currentMessage]);
 
-  // For animation 4 (final), count loops (but don't trigger animation on every loop)
+  // For animation 5 (final), count loops (but don't trigger animation on every loop)
   useEffect(() => {
-    if (currentAnimationIndex === 3) {
+    if (currentAnimationIndex === 4) {
       const interval = setInterval(() => {
         setAnimation3LoopCount(prev => prev + 1);
       }, 3000); // Animation duration
@@ -169,26 +171,60 @@ export function DraftingScreen() {
     }
   };
 
-  // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
+  // Sequential animation timing: first (6s) -> transition 1 (2s) -> second (8s) -> transition 2 (2s) -> third (stays until complete)
   useEffect(() => {
     const timers: number[] = [];
 
-    // After 6s: go to Transition (index 1)
+    // After 6s: go to Transition 1 (index 1)
     timers.push(window.setTimeout(() => {
       transitionToAnimation(1);
 
-      // 1.5s into transition: preload Animation 2 on the hidden layer
+      // 1.5s into transition 1: preload Animation 2 on the hidden layer
       timers.push(window.setTimeout(() => {
         preloadHiddenLayer(2);
       }, 1500));
 
-      // At 2s into transition (8s total): crossfade to the preloaded Animation 2
+      // At 2s into transition 1 (8s total): crossfade to the preloaded Animation 2
       timers.push(window.setTimeout(() => {
         const doCrossfade = () => {
           crossfadeToPreloaded(2);
-          // After 8s on Animation 2: move to Animation 3
+          // After 8s on Animation 2: go to Transition 2 (index 3)
           timers.push(window.setTimeout(() => {
             transitionToAnimation(3);
+
+            // 1.5s into transition 2: preload Animation 3 on the hidden layer
+            timers.push(window.setTimeout(() => {
+              preloadHiddenLayer(4);
+            }, 1500));
+
+            // At 2s into transition 2: crossfade to the preloaded Animation 3
+            timers.push(window.setTimeout(() => {
+              const doCrossfade2 = () => {
+                crossfadeToPreloaded(4);
+              };
+
+              if (preloadedReadyRef.current) {
+                doCrossfade2();
+              } else {
+                const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
+                let done = false;
+                const onReady = () => {
+                  if (done) return;
+                  done = true;
+                  hiddenEl?.removeEventListener('ready', onReady as any);
+                  hiddenEl?.removeEventListener('load', onReady as any);
+                  doCrossfade2();
+                };
+                hiddenEl?.addEventListener('ready', onReady as any, { once: true } as any);
+                hiddenEl?.addEventListener('load', onReady as any, { once: true } as any);
+                // Fallback timeout to avoid waiting forever
+                timers.push(window.setTimeout(() => {
+                  if (done) return;
+                  done = true;
+                  doCrossfade2();
+                }, 1200));
+              }
+            }, 2000));
           }, 8000));
         };
 
