@@ -108,25 +108,25 @@ export function DraftingScreen() {
       // Load next animation into Layer B (hidden), then crossfade to it
       setLayerBAnimationIndex(targetIndex);
       
-      // Small delay to ensure Layer B loads the new animation
+      // Delay to ensure Layer B fully loads the new animation before crossfading
       setTimeout(() => {
         setLayerAVisible(false); // Crossfade to Layer B
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 50);
+      }, 150);
     } else {
       // Layer B is currently visible
       // Load next animation into Layer A (hidden), then crossfade to it
       setLayerAAnimationIndex(targetIndex);
       
-      // Small delay to ensure Layer A loads the new animation
+      // Delay to ensure Layer A fully loads the new animation before crossfading
       setTimeout(() => {
         setLayerAVisible(true); // Crossfade to Layer A
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 50);
+      }, 150);
     }
   };
 
@@ -376,8 +376,11 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
-                      style={{ opacity: layerAVisible ? 1 : 0 }}
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400 ease-in-out"
+                      style={{ 
+                        opacity: layerAVisible ? 1 : 0,
+                        willChange: 'opacity'
+                      }}
                     >
                       <lottie-player
                         src={animationUrls[layerAAnimationIndex]}
@@ -392,14 +395,16 @@ export function DraftingScreen() {
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}
-                        key={`layer-a-${layerAAnimationIndex}`}
                       />
                     </div>
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
-                      style={{ opacity: layerAVisible ? 0 : 1 }}
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400 ease-in-out"
+                      style={{ 
+                        opacity: layerAVisible ? 0 : 1,
+                        willChange: 'opacity'
+                      }}
                     >
                       <lottie-player
                         src={animationUrls[layerBAnimationIndex]}
@@ -414,7 +419,6 @@ export function DraftingScreen() {
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}
-                        key={`layer-b-${layerBAnimationIndex}`}
                       />
                     </div>
                     
