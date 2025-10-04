@@ -75,6 +75,10 @@ export function DraftingScreen() {
   const stopAndHideLayer = (layer: 'A' | 'B') => {
     const el = layer === 'A' ? layerARef.current : layerBRef.current;
     try {
+      // Disable looping first to prevent transition animations from restarting
+      if (el && 'loop' in el) {
+        (el as any).loop = false;
+      }
       (el as any)?.stop?.();
       if (el) (el as HTMLElement).style.visibility = 'hidden';
     } catch {}
