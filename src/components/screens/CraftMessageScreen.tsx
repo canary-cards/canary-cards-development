@@ -339,7 +339,7 @@ export function CraftMessageScreen() {
                         sources: []
                       }
                     });
-                  }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 placeholder:text-base placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed overflow-y-auto" data-attr="input-craft-concerns" />
+                  }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 overflow-y-auto" data-attr="input-craft-concerns" />
                     
                     <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'} aria-pressed={isRecording && recordingField === 'concerns'} onClick={() => {
                     if (isRecording && recordingField === 'concerns') {
