@@ -49,6 +49,8 @@ export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
   const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
+  const activeLayerRef = useRef<'A' | 'B'>('A');
+  useEffect(() => { activeLayerRef.current = activeLayer; }, [activeLayer]);
   const [layerAAnimationIndex, setLayerAAnimationIndex] = useState(0);
   const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(0); // Start same as A, will change on first transition
   const [layerAVisible, setLayerAVisible] = useState(true);
@@ -63,6 +65,9 @@ export function DraftingScreen() {
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
   const transitionInProgress = useRef(false);
+  const layerARef = useRef<HTMLElement | null>(null);
+  const layerBRef = useRef<HTMLElement | null>(null);
+  const preloadedReadyRef = useRef(false);
 
   // Update message based on current animation
   useEffect(() => {
@@ -98,11 +103,24 @@ export function DraftingScreen() {
 
   // Preload the next animation into the hidden layer without crossfading
   const preloadHiddenLayer = (targetIndex: number) => {
-    if (activeLayer === 'A') {
+    preloadedReadyRef.current = false;
+    if (activeLayerRef.current === 'A') {
       setLayerBAnimationIndex(targetIndex);
     } else {
       setLayerAAnimationIndex(targetIndex);
     }
+    // Attach one-time 'ready'/'load' listeners to detect when hidden layer is ready
+    setTimeout(() => {
+      const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
+      if (!hiddenEl) return;
+      const onReady = () => {
+        preloadedReadyRef.current = true;
+        hiddenEl.removeEventListener('ready', onReady as any);
+        hiddenEl.removeEventListener('load', onReady as any);
+      };
+      hiddenEl.addEventListener('ready', onReady as any, { once: true } as any);
+      hiddenEl.addEventListener('load', onReady as any, { once: true } as any);
+    }, 0);
   };
 
   // Instantly start crossfading to whatever is already preloaded on the hidden layer
@@ -110,7 +128,7 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    if (activeLayer === 'A') {
+    if (activeLayerRef.current === 'A') {
       setLayerAVisible(false); // Crossfade to Layer B
       setActiveLayer('B');
     } else {
@@ -125,33 +143,25 @@ export function DraftingScreen() {
     }, 10);
   };
 
-  // Smooth crossfade transition between animations
+  // Smooth crossfade transition between animations (with small preload delay)
   const transitionToAnimation = (targetIndex: number) => {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    console.log(`🎬 Transitioning from animation ${currentAnimationIndex} to ${targetIndex}, active layer: ${activeLayer}`);
+    console.log(`🎬 Transitioning from animation ${currentAnimationIndex} to ${targetIndex}, active layer: ${activeLayerRef.current}`);
 
-    if (activeLayer === 'A') {
-      // Layer A is currently visible
-      // Load next animation into Layer B (hidden), then crossfade to it
+    if (activeLayerRef.current === 'A') {
       setLayerBAnimationIndex(targetIndex);
-      
-      // Delay to ensure Layer B fully loads the new animation before crossfading
       setTimeout(() => {
-        setLayerAVisible(false); // Crossfade to Layer B
+        setLayerAVisible(false);
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
       }, 300);
     } else {
-      // Layer B is currently visible
-      // Load next animation into Layer A (hidden), then crossfade to it
       setLayerAAnimationIndex(targetIndex);
-      
-      // Delay to ensure Layer A fully loads the new animation before crossfading
       setTimeout(() => {
-        setLayerAVisible(true); // Crossfade to Layer A
+        setLayerAVisible(true);
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
@@ -174,12 +184,35 @@ export function DraftingScreen() {
 
       // At 2s into transition (8s total): crossfade to the preloaded Animation 2
       timers.push(window.setTimeout(() => {
-        crossfadeToPreloaded(2);
+        const doCrossfade = () => {
+          crossfadeToPreloaded(2);
+          // After 8s on Animation 2: move to Animation 3
+          timers.push(window.setTimeout(() => {
+            transitionToAnimation(3);
+          }, 8000));
+        };
 
-        // After 8s on Animation 2: move to Animation 3
-        timers.push(window.setTimeout(() => {
-          transitionToAnimation(3);
-        }, 8000));
+        if (preloadedReadyRef.current) {
+          doCrossfade();
+        } else {
+          const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
+          let done = false;
+          const onReady = () => {
+            if (done) return;
+            done = true;
+            hiddenEl?.removeEventListener('ready', onReady as any);
+            hiddenEl?.removeEventListener('load', onReady as any);
+            doCrossfade();
+          };
+          hiddenEl?.addEventListener('ready', onReady as any, { once: true } as any);
+          hiddenEl?.addEventListener('load', onReady as any, { once: true } as any);
+          // Fallback timeout to avoid waiting forever
+          timers.push(window.setTimeout(() => {
+            if (done) return;
+            done = true;
+            doCrossfade();
+          }, 1200));
+        }
       }, 2000));
     }, 6000));
 
@@ -418,6 +451,7 @@ export function DraftingScreen() {
                     >
                       <lottie-player
                         key={`layerA-${layerAAnimationIndex}`}
+                        ref={(el) => { layerARef.current = el as unknown as HTMLElement; }}
                         src={animationUrls[layerAAnimationIndex]}
                         autoplay
                         loop
@@ -443,6 +477,7 @@ export function DraftingScreen() {
                     >
                       <lottie-player
                         key={`layerB-${layerBAnimationIndex}`}
+                        ref={(el) => { layerBRef.current = el as unknown as HTMLElement; }}
                         src={animationUrls[layerBAnimationIndex]}
                         autoplay
                         loop
