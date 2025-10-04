@@ -169,6 +169,9 @@ export function DraftingScreen() {
     }
     setCurrentAnimationIndex(targetIndex);
 
+    // Halfway through the crossfade, hide the outgoing layer to prevent ghosting
+    setTimeout(() => stopAndHideLayer(prev), Math.floor(CROSSFADE_MS / 2));
+
     // After fade completes, fully stop and hide the previous layer to avoid ghosting
     setTimeout(() => stopAndHideLayer(prev), CROSSFADE_MS + 50);
 
@@ -195,6 +198,8 @@ export function DraftingScreen() {
         setLayerAVisible(false);
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
+        // Midway through crossfade: hide outgoing layer A to prevent ghosting
+        setTimeout(() => stopAndHideLayer('A'), Math.floor(CROSSFADE_MS / 2));
         // Cleanup previous after fade
         setTimeout(() => stopAndHideLayer('A'), CROSSFADE_MS + 50);
         transitionInProgress.current = false;
@@ -207,6 +212,8 @@ export function DraftingScreen() {
         setLayerAVisible(true);
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
+        // Midway through crossfade: hide outgoing layer B to prevent ghosting
+        setTimeout(() => stopAndHideLayer('B'), Math.floor(CROSSFADE_MS / 2));
         // Cleanup previous after fade
         setTimeout(() => stopAndHideLayer('B'), CROSSFADE_MS + 50);
         transitionInProgress.current = false;
