@@ -227,7 +227,13 @@ export function DraftingScreen() {
 
     // After 6s: go to Transition 1 (index 1)
     timers.push(window.setTimeout(() => {
+      const prevLayer = activeLayerRef.current;
       transitionToAnimation(1);
+
+      // Halfway through transition 1 (1s): hide animation 0 to prevent ghosting
+      timers.push(window.setTimeout(() => {
+        stopAndHideLayer(prevLayer);
+      }, 1000));
 
       // 1.5s into transition 1: preload Animation 2 on the hidden layer
       timers.push(window.setTimeout(() => {
