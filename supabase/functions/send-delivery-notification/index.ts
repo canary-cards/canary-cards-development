@@ -116,7 +116,7 @@ const handler = async (req) => {
   <meta name="viewport" content="width=device-width">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
-  <title>Your postcard is on its way</title>
+  <title>Order mailed</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -282,7 +282,7 @@ const handler = async (req) => {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-bottom: 24px;">
           <tr>
             <td align="center">
-              <h1 class="h1">Your postcard is on its way</h1>
+              <h1 class="h1">Order mailed</h1>
             </td>
           </tr>
         </table>
@@ -518,7 +518,7 @@ const handler = async (req) => {
     const emailResponse = await resend.emails.send({
       from: "Canary Cards <hello@canary.cards>",
       to: [userEmail],
-      subject: `Your postcard to ${repTitleAndLastName} is on its way`,
+      subject: `Order mailed - your postcard to ${repTitleAndLastName} is on its way`,
       html: emailHtml,
       text: `Your postcard to ${repTitleAndLastName} has been mailed and should arrive around ${formattedExpectedDate}.`
     });
