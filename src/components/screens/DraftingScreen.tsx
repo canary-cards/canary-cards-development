@@ -383,9 +383,10 @@ export function DraftingScreen() {
                       }}
                     >
                       <lottie-player
+                        key={`layerA-${layerAAnimationIndex}`}
                         src={animationUrls[layerAAnimationIndex]}
                         autoplay
-                        loop
+                        loop={layerAAnimationIndex !== 1}
                         speed="1"
                         background="transparent"
                         style={{ 
@@ -407,9 +408,10 @@ export function DraftingScreen() {
                       }}
                     >
                       <lottie-player
+                        key={`layerB-${layerBAnimationIndex}`}
                         src={animationUrls[layerBAnimationIndex]}
                         autoplay
-                        loop
+                        loop={layerBAnimationIndex !== 1}
                         speed="1"
                         background="transparent"
                         style={{ 
