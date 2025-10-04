@@ -96,6 +96,35 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex]);
 
+  // Preload the next animation into the hidden layer without crossfading
+  const preloadHiddenLayer = (targetIndex: number) => {
+    if (activeLayer === 'A') {
+      setLayerBAnimationIndex(targetIndex);
+    } else {
+      setLayerAAnimationIndex(targetIndex);
+    }
+  };
+
+  // Instantly start crossfading to whatever is already preloaded on the hidden layer
+  const crossfadeToPreloaded = (targetIndex: number) => {
+    if (transitionInProgress.current) return;
+    transitionInProgress.current = true;
+
+    if (activeLayer === 'A') {
+      setLayerAVisible(false); // Crossfade to Layer B
+      setActiveLayer('B');
+    } else {
+      setLayerAVisible(true); // Crossfade to Layer A
+      setActiveLayer('A');
+    }
+    setCurrentAnimationIndex(targetIndex);
+
+    // Release the lock shortly after state updates
+    setTimeout(() => {
+      transitionInProgress.current = false;
+    }, 10);
+  };
+
   // Smooth crossfade transition between animations
   const transitionToAnimation = (targetIndex: number) => {
     if (transitionInProgress.current) return;
@@ -132,26 +161,31 @@ export function DraftingScreen() {
 
   // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
   useEffect(() => {
-    // Show first animation for 6 seconds
-    const firstTimeout = setTimeout(() => {
-      transitionToAnimation(1); // Transition animation
-      
-      // Show transition for 2 seconds
-      const transitionTimeout = setTimeout(() => {
-        transitionToAnimation(2); // Second animation
-        
-        // Show second animation for 8 seconds, then switch to third
-        const secondTimeout = setTimeout(() => {
-          transitionToAnimation(3); // Final animation
-        }, 8000);
-        
-        return () => clearTimeout(secondTimeout);
-      }, 2000);
-      
-      return () => clearTimeout(transitionTimeout);
-    }, 6000);
+    const timers: number[] = [];
 
-    return () => clearTimeout(firstTimeout);
+    // After 6s: go to Transition (index 1)
+    timers.push(window.setTimeout(() => {
+      transitionToAnimation(1);
+
+      // 1.5s into transition: preload Animation 2 on the hidden layer
+      timers.push(window.setTimeout(() => {
+        preloadHiddenLayer(2);
+      }, 1500));
+
+      // At 2s into transition (8s total): crossfade to the preloaded Animation 2
+      timers.push(window.setTimeout(() => {
+        crossfadeToPreloaded(2);
+
+        // After 8s on Animation 2: move to Animation 3
+        timers.push(window.setTimeout(() => {
+          transitionToAnimation(3);
+        }, 8000));
+      }, 2000));
+    }, 6000));
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   // Handle the actual drafting process
@@ -376,7 +410,7 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 1 : 0,
                         willChange: 'opacity'
@@ -401,7 +435,7 @@ export function DraftingScreen() {
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 0 : 1,
                         willChange: 'opacity'
