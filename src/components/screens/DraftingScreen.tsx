@@ -48,10 +48,10 @@ const draftingMessages = [
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
+  const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
   const [layerAAnimationIndex, setLayerAAnimationIndex] = useState(0);
-  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(0);
-  const [layerAOpacity, setLayerAOpacity] = useState(1);
-  const [layerBOpacity, setLayerBOpacity] = useState(0);
+  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(1); // Pre-load next animation
+  const [layerAVisible, setLayerAVisible] = useState(true);
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
@@ -101,28 +101,33 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    // Determine which layer is currently visible and which is hidden
-    if (layerAOpacity === 1) {
-      // Layer A is visible, prepare Layer B with next animation
+    console.log(`🎬 Transitioning from animation ${currentAnimationIndex} to ${targetIndex}, active layer: ${activeLayer}`);
+
+    if (activeLayer === 'A') {
+      // Layer A is currently visible
+      // Load next animation into Layer B (hidden), then crossfade to it
       setLayerBAnimationIndex(targetIndex);
       
-      // Crossfade: fade out A, fade in B
-      setLayerAOpacity(0);
-      setLayerBOpacity(1);
+      // Small delay to ensure Layer B loads the new animation
+      setTimeout(() => {
+        setLayerAVisible(false); // Crossfade to Layer B
+        setActiveLayer('B');
+        setCurrentAnimationIndex(targetIndex);
+        transitionInProgress.current = false;
+      }, 50);
     } else {
-      // Layer B is visible, prepare Layer A with next animation
+      // Layer B is currently visible
+      // Load next animation into Layer A (hidden), then crossfade to it
       setLayerAAnimationIndex(targetIndex);
       
-      // Crossfade: fade out B, fade in A
-      setLayerBOpacity(0);
-      setLayerAOpacity(1);
+      // Small delay to ensure Layer A loads the new animation
+      setTimeout(() => {
+        setLayerAVisible(true); // Crossfade to Layer A
+        setActiveLayer('A');
+        setCurrentAnimationIndex(targetIndex);
+        transitionInProgress.current = false;
+      }, 50);
     }
-    
-    setCurrentAnimationIndex(targetIndex);
-    
-    setTimeout(() => {
-      transitionInProgress.current = false;
-    }, 400);
   };
 
   // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
@@ -371,8 +376,8 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400"
-                      style={{ opacity: layerAOpacity }}
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
+                      style={{ opacity: layerAVisible ? 1 : 0 }}
                     >
                       <lottie-player
                         src={animationUrls[layerAAnimationIndex]}
@@ -387,13 +392,14 @@ export function DraftingScreen() {
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}
+                        key={`layer-a-${layerAAnimationIndex}`}
                       />
                     </div>
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-400"
-                      style={{ opacity: layerBOpacity }}
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
+                      style={{ opacity: layerAVisible ? 0 : 1 }}
                     >
                       <lottie-player
                         src={animationUrls[layerBAnimationIndex]}
@@ -408,6 +414,7 @@ export function DraftingScreen() {
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}
+                        key={`layer-b-${layerBAnimationIndex}`}
                       />
                     </div>
                     
@@ -415,7 +422,7 @@ export function DraftingScreen() {
                     <div className="absolute opacity-0 pointer-events-none" style={{ width: 0, height: 0 }}>
                       {animationUrls.map((url, i) => (
                         <lottie-player
-                          key={i}
+                          key={`preload-${i}`}
                           src={url}
                           autoplay={false}
                           loop={false}
