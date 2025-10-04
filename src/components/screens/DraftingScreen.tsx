@@ -114,7 +114,7 @@ export function DraftingScreen() {
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 150);
+      }, 300);
     } else {
       // Layer B is currently visible
       // Load next animation into Layer A (hidden), then crossfade to it
@@ -126,7 +126,7 @@ export function DraftingScreen() {
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 150);
+      }, 300);
     }
   };
 
