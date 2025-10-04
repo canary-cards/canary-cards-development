@@ -244,7 +244,7 @@ export function ReturnAddressScreen() {
                     e.target.setSelectionRange(cursorPosition, cursorPosition);
                   }
                 }, 0);
-              }} placeholder="Enter your full name" className="input-warm h-12 text-base" autoCapitalize="words" autoComplete="name" required />
+              }} placeholder="Enter your full name" className="input-warm h-12 text-base" autoCapitalize="words" autoComplete="name" required data-attr="input-return-full-name" />
               </div>
 
               <div className="space-y-2 relative">
@@ -255,7 +255,7 @@ export function ReturnAddressScreen() {
                   if (addressSuggestions.length > 0) {
                     setShowSuggestions(true);
                   }
-                }} className="input-warm pl-10 min-h-[60px] resize-none overflow-hidden text-base" autoComplete="off" required rows={1} />
+                }} className="input-warm pl-10 min-h-[60px] resize-none overflow-hidden text-base" autoComplete="off" required rows={1} data-attr="input-return-street-address" />
                 </div>
                 
                 {showSuggestions && <div className="absolute top-full left-0 right-0 z-50 mt-1">
@@ -317,12 +317,12 @@ export function ReturnAddressScreen() {
                 </div>}
 
               <div className="flex gap-4 pt-4">
-                <Button type="button" variant="secondary" onClick={goBack} className="h-12">
+                <Button type="button" variant="secondary" onClick={goBack} className="h-12" data-attr="click-return-address-back">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>
                 
-                <Button type="submit" className="flex-1 h-12" disabled={!isFormComplete}>
+                <Button type="submit" className="flex-1 h-12" disabled={!isFormComplete} data-attr="submit-return-address-continue">
                   Continue
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

@@ -483,10 +483,11 @@ export function HamburgerMenu({
             {currentView === 'main' ? (
               /* Main Menu */
               <nav className="px-4 md:px-5 lg:px-6 py-2 animate-fade-in">
-                <div className="space-y-2">
+                 <div className="space-y-2">
                    <button
                      onClick={() => handleNavigation('about')}
                      className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                     data-attr="click-menu-about"
                    >
                     <div className="text-primary">About Canary</div>
                   </button>
@@ -496,6 +497,7 @@ export function HamburgerMenu({
                    <button
                      onClick={() => handleNavigation('faq')}
                      className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                     data-attr="click-menu-faq"
                    >
                     <div className="text-primary">FAQ</div>
                   </button>
@@ -505,6 +507,7 @@ export function HamburgerMenu({
                   <button
                     onClick={() => handleNavigation('research')}
                     className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                    data-attr="click-menu-research"
                   >
                     <div className="text-primary">The Research</div>
                   </button>
@@ -514,6 +517,7 @@ export function HamburgerMenu({
                    <button
                      onClick={() => handleNavigation('contact')}
                      className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                     data-attr="click-menu-contact"
                    >
                     <div className="text-primary">Contact Us</div>
                   </button>
@@ -523,6 +527,7 @@ export function HamburgerMenu({
                     <button
                       onClick={() => handleNavigation('privacy-terms')}
                       className="w-full text-left py-3 body-text hover-safe:bg-primary/10 active:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary rounded-[var(--radius)] motion-safe:transition-colors motion-safe:duration-200 min-h-[44px] flex items-center px-2 touch-manipulation hover-primary-tint"
+                      data-attr="click-menu-privacy-terms"
                     >
                      <div className="text-primary">Privacy & Terms</div>
                    </button>

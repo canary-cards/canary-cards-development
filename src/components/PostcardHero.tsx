@@ -288,12 +288,12 @@ export function PostcardHero({
       }}>
           {/* Bounce wrapper */}
           <div className={`relative aspect-[1.6/1] ${isBouncing ? 'animate-[bounce_0.2s_ease-out]' : ''}`}>
-            {/* 3D Rotator */}
+          {/* 3D Rotator */}
             <div ref={containerRef} className={`w-full h-full transition-transform duration-500 transform-gpu ${isZoomed ? isPanningRef.current ? 'cursor-grabbing' : 'cursor-grab' : 'cursor-pointer'}`} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} style={{
             transformStyle: 'preserve-3d',
             transform: `rotateY(${isShowingBack ? 180 : 0}deg)`,
             touchAction: isZoomed ? 'none' : 'manipulation'
-          }}>
+          }} data-attr="double-tap-review-card-zoom">
               {/* Front Face */}
               <div className="absolute inset-0 w-full h-full" style={{
               backfaceVisibility: 'hidden'
@@ -327,7 +327,7 @@ export function PostcardHero({
           {!isZoomed && <Button variant="primary" size="icon" onPointerDown={e => {
           e.stopPropagation();
           performFlip();
-        }} className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'}`} aria-label="Flip postcard" disabled={isFlipping}>
+        }} className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'}`} aria-label="Flip postcard" disabled={isFlipping} data-attr="click-review-card-flip-button">
               <Repeat className="h-4 w-4 text-accent" />
             </Button>}
         </div>

@@ -233,10 +233,10 @@ export function EmbeddedCheckout({
           </div>
           
           {/* Stripe Embedded Checkout will mount here */}
-          <div id="embedded-checkout" className="min-h-[500px] w-full" />
+          <div id="embedded-checkout" className="min-h-[500px] w-full" data-attr="submit-stripe-checkout" />
           
           <div className="mt-6 pt-4 border-t">
-            <Button type="button" variant="secondary" onClick={onBack}>
+            <Button type="button" variant="secondary" onClick={onBack} data-attr="click-embedded-checkout-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Review
             </Button>

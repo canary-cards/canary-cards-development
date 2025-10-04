@@ -74,6 +74,7 @@ export default function Share() {
                 size="lg"
                 className="w-full max-w-80"
                 aria-label="Share Canary Cards with friends"
+                data-attr="click-share-invite-action"
               >
                 <ShareIcon className="w-4 h-4 mr-2" />
                 {isNativeShareAvailable ? "Invite Others to Take Action" : "Copy Link"}

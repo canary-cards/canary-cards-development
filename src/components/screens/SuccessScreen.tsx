@@ -207,11 +207,13 @@ export function SuccessScreen() {
                   value={inviteLink}
                   readOnly
                   className="input-warm flex-1"
+                  data-attr="input-success-invite-link"
                 />
                 <Button
                   onClick={copyInviteLink}
                   variant="outline"
                   className=""
+                  data-attr="click-success-copy-link"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -223,6 +225,7 @@ export function SuccessScreen() {
                 size="lg"
                 className="w-full max-w-80 mx-auto mb-4"
                 aria-label="Share Canary Cards with friends"
+                data-attr="click-success-share-page"
               >
                 <ShareIcon className="w-4 h-4 mr-2" />
                 Invite Others to Take Action
@@ -237,6 +240,7 @@ export function SuccessScreen() {
                   onClick={shareViaText}
                   variant="outline"
                   className="flex-1"
+                  data-attr="click-success-share-text"
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Text Message
@@ -245,6 +249,7 @@ export function SuccessScreen() {
                   onClick={shareViaEmail}
                   variant="outline"
                   className="flex-1"
+                  data-attr="click-success-share-email"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Email
@@ -264,6 +269,7 @@ export function SuccessScreen() {
             <Button
               onClick={startNew}
               className=""
+              data-attr="click-success-send-another"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Create New Postcard
