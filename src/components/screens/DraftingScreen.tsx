@@ -48,11 +48,11 @@ const draftingMessages = [
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
-  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
-  const [nextAnimationIndex, setNextAnimationIndex] = useState(1);
-  const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
+  const [layerAAnimationIndex, setLayerAAnimationIndex] = useState(0);
+  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(0);
   const [layerAOpacity, setLayerAOpacity] = useState(1);
   const [layerBOpacity, setLayerBOpacity] = useState(0);
+  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -101,30 +101,28 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    // Prepare next layer with target animation
-    if (activeLayer === 'A') {
-      setNextAnimationIndex(targetIndex);
+    // Determine which layer is currently visible and which is hidden
+    if (layerAOpacity === 1) {
+      // Layer A is visible, prepare Layer B with next animation
+      setLayerBAnimationIndex(targetIndex);
+      
       // Crossfade: fade out A, fade in B
       setLayerAOpacity(0);
       setLayerBOpacity(1);
-      
-      setTimeout(() => {
-        setCurrentAnimationIndex(targetIndex);
-        setActiveLayer('B');
-        transitionInProgress.current = false;
-      }, 400);
     } else {
-      setNextAnimationIndex(targetIndex);
+      // Layer B is visible, prepare Layer A with next animation
+      setLayerAAnimationIndex(targetIndex);
+      
       // Crossfade: fade out B, fade in A
       setLayerBOpacity(0);
       setLayerAOpacity(1);
-      
-      setTimeout(() => {
-        setCurrentAnimationIndex(targetIndex);
-        setActiveLayer('A');
-        transitionInProgress.current = false;
-      }, 400);
     }
+    
+    setCurrentAnimationIndex(targetIndex);
+    
+    setTimeout(() => {
+      transitionInProgress.current = false;
+    }, 400);
   };
 
   // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
@@ -377,7 +375,7 @@ export function DraftingScreen() {
                       style={{ opacity: layerAOpacity }}
                     >
                       <lottie-player
-                        src={animationUrls[activeLayer === 'A' ? currentAnimationIndex : nextAnimationIndex]}
+                        src={animationUrls[layerAAnimationIndex]}
                         autoplay
                         loop
                         speed="1"
@@ -398,7 +396,7 @@ export function DraftingScreen() {
                       style={{ opacity: layerBOpacity }}
                     >
                       <lottie-player
-                        src={animationUrls[activeLayer === 'B' ? currentAnimationIndex : nextAnimationIndex]}
+                        src={animationUrls[layerBAnimationIndex]}
                         autoplay
                         loop
                         speed="1"
