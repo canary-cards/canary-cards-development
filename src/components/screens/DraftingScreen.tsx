@@ -130,19 +130,22 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    if (activeLayerRef.current === 'A') {
-      setLayerAVisible(false); // Crossfade to Layer B
-      setActiveLayer('B');
-    } else {
-      setLayerAVisible(true); // Crossfade to Layer A
-      setActiveLayer('A');
-    }
-    setCurrentAnimationIndex(targetIndex);
-
-    // Release the lock shortly after state updates
+    // Wait a tiny bit to ensure the hidden layer animation is fully loaded and playing
     setTimeout(() => {
-      transitionInProgress.current = false;
-    }, 10);
+      if (activeLayerRef.current === 'A') {
+        setLayerAVisible(false); // Crossfade to Layer B
+        setActiveLayer('B');
+      } else {
+        setLayerAVisible(true); // Crossfade to Layer A
+        setActiveLayer('A');
+      }
+      setCurrentAnimationIndex(targetIndex);
+
+      // Release the lock after crossfade completes
+      setTimeout(() => {
+        transitionInProgress.current = false;
+      }, 550);
+    }, 100);
   };
 
   // Smooth crossfade transition between animations (with small preload delay)
@@ -479,7 +482,7 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 1 : 0,
                         visibility: layerAVisible ? 'visible' : 'hidden',
@@ -507,7 +510,7 @@ export function DraftingScreen() {
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 0 : 1,
                         visibility: layerAVisible ? 'hidden' : 'visible',
