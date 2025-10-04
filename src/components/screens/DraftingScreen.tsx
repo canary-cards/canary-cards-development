@@ -79,14 +79,21 @@ export function DraftingScreen() {
       if (el && 'loop' in el) {
         (el as any).loop = false;
       }
+      // Stop playback and completely remove from render tree to avoid GPU cached frames
       (el as any)?.stop?.();
-      if (el) (el as HTMLElement).style.visibility = 'hidden';
+      if (el) {
+        (el as HTMLElement).style.visibility = 'hidden';
+        (el as HTMLElement).style.display = 'none';
+      }
     } catch {}
   };
   const showAndPlayLayer = (layer: 'A' | 'B') => {
     const el = layer === 'A' ? layerARef.current : layerBRef.current;
     try {
-      if (el) (el as HTMLElement).style.visibility = 'visible';
+      if (el) {
+        (el as HTMLElement).style.display = 'flex'; // restore layout
+        (el as HTMLElement).style.visibility = 'visible';
+      }
       (el as any)?.play?.();
     } catch {}
   };
