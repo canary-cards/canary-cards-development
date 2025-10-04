@@ -130,22 +130,19 @@ export function DraftingScreen() {
     if (transitionInProgress.current) return;
     transitionInProgress.current = true;
 
-    // Wait a tiny bit to ensure the hidden layer animation is fully loaded and playing
-    setTimeout(() => {
-      if (activeLayerRef.current === 'A') {
-        setLayerAVisible(false); // Crossfade to Layer B
-        setActiveLayer('B');
-      } else {
-        setLayerAVisible(true); // Crossfade to Layer A
-        setActiveLayer('A');
-      }
-      setCurrentAnimationIndex(targetIndex);
+    if (activeLayerRef.current === 'A') {
+      setLayerAVisible(false); // Crossfade to Layer B
+      setActiveLayer('B');
+    } else {
+      setLayerAVisible(true); // Crossfade to Layer A
+      setActiveLayer('A');
+    }
+    setCurrentAnimationIndex(targetIndex);
 
-      // Release the lock after crossfade completes
-      setTimeout(() => {
-        transitionInProgress.current = false;
-      }, 550);
-    }, 100);
+    // Release the lock shortly after state updates
+    setTimeout(() => {
+      transitionInProgress.current = false;
+    }, 10);
   };
 
   // Smooth crossfade transition between animations (with small preload delay)
@@ -162,7 +159,7 @@ export function DraftingScreen() {
         setActiveLayer('B');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 200);
+      }, 300);
     } else {
       setLayerAAnimationIndex(targetIndex);
       setTimeout(() => {
@@ -170,7 +167,7 @@ export function DraftingScreen() {
         setActiveLayer('A');
         setCurrentAnimationIndex(targetIndex);
         transitionInProgress.current = false;
-      }, 200);
+      }, 300);
     }
   };
 
@@ -482,11 +479,9 @@ export function DraftingScreen() {
                   <div className="w-[95%] h-[95%] relative flex items-center justify-center">
                     {/* Layer A */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 1 : 0,
-                        visibility: layerAVisible ? 'visible' : 'hidden',
-                        pointerEvents: layerAVisible ? 'auto' : 'none',
                         willChange: 'opacity'
                       }}
                     >
@@ -510,11 +505,9 @@ export function DraftingScreen() {
                     
                     {/* Layer B */}
                     <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out"
+                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
                       style={{ 
                         opacity: layerAVisible ? 0 : 1,
-                        visibility: layerAVisible ? 'hidden' : 'visible',
-                        pointerEvents: layerAVisible ? 'none' : 'auto',
                         willChange: 'opacity'
                       }}
                     >
