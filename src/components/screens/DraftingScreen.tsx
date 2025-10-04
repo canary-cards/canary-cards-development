@@ -33,6 +33,7 @@ if (typeof window !== 'undefined' && !customElements.get('lottie-player')) {
 // CDN-hosted animations for better load times
 const animationUrls = [
   "https://cdn.lottielab.com/l/DpA7DrGV7NdExu.json",
+  "https://cdn.lottielab.com/l/2hxdso7kaDCFVy.json", // Transition animation
   "https://cdn.lottielab.com/l/2FdfJEUKxUWhCF.json",
   "https://cdn.lottielab.com/l/3Q5fRmtNUXVCDz.json"
 ];
@@ -60,9 +61,14 @@ export function DraftingScreen() {
 
   // Update message based on current animation
   useEffect(() => {
-    const newMessage = currentAnimationIndex === 2 && animation3LoopCount >= 3
-      ? draftingMessages[3]
-      : draftingMessages[currentAnimationIndex];
+    // Map animation indices to message indices (skip message for transition animation at index 1)
+    const messageIndex = currentAnimationIndex === 0 ? 0 
+                       : currentAnimationIndex === 1 ? 0 // Keep first message during transition
+                       : currentAnimationIndex === 2 ? 1 
+                       : currentAnimationIndex === 3 && animation3LoopCount >= 3 ? 3 
+                       : 2;
+    
+    const newMessage = draftingMessages[messageIndex];
     
     // Only animate transition if message actually changed
     if (newMessage !== currentMessage) {
@@ -74,29 +80,36 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex, animation3LoopCount, currentMessage]);
 
-  // For animation 3, count loops (but don't trigger animation on every loop)
+  // For animation 4 (final), count loops (but don't trigger animation on every loop)
   useEffect(() => {
-    if (currentAnimationIndex === 2) {
+    if (currentAnimationIndex === 3) {
       const interval = setInterval(() => {
         setAnimation3LoopCount(prev => prev + 1);
-      }, 3000); // Animation 3 duration
+      }, 3000); // Animation duration
 
       return () => clearInterval(interval);
     }
   }, [currentAnimationIndex]);
 
-  // Sequential animation timing: first for 6s (4 loops), second for 8s (2 loops), third stays until complete
+  // Sequential animation timing: first (6s) -> transition (2s) -> second (8s) -> third (stays until complete)
   useEffect(() => {
     // Show first animation for 6 seconds
     const firstTimeout = setTimeout(() => {
-      setCurrentAnimationIndex(1);
+      setCurrentAnimationIndex(1); // Transition animation
       
-      // Show second animation for 8 seconds, then switch to third
-      const secondTimeout = setTimeout(() => {
-        setCurrentAnimationIndex(2);
-      }, 8000);
+      // Show transition for 2 seconds
+      const transitionTimeout = setTimeout(() => {
+        setCurrentAnimationIndex(2); // Second animation
+        
+        // Show second animation for 8 seconds, then switch to third
+        const secondTimeout = setTimeout(() => {
+          setCurrentAnimationIndex(3); // Final animation
+        }, 8000);
+        
+        return () => clearTimeout(secondTimeout);
+      }, 2000);
       
-      return () => clearTimeout(secondTimeout);
+      return () => clearTimeout(transitionTimeout);
     }, 6000);
 
     return () => clearTimeout(firstTimeout);
