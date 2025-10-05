@@ -337,12 +337,13 @@ export default function PaymentSuccess() {
                 className="w-full" 
                 onClick={() => shareContent(shareableLink)}
                 disabled={isLoadingShareLink || !shareableLink}
+                data-attr="click-payment-success-share"
               >
                 <Share className="w-4 h-4 mr-2" />
                 {isLoadingShareLink ? 'Loading...' : 'Invite Others to Take Action'}
               </Button>
               
-              <Button variant="secondary" size="lg" className="w-full" asChild>
+              <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
                 <Link to="/">Home</Link>
               </Button>
             </div>
