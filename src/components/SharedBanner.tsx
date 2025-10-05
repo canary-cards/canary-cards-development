@@ -10,22 +10,24 @@ interface SharedBannerProps {
 export function SharedBanner({ sharedBy, onDismiss, variant = 'default' }: SharedBannerProps) {
   console.log('[SharedBanner] Rendering with sharedBy:', sharedBy, 'variant:', variant);
   
-  // Auto-dismiss after 8 seconds
+  // Auto-dismiss after 8 seconds - only for app variant, not onboarding
   useEffect(() => {
+    if (variant !== 'app') return;
+    
     const timer = setTimeout(() => {
       console.log('[SharedBanner] Auto-dismissing after 8 seconds');
       onDismiss();
     }, 8000);
 
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, variant]);
 
   // Different positioning based on variant
   const getPositionClasses = () => {
     switch (variant) {
       case 'onboarding':
-        // Position tight below progress bar
-        return 'absolute top-[4rem] left-0 right-0 z-[100]';
+        // Position very tight below progress bar
+        return 'absolute top-[3.75rem] left-0 right-0 z-[100]';
       case 'app':
         // Position to cover StepDots (which appears below header)
         return 'fixed left-0 right-0 z-[100]' + ' top-[3.5rem]';
