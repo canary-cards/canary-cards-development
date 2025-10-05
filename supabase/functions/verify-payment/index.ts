@@ -14,10 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId } = await req.json();
+    const { sessionId, frontendUrl } = await req.json();
     
     console.log("=== VERIFY PAYMENT DEBUG ===");
     console.log("Session ID to verify:", sessionId);
+    console.log("Frontend URL:", frontendUrl);
     
     if (!sessionId) {
       throw new Error("Session ID is required");
@@ -203,7 +204,8 @@ serve(async (req) => {
             amount_paid: session.amount_total,
             payment_status: 'paid',
             paid_at: new Date().toISOString(),
-            metadata_snapshot: metadata
+            metadata_snapshot: metadata,
+            frontend_url: frontendUrl || null
           })
           .select()
           .single();
@@ -266,7 +268,8 @@ serve(async (req) => {
               postcardData,
               orderId: order.id,
               simulateFailure,
-              simulatedFailed
+              simulatedFailed,
+              frontendUrl
             }
           });
           

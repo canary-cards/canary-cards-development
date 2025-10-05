@@ -156,10 +156,11 @@ serve(async (req) => {
           console.log('Updated postcard delivery status:', updatedPostcard);
           
           // Get user email from the order through the postcard's order_id
+          let frontendUrl = null;
           if (updatedPostcard?.order_id) {
             const { data: orderData, error: orderError } = await supabase
               .from('orders')
-              .select('email_for_receipt')
+              .select('email_for_receipt, frontend_url')
               .eq('id', updatedPostcard.order_id)
               .single();
               
@@ -168,7 +169,9 @@ serve(async (req) => {
               console.warn('⚠️ Could not find order - delivery notification cannot be sent');
             } else if (orderData) {
               userEmail = orderData.email_for_receipt;
+              frontendUrl = orderData.frontend_url;
               console.log('User email from our database:', userEmail);
+              console.log('Frontend URL from order:', frontendUrl);
             }
           }
           
@@ -202,7 +205,8 @@ serve(async (req) => {
             userEmail,
             recipientType,
             representativeId,
-            uid
+            uid,
+            frontendUrl
           }
         });
 

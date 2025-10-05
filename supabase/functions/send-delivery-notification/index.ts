@@ -34,7 +34,8 @@ const handler = async (req) => {
       userEmail,
       recipientType,
       representativeId,
-      uid 
+      uid,
+      frontendUrl
     } = await req.json();
     
     console.log(`[send-delivery-notification ${VERSION}] Processing delivery notification for postcard:`, postcardId);
@@ -69,8 +70,8 @@ const handler = async (req) => {
 
     const sharingLink = customer?.sharing_link || 'direct';
     
-    // Generate shareable URL - use FRONTEND_URL env var for testing, fallback to production
-    const appUrl = Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
+    // Generate shareable URL - use frontendUrl if provided, fallback to FRONTEND_URL env var, then production
+    const appUrl = frontendUrl || Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
     const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
     
     // Calculate expected delivery date (9 days from sentAt or now)

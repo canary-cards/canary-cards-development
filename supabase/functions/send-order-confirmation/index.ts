@@ -32,7 +32,8 @@ const handler = async (req) => {
       finalMessage, 
       actualMailingDate, 
       refundInfo, 
-      summary 
+      summary,
+      frontendUrl
     } = await req.json();
 
     if (!userInfo.email) {
@@ -215,8 +216,8 @@ const handler = async (req) => {
       otherRecipients = others.join(' and ');
     }
 
-    // App URLs - use FRONTEND_URL env var for testing, fallback to production
-    const appUrl = Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
+    // App URLs - use frontendUrl if provided, fallback to FRONTEND_URL env var, then production
+    const appUrl = frontendUrl || Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
     const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
 
     // Build email HTML

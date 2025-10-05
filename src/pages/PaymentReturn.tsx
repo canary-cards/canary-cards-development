@@ -251,7 +251,10 @@ export default function PaymentReturn() {
     try {
       // Verify payment with Stripe
       const { data: verificationResult, error: verificationError } = await supabase.functions.invoke('verify-payment', {
-        body: { sessionId }
+        body: { 
+          sessionId,
+          frontendUrl: window.location.origin
+        }
       });
       
       if (verificationError) {
