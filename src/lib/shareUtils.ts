@@ -82,14 +82,16 @@ export const copyShareContent = async (url: string, customText?: string): Promis
 
 /**
  * Share content using native Web Share API with fallback to clipboard
+ * For mobile shares, includes URL in text to prevent duplication in apps like WhatsApp
  */
 export const shareContent = async (url: string, customText?: string): Promise<void> => {
   const text = customText || SHARE_TEXT;
   
+  // For mobile sharing (WhatsApp, iMessage, etc.), include the URL in the text
+  // This prevents WhatsApp from showing the URL twice and ensures consistent behavior
   const shareData = {
     title: SHARE_TITLE,
-    text: text,
-    url: url
+    text: `${text} ${url}`
   };
 
   if (navigator.share) {
