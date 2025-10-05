@@ -138,7 +138,7 @@ export function LandingScreen() {
         <div className="text-center">
           {/* Hero Text */}
           <div className="w-full p-6 pb-0">
-            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative in DC </h1>
+            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative in D.C. </h1>
             <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
           </div>
         </div>
