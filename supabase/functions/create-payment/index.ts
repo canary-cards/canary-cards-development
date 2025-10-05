@@ -207,6 +207,7 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
+      allow_promotion_codes: true,
       line_items: [
         {
           price_data: {
