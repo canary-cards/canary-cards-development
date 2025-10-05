@@ -215,8 +215,8 @@ const handler = async (req) => {
       otherRecipients = others.join(' and ');
     }
 
-    // App URLs - always use production URL
-    const appUrl = 'https://canary.cards';
+    // App URLs - use FRONTEND_URL for testing, production as fallback
+    const appUrl = Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
     const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
 
     // Build email HTML
