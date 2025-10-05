@@ -56,19 +56,53 @@ const handler = async (req) => {
       });
     }
 
-    // Fetch customer's sharing link from database
+    // Fetch customer's sharing link from database using normalized email
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
+    // Normalize email to match database normalization logic
+    const normalizeEmail = (email: string): string => {
+      if (!email) return '';
+      
+      let normalized = email.toLowerCase().trim();
+      const parts = normalized.split('@');
+      if (parts.length !== 2) return normalized;
+      
+      let [localPart, domain] = parts;
+      
+      // Remove everything after + in local part
+      const plusIndex = localPart.indexOf('+');
+      if (plusIndex > 0) {
+        localPart = localPart.substring(0, plusIndex);
+      }
+      
+      // For Gmail, remove dots from local part
+      if (domain === 'gmail.com' || domain === 'googlemail.com') {
+        localPart = localPart.replace(/\./g, '');
+      }
+      
+      return `${localPart}@${domain}`;
+    };
+    
+    const normalizedEmail = normalizeEmail(userEmail);
+
     const { data: customer } = await supabase
       .from('customers')
-      .select('sharing_link')
-      .eq('email', userEmail)
+      .select('sharing_link, email_normalized')
+      .eq('email_normalized', normalizedEmail)
       .maybeSingle();
 
     const sharingLink = customer?.sharing_link || 'direct';
+    
+    console.log(`[send-delivery-notification ${VERSION}] Sharing link lookup:`, {
+      originalEmail: userEmail,
+      normalizedEmail,
+      foundCustomer: !!customer,
+      customerEmailNormalized: customer?.email_normalized,
+      sharingLink
+    });
     
     // Generate shareable URL - use frontendUrl if provided, fallback to FRONTEND_URL env var, then production
     const appUrl = frontendUrl || Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
