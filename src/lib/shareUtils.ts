@@ -98,12 +98,39 @@ export const shareContent = async (url: string, customText?: string): Promise<vo
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         // Fallback to clipboard if share fails (but not if user cancelled)
-        await copyShareContent(url, customText);
+        // On desktop fallback, only copy the URL without the message text
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({
+            title: "Link copied!",
+            description: "Share link copied to clipboard",
+          });
+        } catch (clipboardError) {
+          console.error('Failed to copy:', clipboardError);
+          toast({
+            title: "Failed to copy",
+            description: "Please copy the link manually.",
+            variant: "destructive"
+          });
+        }
       }
     }
   } else {
-    // Fallback to clipboard
-    await copyShareContent(url, customText);
+    // Desktop fallback - only copy the URL, not the message text
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: "Share link copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the link manually.",
+        variant: "destructive"
+      });
+    }
   }
 };
 
