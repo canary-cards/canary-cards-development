@@ -48,14 +48,48 @@ const handler = async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Fetch customer's sharing link from database
+    // Fetch customer's sharing link from database using normalized email for reliable lookup
+    // Normalize email to match database normalization logic (handles +tags and Gmail dots)
+    const normalizeEmail = (email: string): string => {
+      if (!email) return '';
+      
+      let normalized = email.toLowerCase().trim();
+      const parts = normalized.split('@');
+      if (parts.length !== 2) return normalized;
+      
+      let [localPart, domain] = parts;
+      
+      // Remove everything after + in local part
+      const plusIndex = localPart.indexOf('+');
+      if (plusIndex > 0) {
+        localPart = localPart.substring(0, plusIndex);
+      }
+      
+      // For Gmail, remove dots from local part
+      if (domain === 'gmail.com' || domain === 'googlemail.com') {
+        localPart = localPart.replace(/\./g, '');
+      }
+      
+      return `${localPart}@${domain}`;
+    };
+    
+    const normalizedEmail = normalizeEmail(userInfo.email);
+    
     const { data: customer } = await supabase
       .from('customers')
-      .select('sharing_link')
-      .eq('email', userInfo.email)
+      .select('sharing_link, email_normalized')
+      .eq('email_normalized', normalizedEmail)
       .maybeSingle();
 
     const sharingLink = customer?.sharing_link || 'direct';
+    
+    console.log(`[send-order-confirmation ${VERSION}] Sharing link lookup:`, {
+      originalEmail: userInfo.email,
+      normalizedEmail,
+      foundCustomer: !!customer,
+      customerEmailNormalized: customer?.email_normalized,
+      sharingLink
+    });
 
     const successfulOrders = orderResults.filter(order => order.status === 'success');
     const failedOrders = orderResults.filter(order => order.status === 'error');
@@ -219,6 +253,8 @@ const handler = async (req) => {
     // App URLs - use frontendUrl if provided, fallback to FRONTEND_URL env var, then production
     const appUrl = frontendUrl || Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
     const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
+    
+    console.log(`[send-order-confirmation ${VERSION}] Generated share URL:`, shareUrl);
 
     // Build email HTML
     const emailHtml = `<!DOCTYPE html>

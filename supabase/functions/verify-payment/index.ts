@@ -157,6 +157,12 @@ serve(async (req) => {
 
       const fullName = metadata.user_full_name || userInfo.fullName || '';
       const sharingLink = await generateSharingLink(fullName);
+      
+      console.log('Generated sharing link:', {
+        fullName,
+        sharingLink: sharingLink || '(empty)',
+        email: session.customer_email || metadata.user_email
+      });
 
       // Upsert customer using normalized email
       const { data: customer, error: customerError } = await supabase
