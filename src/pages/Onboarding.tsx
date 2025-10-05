@@ -269,7 +269,7 @@ export default function Onboarding() {
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative flex-1 w-full touch-pan-x select-none overflow-y-auto"
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
       >
 
