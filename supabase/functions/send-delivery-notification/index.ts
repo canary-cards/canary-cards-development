@@ -69,12 +69,8 @@ const handler = async (req) => {
 
     const sharingLink = customer?.sharing_link || 'direct';
     
-    // Generate shareable URL
-    const getAppUrl = () => {
-      const frontendUrl = Deno.env.get('FRONTEND_URL');
-      return frontendUrl || 'https://canary.cards';
-    };
-    const appUrl = getAppUrl();
+    // Generate shareable URL - always use production URL
+    const appUrl = 'https://canary.cards';
     const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
     
     // Calculate expected delivery date (9 days from sentAt or now)

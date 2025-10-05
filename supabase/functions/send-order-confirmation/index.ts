@@ -215,12 +215,8 @@ const handler = async (req) => {
       otherRecipients = others.join(' and ');
     }
 
-    // App URLs
-    const getAppUrl = () => {
-      const frontendUrl = Deno.env.get('FRONTEND_URL');
-      return frontendUrl || 'https://canary.cards';
-    };
-    const appUrl = getAppUrl();
+    // App URLs - always use production URL
+    const appUrl = 'https://canary.cards';
     const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
 
     // Build email HTML
