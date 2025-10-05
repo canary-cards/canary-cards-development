@@ -352,13 +352,18 @@ export function DraftingScreen() {
           zipCode: state.postcardData.zipCode
         });
 
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+
         // Call the edge function to draft the message
         const { data, error } = await supabase.functions.invoke('draft-postcard-message', {
           body: {
             concerns,
             personalImpact,
             representative: state.postcardData.representative,
-            zipCode: state.postcardData.zipCode
+            zipCode: state.postcardData.zipCode,
+            inviteCode: refCode
           }
         });
 

@@ -109,13 +109,62 @@ serve(async (req) => {
       // Create complete address text for raw_address_text field
       const completeAddress = `${userInfo.streetAddress || ''}, ${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`.trim();
 
+      // Generate unique sharing link from full name
+      const generateSharingLink = async (fullName: string): Promise<string> => {
+        if (!fullName || fullName.trim() === '') {
+          return '';
+        }
+
+        const nameParts = fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0).toUpperCase() : '';
+        
+        if (!firstName || !lastInitial) {
+          return '';
+        }
+
+        const baseLink = `${firstName}-${lastInitial}`;
+        
+        // Check if base link exists
+        const { data: existingLinks } = await supabase
+          .from('customers')
+          .select('sharing_link')
+          .like('sharing_link', `${baseLink}%`)
+          .order('sharing_link', { ascending: true });
+
+        if (!existingLinks || existingLinks.length === 0) {
+          return baseLink;
+        }
+
+        // Check if exact match exists
+        const exactMatch = existingLinks.find(link => link.sharing_link === baseLink);
+        if (!exactMatch) {
+          return baseLink;
+        }
+
+        // Find next available number
+        let counter = 2;
+        while (true) {
+          const testLink = `${baseLink}-${counter}`;
+          const exists = existingLinks.some(link => link.sharing_link === testLink);
+          if (!exists) {
+            return testLink;
+          }
+          counter++;
+        }
+      };
+
+      const fullName = metadata.user_full_name || userInfo.fullName || '';
+      const sharingLink = await generateSharingLink(fullName);
+
       // Upsert customer using normalized email
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .upsert({
           email: session.customer_email || metadata.user_email,
-          full_name: metadata.user_full_name || userInfo.fullName || '',
+          full_name: fullName,
           raw_address_text: completeAddress,
+          sharing_link: sharingLink || null,
           ...parsedAddress
         }, {
           onConflict: 'email_normalized',

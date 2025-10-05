@@ -248,6 +248,10 @@ export function CraftMessageScreen() {
       const processedPersonalImpact = convertListToSentence(personalImpact);
       const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
       try {
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+        
         // Create a manual draft in the database
         const {
           data,
@@ -257,7 +261,8 @@ export function CraftMessageScreen() {
             action: 'create',
             zipCode: state.postcardData.zipCode,
             concerns: processedConcerns,
-            personalImpact: processedPersonalImpact
+            personalImpact: processedPersonalImpact,
+            refCode: refCode
           }
         });
         if (error) {

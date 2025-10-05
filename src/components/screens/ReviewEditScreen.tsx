@@ -77,6 +77,11 @@ ${userInfo?.fullName}`;
       // Create draft if missing (safeguard for manual messages)
       if (!draftId) {
         console.log('No draftId found, creating manual draft on the fly');
+        
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+        
         const {
           data: createData,
           error: createError
@@ -85,7 +90,8 @@ ${userInfo?.fullName}`;
             action: 'create',
             zipCode: state.postcardData.zipCode,
             concerns: state.postcardData.concerns,
-            personalImpact: state.postcardData.personalImpact
+            personalImpact: state.postcardData.personalImpact,
+            refCode: refCode
           }
         });
         if (createError) {

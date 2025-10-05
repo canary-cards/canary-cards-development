@@ -29,6 +29,7 @@ export type Database = {
           parsed_via: string | null
           postal_code: string | null
           raw_address_text: string
+          sharing_link: string | null
           state: string | null
           updated_at: string
         }
@@ -46,6 +47,7 @@ export type Database = {
           parsed_via?: string | null
           postal_code?: string | null
           raw_address_text: string
+          sharing_link?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           parsed_via?: string | null
           postal_code?: string | null
           raw_address_text?: string
+          sharing_link?: string | null
           state?: string | null
           updated_at?: string
         }

@@ -41,11 +41,15 @@ export function LandingScreen() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // Check for shared link
-    const sharedBy = urlParams.get('shared_by');
-    if (sharedBy) {
-      setSharedByName(decodeURIComponent(sharedBy));
-      setShowSharedDialog(true);
+    // Check for ref parameter (sharing link)
+    const ref = urlParams.get('ref');
+    if (ref) {
+      // Import formatSharingLinkForDisplay dynamically
+      import('@/lib/shareUtils').then(({ formatSharingLinkForDisplay }) => {
+        const formattedName = formatSharingLinkForDisplay(decodeURIComponent(ref));
+        setSharedByName(formattedName);
+        setShowSharedDialog(true);
+      });
       // Don't remove the query param - keep it for persistence
     }
     

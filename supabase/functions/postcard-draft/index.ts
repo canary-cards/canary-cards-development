@@ -12,7 +12,8 @@ const CreateDraftSchema = z.object({
   action: z.literal('create'),
   zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional(),
   concerns: z.string().trim().max(5000).optional(),
-  personalImpact: z.string().trim().max(5000).optional()
+  personalImpact: z.string().trim().max(5000).optional(),
+  refCode: z.string().trim().max(100).optional()
 });
 
 const ApproveDraftSchema = z.object({
@@ -67,12 +68,13 @@ serve(async (req): Promise<Response> => {
 
     if (action === 'create') {
       // Create a new draft for "Write it myself" flow
-      const { zipCode, concerns, personalImpact } = body;
+      const { zipCode, concerns, personalImpact, refCode } = body;
       
       console.log("Creating new postcard draft");
       console.log("Zip code:", zipCode || "not provided");
       console.log("Concerns:", concerns ? "provided" : "missing");
       console.log("Personal impact:", personalImpact ? "provided" : "missing");
+      console.log("Ref code (sharing link):", refCode || "not provided");
 
       const { data: newDraft, error: createError } = await supabase
         .from('postcard_drafts')
@@ -80,6 +82,7 @@ serve(async (req): Promise<Response> => {
           zip_code: zipCode || null,
           concerns: concerns || null,
           personal_impact: personalImpact || null,
+          invite_code: refCode || null,
           // recipient_snapshot and recipient_type will be null initially
           // They can be updated later when recipient data is available
         })

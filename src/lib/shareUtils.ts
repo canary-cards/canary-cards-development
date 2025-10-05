@@ -11,6 +11,25 @@ export const SHARE_TITLE = 'Send a handwritten postcard to Congress.';
 export const SHARE_DESCRIPTION = 'Just a few handwritten postcards can swing a congressional vote';
 
 /**
+ * Strip trailing numbers from a sharing link for display purposes
+ * Example: "Ben-W-2" -> "Ben W."
+ */
+export const formatSharingLinkForDisplay = (link: string): string => {
+  if (!link) return '';
+  
+  // Remove trailing -N pattern (e.g., "-2", "-3")
+  const baseLink = link.replace(/-\d+$/, '');
+  
+  // Convert "Ben-W" to "Ben W."
+  const parts = baseLink.split('-');
+  if (parts.length === 2) {
+    return `${parts[0]} ${parts[1]}.`;
+  }
+  
+  return link;
+};
+
+/**
  * Get the app URL for sharing - always use production domain
  */
 export const getAppUrl = (): string => {
@@ -18,11 +37,11 @@ export const getAppUrl = (): string => {
 };
 
 /**
- * Generate a referral URL with optional ref parameter
+ * Generate a referral URL with sharing link
  */
-export const generateReferralUrl = (ref?: string): string => {
+export const generateReferralUrl = (sharingLink?: string): string => {
   const baseUrl = getAppUrl();
-  return ref ? `${baseUrl}?ref=${ref}` : baseUrl;
+  return sharingLink ? `${baseUrl}?ref=${encodeURIComponent(sharingLink)}` : baseUrl;
 };
 
 /**
