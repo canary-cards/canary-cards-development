@@ -33,7 +33,7 @@ const slides = [
     imageAlt: "Real handwriting with ink and pen"
   },
   {
-    title: "No stamps. No hassle",
+    title: "No stamps, no hassle",
     subtitle: "Your postcard is mailed straight to your representative's desk",
     iconPlaceholder: "ICON / MAILED FOR YOU",
     assetName: "onboarding_icon_4.svg",
