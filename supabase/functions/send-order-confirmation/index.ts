@@ -217,7 +217,7 @@ const handler = async (req) => {
 
     // App URLs - always use production URL
     const appUrl = 'https://canary.cards';
-    const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
+    const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
 
     // Build email HTML
     const emailHtml = `<!DOCTYPE html>

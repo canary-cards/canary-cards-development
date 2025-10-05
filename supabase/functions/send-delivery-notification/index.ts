@@ -71,7 +71,7 @@ const handler = async (req) => {
     
     // Generate shareable URL - always use production URL
     const appUrl = 'https://canary.cards';
-    const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
+    const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
     
     // Calculate expected delivery date (9 days from sentAt or now)
     const baseDate = sentAt ? new Date(sentAt) : new Date();
