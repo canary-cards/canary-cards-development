@@ -65,10 +65,10 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
 
       {/* Text area - responsive spacing from icon */}
       <div 
-        className="absolute inset-x-0 px-4 sm:px-6 text-center"
+        className="px-4 sm:px-6 text-center"
         style={{
-          top: isMobile ? '48%' : '47%',
-          bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
+          paddingTop: isMobile ? '48vh' : '47vh',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
         }}
       >
         <div className="space-y-4">
