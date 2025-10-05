@@ -42,6 +42,9 @@ serve(async (req) => {
   }
 
   try {
+    // Force redeploy: 2025-10-05 - Ensuring allow_promotion_codes is active in production
+    console.log("🔄 create-payment function invoked - promo codes enabled");
+    
     // Parse and validate request body
     const rawBody = await req.json();
     const validation = RequestSchema.safeParse(rawBody);
