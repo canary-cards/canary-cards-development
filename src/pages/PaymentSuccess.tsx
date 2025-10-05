@@ -72,9 +72,15 @@ export default function PaymentSuccess() {
       }
 
       if (customer?.sharing_link) {
-        setShareableLink(generateReferralUrl(customer.sharing_link));
+        const fullUrl = generateReferralUrl(customer.sharing_link);
+        console.log('[PaymentSuccess] Fetched sharing link from database:', {
+          sharingLink: customer.sharing_link,
+          fullUrl
+        });
+        setShareableLink(fullUrl);
       } else {
         // Fallback to generic link
+        console.log('[PaymentSuccess] No sharing link found in database, using generic link');
         setShareableLink(generateReferralUrl());
       }
     } catch (error) {
@@ -178,11 +184,16 @@ export default function PaymentSuccess() {
 
     // Try to get sharing link from location state first (from verify-payment response)
     const sharingLinkFromState = location.state?.sharingLink;
+    console.log('[PaymentSuccess] Sharing link from state:', sharingLinkFromState);
+    
     if (sharingLinkFromState) {
-      setShareableLink(generateReferralUrl(sharingLinkFromState));
+      const fullUrl = generateReferralUrl(sharingLinkFromState);
+      console.log('[PaymentSuccess] Generated referral URL:', fullUrl);
+      setShareableLink(fullUrl);
       setIsLoadingShareLink(false);
     } else {
       // Fallback to fetching from database
+      console.log('[PaymentSuccess] No sharing link in state, fetching from database');
       fetchShareableUrl();
     }
   }, []);

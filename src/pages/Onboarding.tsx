@@ -57,8 +57,16 @@ export default function Onboarding() {
     const urlParams = new URLSearchParams(location.search);
     const ref = urlParams.get('ref');
     
-    if (ref) {
-      setSharedBy(formatSharingLinkForDisplay(ref));
+    console.log('[Onboarding] Checking for ref parameter:', { 
+      ref, 
+      locationSearch: location.search,
+      shouldShowBanner: !!(ref && ref !== 'direct')
+    });
+    
+    if (ref && ref !== 'direct') {
+      const formattedName = formatSharingLinkForDisplay(ref);
+      console.log('[Onboarding] Showing shared banner for:', formattedName);
+      setSharedBy(formattedName);
       setShowSharedBanner(true);
     }
   }, [location.search]);

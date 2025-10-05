@@ -7,8 +7,10 @@ interface SharedBannerProps {
 }
 
 export function SharedBanner({ sharedBy, onDismiss }: SharedBannerProps) {
+  console.log('[SharedBanner] Rendering with sharedBy:', sharedBy);
+  
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground px-4 py-3 shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-[100] bg-primary text-primary-foreground px-4 py-3 shadow-md">
       <div className="container mx-auto max-w-2xl relative">
         <div className="flex items-center justify-center gap-2">
           <Heart className="h-4 w-4 text-primary-foreground/80" />
