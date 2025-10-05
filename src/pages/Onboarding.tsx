@@ -11,7 +11,7 @@ const TOTAL_SLIDES = 4;
 
 const slides = [
   {
-    title: "Handwritten postcards are the gold standard in DC",
+    title: "Handwritten postcards are the gold standard in Washington DC",
     subtitle: "96% of Capitol Hill staff say personalized letters influence undecided congressional votes",
     finePrint: "— Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation",
     iconPlaceholder: "ICON / WHY POSTCARDS",
