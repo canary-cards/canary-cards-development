@@ -131,7 +131,6 @@ export function CraftMessageScreen() {
           audio: base64Audio
         }
       });
-      
       if (error) {
         captureEdgeFunctionError(error, 'transcribe-audio', {
           email: state.postcardData?.email,
@@ -251,7 +250,7 @@ export function CraftMessageScreen() {
         // Capture ref parameter from URL for tracking
         const urlParams = new URLSearchParams(window.location.search);
         const refCode = urlParams.get('ref') || undefined;
-        
+
         // Create a manual draft in the database
         const {
           data,
@@ -316,14 +315,16 @@ export function CraftMessageScreen() {
       payload: 1
     });
   };
-  return <div className="bg-background flex flex-col overflow-hidden" style={{ height: 'calc(var(--app-vh, 1vh) * 100)' }}>
+  return <div className="bg-background flex flex-col overflow-hidden" style={{
+    height: 'calc(var(--app-vh, 1vh) * 100)'
+  }}>
       <div className="container mx-auto px-4 py-4 max-w-2xl flex-1 min-h-0 overflow-y-auto overscroll-contain pb-6">
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
               <h1 className="display-title mb-2">What's on your mind?</h1>
               
-              <h3 className="subtitle text-base mb-4">Reps respond best to personal messages </h3>
+              <h3 className="subtitle text-base mb-4">Representatives respond best to personal messages </h3>
             </div>
 
             {/* External voice button approach with onboarding */}
