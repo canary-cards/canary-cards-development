@@ -37,10 +37,13 @@ export const getAppUrl = (): string => {
   // In production, use production domain
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname.includes('lovable.app') || hostname === 'localhost') {
-      return window.location.origin;
-    }
+    const origin = window.location.origin;
+    const isDev = hostname.includes('lovable.app') || hostname === 'localhost';
+    const result = isDev ? origin : 'https://canary.cards';
+    console.log('[shareUtils] getAppUrl()', { hostname, origin, isDev, result });
+    return result;
   }
+  // SSR/build fallback
   return 'https://canary.cards';
 };
 
@@ -49,7 +52,9 @@ export const getAppUrl = (): string => {
  */
 export const generateReferralUrl = (sharingLink?: string): string => {
   const baseUrl = getAppUrl();
-  return sharingLink ? `${baseUrl}?ref=${encodeURIComponent(sharingLink)}` : baseUrl;
+  const finalUrl = sharingLink ? `${baseUrl}?ref=${encodeURIComponent(sharingLink)}` : baseUrl;
+  console.log('[shareUtils] generateReferralUrl()', { sharingLink, baseUrl, finalUrl });
+  return finalUrl;
 };
 
 /**
