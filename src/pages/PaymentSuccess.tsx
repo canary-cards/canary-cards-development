@@ -176,8 +176,15 @@ export default function PaymentSuccess() {
     // Show confetti animation
     showConfetti();
 
-    // Fetch shareable link
-    fetchShareableUrl();
+    // Try to get sharing link from location state first (from verify-payment response)
+    const sharingLinkFromState = location.state?.sharingLink;
+    if (sharingLinkFromState) {
+      setShareableLink(generateReferralUrl(sharingLinkFromState));
+      setIsLoadingShareLink(false);
+    } else {
+      // Fallback to fetching from database
+      fetchShareableUrl();
+    }
   }, []);
   const showConfetti = () => {
     const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];

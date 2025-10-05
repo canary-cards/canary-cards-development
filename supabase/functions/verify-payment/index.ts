@@ -325,7 +325,8 @@ serve(async (req) => {
         orderId: order.id,
         postcardData: postcardData,
         postcardResults: postcardResults,
-        actualMailingDate: actualMailingDate
+        actualMailingDate: actualMailingDate,
+        sharingLink: sharingLink
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
