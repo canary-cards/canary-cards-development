@@ -47,6 +47,15 @@ const handler = async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
+    // Fetch customer's sharing link from database
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('sharing_link')
+      .eq('email', userInfo.email)
+      .maybeSingle();
+
+    const sharingLink = customer?.sharing_link || 'direct';
+
     const successfulOrders = orderResults.filter(order => order.status === 'success');
     const failedOrders = orderResults.filter(order => order.status === 'error');
     const totalOrders = orderResults.length;
@@ -212,7 +221,7 @@ const handler = async (req) => {
       return frontendUrl || 'https://canary.cards';
     };
     const appUrl = getAppUrl();
-    const shareUrl = `https://xwsgyxlvxntgpochonwe.supabase.co/functions/v1/smart-share?ref=email&order=${orderNumber}`;
+    const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
 
     // Build email HTML
     const emailHtml = `<!DOCTYPE html>

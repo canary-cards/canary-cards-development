@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const VERSION = "v4";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -53,6 +54,28 @@ const handler = async (req) => {
         }
       });
     }
+
+    // Fetch customer's sharing link from database
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('sharing_link')
+      .eq('email', userEmail)
+      .maybeSingle();
+
+    const sharingLink = customer?.sharing_link || 'direct';
+    
+    // Generate shareable URL
+    const getAppUrl = () => {
+      const frontendUrl = Deno.env.get('FRONTEND_URL');
+      return frontendUrl || 'https://canary.cards';
+    };
+    const appUrl = getAppUrl();
+    const shareUrl = `${appUrl}?ref=${encodeURIComponent(sharingLink)}`;
     
     // Calculate expected delivery date (9 days from sentAt or now)
     const baseDate = sentAt ? new Date(sentAt) : new Date();
@@ -457,7 +480,7 @@ const handler = async (req) => {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 16px;">
                   <tr>
                     <td align="center">
-                      <a href="https://pugnjgvdisdbdkbofwrc.supabase.co/functions/v1/smart-share?ref=delivery&postcard=${postcardId || ''}" style="background-color: #FFD44D; color: #2F4156; border: 2px solid #2F4156; text-decoration: none; display: inline-block; padding: 14px 24px; border-radius: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 16px; max-width: 280px; min-width: 200px;">
+                      <a href="${shareUrl}" style="background-color: #FFD44D; color: #2F4156; border: 2px solid #2F4156; text-decoration: none; display: inline-block; padding: 14px 24px; border-radius: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 16px; max-width: 280px; min-width: 200px;">
                         Share Canary with Friends ↗
                       </a>
                     </td>
@@ -465,7 +488,7 @@ const handler = async (req) => {
                 </table>
                 
                 <p class="meta-text" style="text-align: center; margin-top: 12px;">
-                  Or copy: <a href="https://canary.cards" style="color: #2F4156; font-weight: 600; text-decoration: none;">https://canary.cards</a>
+                  Or copy: <a href="${shareUrl}" style="color: #2F4156; font-weight: 600; text-decoration: none;">${shareUrl}</a>
                 </p>
                 
               </div>
