@@ -109,6 +109,7 @@ export type Database = {
           currency: string
           customer_id: string
           email_for_receipt: string
+          frontend_url: string | null
           id: string
           metadata_snapshot: Json | null
           paid_at: string | null
@@ -127,6 +128,7 @@ export type Database = {
           currency?: string
           customer_id: string
           email_for_receipt: string
+          frontend_url?: string | null
           id?: string
           metadata_snapshot?: Json | null
           paid_at?: string | null
@@ -145,6 +147,7 @@ export type Database = {
           currency?: string
           customer_id?: string
           email_for_receipt?: string
+          frontend_url?: string | null
           id?: string
           metadata_snapshot?: Json | null
           paid_at?: string | null
