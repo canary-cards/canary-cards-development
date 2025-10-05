@@ -73,7 +73,7 @@ const handler = async (req) => {
       return `${localPart}@${domain}`;
     };
     
-    const normalizedEmail = normalizeEmail(userInfo.email);
+    const normalizedEmail = normalizeEmail(metadata.postcard_email);
     
     const { data: customer } = await supabase
       .from('customers')
