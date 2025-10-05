@@ -86,13 +86,23 @@ export const copyShareContent = async (url: string, customText?: string): Promis
  */
 export const shareContent = async (url: string, customText?: string): Promise<void> => {
   const text = customText || SHARE_TEXT;
-  
-  // Include URL in both text and as separate parameter:
-  // - Text with URL: Prevents WhatsApp from duplicating the link
-  // - Separate URL param: Allows iMessage/social platforms to generate rich previews
+  const message = `${text}\n${url}`;
+
+  // Prefer SMS on iOS to ensure body text appears in Messages
+  const isIOS = typeof navigator !== 'undefined' && (
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.userAgent.includes('Mac') && typeof document !== 'undefined' && 'ontouchend' in document)
+  );
+  if (isIOS) {
+    // Use SMS deep link so the body is preserved in iMessage
+    shareViaSMS(url, text);
+    return;
+  }
+
+  // Include URL in both text and as separate parameter for optimal platform compatibility
   const shareData = {
     title: SHARE_TITLE,
-    text: `${text} ${url}`,
+    text: message,
     url: url
   };
 
