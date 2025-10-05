@@ -579,6 +579,11 @@ export function CheckoutScreen() {
                 </> : <span>{getCheckoutButtonText()}</span>}
             </Button>
             
+            {/* Promo Code Hint */}
+            <p className="text-sm text-center text-muted-foreground mt-2">
+              Have a promo code? Enter it at checkout
+            </p>
+            
             {/* Payment Options and Security */}
             <div className="flex justify-center items-center gap-3 text-muted-foreground py-3">
               <img src="/128px-Apple_Pay_logo.svg.png" alt="Apple Pay" className="h-4" />
