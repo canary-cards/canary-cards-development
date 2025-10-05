@@ -339,7 +339,7 @@ export function CraftMessageScreen() {
                         sources: []
                       }
                     });
-                  }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 placeholder:text-base placeholder:font-medium placeholder:text-muted-foreground/70 placeholder:leading-relaxed overflow-y-auto" data-attr="input-craft-concerns" />
+                  }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 overflow-y-auto" data-attr="input-craft-concerns" />
                     
                     <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'concerns' ? 'Stop recording' : 'Start recording for concerns'} aria-pressed={isRecording && recordingField === 'concerns'} onClick={() => {
                     if (isRecording && recordingField === 'concerns') {
@@ -387,7 +387,7 @@ export function CraftMessageScreen() {
                       });
                     }} className="input-warm min-h-[70px] max-h-[120px] resize-none w-full overflow-y-auto" data-attr="input-craft-impact" />
 
-                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base font-medium leading-relaxed text-muted-foreground/70" onMouseDown={e => {
+                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base text-muted-foreground" onMouseDown={e => {
                       const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
                       ta?.focus();
                       e.preventDefault();

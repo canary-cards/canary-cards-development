@@ -610,7 +610,6 @@ const handler = async (req) => {
         <div class="footer-links" style="text-align: center; margin-top: 32px;">
           <a href="mailto:hello@canary.cards">Support</a>
           <a href="https://canary.cards/privacy">Privacy</a>
-          <a href="https://canary.cards/unsubscribe">Unsubscribe</a>
         </div>
         
       </td>
