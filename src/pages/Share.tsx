@@ -6,11 +6,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Share as ShareIcon } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { MetaTags } from '@/components/MetaTags';
-import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
+import { SharedBanner } from '@/components/SharedBanner';
+import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION, formatSharingLinkForDisplay } from '@/lib/shareUtils';
 
 export default function Share() {
   const [searchParams] = useSearchParams();
   const [isNativeShareAvailable, setIsNativeShareAvailable] = useState(false);
+  const [showSharedBanner, setShowSharedBanner] = useState(false);
+  const [sharedBy, setSharedBy] = useState('');
   const { toast } = useToast();
 
   const ref = searchParams.get('ref') || 'direct';
@@ -18,6 +21,14 @@ export default function Share() {
 
   // Build referral URL using centralized utilities
   const referralUrl = generateReferralUrl(ref);
+
+  // Check for shared link
+  useEffect(() => {
+    if (ref && ref !== 'direct') {
+      setSharedBy(formatSharingLinkForDisplay(ref));
+      setShowSharedBanner(true);
+    }
+  }, [ref]);
 
   const handleShare = async () => {
     const { shareContent: shareUtils } = await import('@/lib/shareUtils');
@@ -43,6 +54,12 @@ export default function Share() {
         image="https://canary.cards/lovable-uploads/new_icon_for_preview.png"
         url={referralUrl}
       />
+      {showSharedBanner && (
+        <SharedBanner 
+          sharedBy={sharedBy} 
+          onDismiss={() => setShowSharedBanner(false)} 
+        />
+      )}
       <Header />
       
       {/* Content Container */}

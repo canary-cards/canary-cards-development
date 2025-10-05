@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
+import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
 
 const SLIDE_DURATION = 6500;
@@ -54,10 +55,10 @@ export default function Onboarding() {
   // Check for shared link
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const sharedByParam = urlParams.get('shared_by');
+    const ref = urlParams.get('ref');
     
-    if (sharedByParam) {
-      setSharedBy(decodeURIComponent(sharedByParam));
+    if (ref) {
+      setSharedBy(formatSharingLinkForDisplay(ref));
       setShowSharedBanner(true);
     }
   }, [location.search]);
