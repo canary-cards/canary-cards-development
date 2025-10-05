@@ -30,9 +30,17 @@ export const formatSharingLinkForDisplay = (link: string): string => {
 };
 
 /**
- * Get the app URL for sharing - always use production domain
+ * Get the app URL for sharing - use current environment or production
  */
 export const getAppUrl = (): string => {
+  // In development/staging, use current domain for testing
+  // In production, use production domain
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname.includes('lovable.app') || hostname === 'localhost') {
+      return window.location.origin;
+    }
+  }
   return 'https://canary.cards';
 };
 
