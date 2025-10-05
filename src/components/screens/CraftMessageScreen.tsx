@@ -378,8 +378,7 @@ export function CraftMessageScreen() {
                 <div className="space-y-3">
                   <label className="field-label">How it affects my community (optional):</label>
                   <div className="flex gap-3 items-stretch">
-                    <div className="relative flex-1">
-                      <Textarea placeholder="" value={personalImpact} onChange={e => {
+                    <Textarea placeholder="Cuts to arts programs at my kids' school" value={personalImpact} onChange={e => {
                       setPersonalImpact(e.target.value);
                       dispatch({
                         type: 'UPDATE_POSTCARD_DATA',
@@ -391,16 +390,7 @@ export function CraftMessageScreen() {
                           sources: []
                         }
                       });
-                    }} className="input-warm min-h-[70px] max-h-[120px] resize-none w-full overflow-y-auto" data-attr="input-craft-impact" />
-
-                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base text-muted-foreground" onMouseDown={e => {
-                      const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
-                      ta?.focus();
-                      e.preventDefault();
-                    }}>
-                          Cuts to arts programs at my kids' school
-                        </div>}
-                    </div>
+                    }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 overflow-y-auto" data-attr="input-craft-impact" />
                     
                     <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'} aria-pressed={isRecording && recordingField === 'impact'} onClick={() => isRecording && recordingField === 'impact' ? stopRecording() : startRecording('impact')} className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${isRecording && recordingField === 'impact' ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse' : 'bg-primary text-white hover:bg-primary/90'}`} data-attr={isRecording && recordingField === 'impact' ? 'click-craft-voice-stop-impact' : 'click-craft-voice-record-impact'}>
                       {isRecording && recordingField === 'impact' ? <>
