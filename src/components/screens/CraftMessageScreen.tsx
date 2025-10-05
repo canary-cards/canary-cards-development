@@ -131,7 +131,6 @@ export function CraftMessageScreen() {
           audio: base64Audio
         }
       });
-      
       if (error) {
         captureEdgeFunctionError(error, 'transcribe-audio', {
           email: state.postcardData?.email,
@@ -248,6 +247,10 @@ export function CraftMessageScreen() {
       const processedPersonalImpact = convertListToSentence(personalImpact);
       const combinedMessage = [processedConcerns, processedPersonalImpact].filter(Boolean).join('. ');
       try {
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+
         // Create a manual draft in the database
         const {
           data,
@@ -257,7 +260,8 @@ export function CraftMessageScreen() {
             action: 'create',
             zipCode: state.postcardData.zipCode,
             concerns: processedConcerns,
-            personalImpact: processedPersonalImpact
+            personalImpact: processedPersonalImpact,
+            refCode: refCode
           }
         });
         if (error) {
@@ -311,14 +315,16 @@ export function CraftMessageScreen() {
       payload: 1
     });
   };
-  return <div className="bg-background flex flex-col overflow-hidden" style={{ height: 'calc(var(--app-vh, 1vh) * 100)' }}>
+  return <div className="bg-background flex flex-col overflow-hidden" style={{
+    height: 'calc(var(--app-vh, 1vh) * 100)'
+  }}>
       <div className="container mx-auto px-4 py-4 max-w-2xl flex-1 min-h-0 overflow-y-auto overscroll-contain pb-6">
         <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
               <h1 className="display-title mb-2">What's on your mind?</h1>
               
-              <h3 className="subtitle text-base mb-4">Reps respond best to personal messages </h3>
+              <h3 className="subtitle text-base mb-4">Representatives respond best to personal messages </h3>
             </div>
 
             {/* External voice button approach with onboarding */}
@@ -372,8 +378,7 @@ export function CraftMessageScreen() {
                 <div className="space-y-3">
                   <label className="field-label">How it affects my community (optional):</label>
                   <div className="flex gap-3 items-stretch">
-                    <div className="relative flex-1">
-                      <Textarea placeholder="" value={personalImpact} onChange={e => {
+                    <Textarea placeholder="Cuts to arts programs at my kids' school" value={personalImpact} onChange={e => {
                       setPersonalImpact(e.target.value);
                       dispatch({
                         type: 'UPDATE_POSTCARD_DATA',
@@ -385,16 +390,7 @@ export function CraftMessageScreen() {
                           sources: []
                         }
                       });
-                    }} className="input-warm min-h-[70px] max-h-[120px] resize-none w-full overflow-y-auto" data-attr="input-craft-impact" />
-
-                      {!personalImpact && <div className="absolute inset-0 z-10 overflow-auto p-3 text-base text-muted-foreground" onMouseDown={e => {
-                      const ta = e.currentTarget.parentElement?.querySelector('textarea') as HTMLTextAreaElement | null;
-                      ta?.focus();
-                      e.preventDefault();
-                    }}>
-                          Cuts to arts programs at my kids' school
-                        </div>}
-                    </div>
+                    }} className="input-warm min-h-[70px] max-h-[120px] resize-none flex-1 overflow-y-auto" data-attr="input-craft-impact" />
                     
                     <Button type="button" variant="secondary" aria-label={isRecording && recordingField === 'impact' ? 'Stop recording' : 'Start recording for impact'} aria-pressed={isRecording && recordingField === 'impact'} onClick={() => isRecording && recordingField === 'impact' ? stopRecording() : startRecording('impact')} className={`!h-auto self-stretch w-auto px-3 sm:px-4 py-3 transition-all duration-200 flex-shrink-0 ${isRecording && recordingField === 'impact' ? 'bg-destructive text-white hover:bg-destructive/90 recording-pulse' : 'bg-primary text-white hover:bg-primary/90'}`} data-attr={isRecording && recordingField === 'impact' ? 'click-craft-voice-stop-impact' : 'click-craft-voice-record-impact'}>
                       {isRecording && recordingField === 'impact' ? <>

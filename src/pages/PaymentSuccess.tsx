@@ -10,12 +10,14 @@ import { Header } from '@/components/Header';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DynamicSvg } from '@/components/DynamicSvg';
 import { MetaTags } from '@/components/MetaTags';
+import { supabase } from '@/integrations/supabase/client';
 import { generateReferralUrl, copyShareContent, shareContent, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [shareableLink, setShareableLink] = useState('');
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+  const [isLoadingShareLink, setIsLoadingShareLink] = useState(true);
   const {
     toast
   } = useToast();
@@ -34,8 +36,60 @@ export default function PaymentSuccess() {
     return null;
   };
 
-  // Get shareable URL using centralized utilities
-  const shareableUrl = generateReferralUrl('success');
+  // Fetch shareable URL from database
+  const fetchShareableUrl = async () => {
+    try {
+      const storedData = localStorage.getItem('postcardData');
+      if (!storedData) {
+        console.log('No postcard data in localStorage');
+        setShareableLink(generateReferralUrl());
+        setIsLoadingShareLink(false);
+        return;
+      }
+
+      const data = JSON.parse(storedData);
+      const email = data.email;
+      
+      if (!email) {
+        console.log('No email found in postcard data');
+        setShareableLink(generateReferralUrl());
+        setIsLoadingShareLink(false);
+        return;
+      }
+
+      // Fetch customer's sharing link from database
+      const { data: customer, error } = await supabase
+        .from('customers')
+        .select('sharing_link')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching sharing link:', error);
+        setShareableLink(generateReferralUrl());
+        setIsLoadingShareLink(false);
+        return;
+      }
+
+      if (customer?.sharing_link) {
+        const fullUrl = generateReferralUrl(customer.sharing_link);
+        console.log('[PaymentSuccess] Fetched sharing link from database:', {
+          sharingLink: customer.sharing_link,
+          fullUrl
+        });
+        setShareableLink(fullUrl);
+      } else {
+        // Fallback to generic link
+        console.log('[PaymentSuccess] No sharing link found in database, using generic link');
+        setShareableLink(generateReferralUrl());
+      }
+    } catch (error) {
+      console.error('Error in fetchShareableUrl:', error);
+      setShareableLink(generateReferralUrl());
+    } finally {
+      setIsLoadingShareLink(false);
+    }
+  };
 
   // Calculate delivery date (3-5 business days)
   const getDeliveryDate = () => {
@@ -128,9 +182,21 @@ export default function PaymentSuccess() {
     // Show confetti animation
     showConfetti();
 
-    // Set shareable link
-    setShareableLink(shareableUrl);
-  }, [shareableUrl]);
+    // Try to get sharing link from location state first (from verify-payment response)
+    const sharingLinkFromState = location.state?.sharingLink;
+    console.log('[PaymentSuccess] Sharing link from state:', sharingLinkFromState);
+    
+    if (sharingLinkFromState) {
+      const fullUrl = generateReferralUrl(sharingLinkFromState);
+      console.log('[PaymentSuccess] Generated referral URL:', fullUrl);
+      setShareableLink(fullUrl);
+      setIsLoadingShareLink(false);
+    } else {
+      // Fallback to fetching from database
+      console.log('[PaymentSuccess] No sharing link in state, fetching from database');
+      fetchShareableUrl();
+    }
+  }, []);
   const showConfetti = () => {
     const colors = ['hsl(46, 100%, 66%)', 'hsl(212, 29%, 25%)', 'hsl(120, 50%, 60%)'];
     for (let i = 0; i < 50; i++) {
@@ -167,8 +233,8 @@ export default function PaymentSuccess() {
     setTimeout(() => confetti.remove(), 6000);
   };
   const copyShareableLink = async () => {
-    if (shareableUrl) {
-      await copyShareContent(shareableUrl);
+    if (shareableLink) {
+      await copyShareContent(shareableLink);
     }
   };
   const shareViaTwitter = () => {
@@ -276,12 +342,19 @@ export default function PaymentSuccess() {
             </p>
             
             <div className="space-y-4">
-              <Button variant="spotlight" size="lg" className="w-full" onClick={() => shareContent(shareableUrl)}>
+              <Button 
+                variant="spotlight" 
+                size="lg" 
+                className="w-full" 
+                onClick={() => shareContent(shareableLink)}
+                disabled={isLoadingShareLink || !shareableLink}
+                data-attr="click-payment-success-share"
+              >
                 <Share className="w-4 h-4 mr-2" />
-                Invite Others to Take Action
+                {isLoadingShareLink ? 'Loading...' : 'Invite Others to Take Action'}
               </Button>
               
-              <Button variant="secondary" size="lg" className="w-full" asChild>
+              <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
                 <Link to="/">Home</Link>
               </Button>
             </div>

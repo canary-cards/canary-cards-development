@@ -6,6 +6,8 @@ import { useAppContext } from '../../context/AppContext';
 import { CheckCircle, Share2, Copy, MessageSquare, Mail, Sparkles, Share as ShareIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { generateReferralUrl } from '@/lib/shareUtils';
 
 export function SuccessScreen() {
   const { state, dispatch } = useAppContext();
@@ -13,6 +15,7 @@ export function SuccessScreen() {
   const navigate = useNavigate();
   const [inviteLink, setInviteLink] = useState('');
   const [showAccountCreation, setShowAccountCreation] = useState(true);
+  const [isLoadingSharingLink, setIsLoadingSharingLink] = useState(true);
 
   // Get the deployed app URL, not the Lovable editor URL
   const getAppUrl = () => {
@@ -25,16 +28,50 @@ export function SuccessScreen() {
   };
 
   useEffect(() => {
-    // Generate unique invite link
-    const uniqueId = Math.random().toString(36).substring(2, 15);
-    const appUrl = getAppUrl();
-    if (appUrl) {
-      setInviteLink(`${appUrl}?invite=${uniqueId}`);
-    }
+    const fetchSharingLink = async () => {
+      try {
+        const email = state.postcardData.email;
+        if (!email) {
+          console.log('No email found in postcard data');
+          setIsLoadingSharingLink(false);
+          return;
+        }
+
+        // Fetch customer's sharing link from database
+        const { data: customer, error } = await supabase
+          .from('customers')
+          .select('sharing_link')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching sharing link:', error);
+          setIsLoadingSharingLink(false);
+          return;
+        }
+
+        if (customer?.sharing_link) {
+          const referralUrl = generateReferralUrl(customer.sharing_link);
+          setInviteLink(referralUrl);
+        } else {
+          // Fallback to generic link
+          const appUrl = getAppUrl();
+          if (appUrl) {
+            setInviteLink(appUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchSharingLink:', error);
+      } finally {
+        setIsLoadingSharingLink(false);
+      }
+    };
+
+    fetchSharingLink();
     
     // Confetti effect
     showConfetti();
-  }, []);
+  }, [state.postcardData.email]);
 
   const showConfetti = () => {
     // Simple confetti effect - in real app would use a library like canvas-confetti
@@ -91,8 +128,17 @@ export function SuccessScreen() {
   };
 
   const handleSharePageNavigation = () => {
-    const uniqueId = Math.random().toString(36).substring(2, 15);
-    navigate(`/share?ref=${uniqueId}&order=${uniqueId.slice(-8).toUpperCase()}`);
+    // Navigate to share page with the sharing link
+    if (inviteLink) {
+      const url = new URL(inviteLink);
+      const ref = url.searchParams.get('ref');
+      if (ref) {
+        navigate(`/share?ref=${encodeURIComponent(ref)}`);
+        return;
+      }
+    }
+    // Fallback
+    navigate('/share');
   };
 
   const shareViaEmail = async () => {
@@ -204,7 +250,7 @@ export function SuccessScreen() {
             <div className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  value={inviteLink}
+                  value={isLoadingSharingLink ? 'Loading your personal link...' : inviteLink}
                   readOnly
                   className="input-warm flex-1"
                   data-attr="input-success-invite-link"
@@ -213,6 +259,7 @@ export function SuccessScreen() {
                   onClick={copyInviteLink}
                   variant="outline"
                   className=""
+                  disabled={isLoadingSharingLink || !inviteLink}
                   data-attr="click-success-copy-link"
                 >
                   <Copy className="w-4 h-4" />

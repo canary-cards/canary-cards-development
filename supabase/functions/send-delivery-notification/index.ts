@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const VERSION = "v4";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -33,7 +34,8 @@ const handler = async (req) => {
       userEmail,
       recipientType,
       representativeId,
-      uid 
+      uid,
+      frontendUrl
     } = await req.json();
     
     console.log(`[send-delivery-notification ${VERSION}] Processing delivery notification for postcard:`, postcardId);
@@ -53,6 +55,59 @@ const handler = async (req) => {
         }
       });
     }
+
+    // Fetch customer's sharing link from database using normalized email
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
+    // Normalize email to match database normalization logic
+    const normalizeEmail = (email: string): string => {
+      if (!email) return '';
+      
+      let normalized = email.toLowerCase().trim();
+      const parts = normalized.split('@');
+      if (parts.length !== 2) return normalized;
+      
+      let [localPart, domain] = parts;
+      
+      // Remove everything after + in local part
+      const plusIndex = localPart.indexOf('+');
+      if (plusIndex > 0) {
+        localPart = localPart.substring(0, plusIndex);
+      }
+      
+      // For Gmail, remove dots from local part
+      if (domain === 'gmail.com' || domain === 'googlemail.com') {
+        localPart = localPart.replace(/\./g, '');
+      }
+      
+      return `${localPart}@${domain}`;
+    };
+    
+    const normalizedEmail = normalizeEmail(userEmail);
+
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('sharing_link, email_normalized')
+      .eq('email_normalized', normalizedEmail)
+      .maybeSingle();
+
+    const sharingLink = customer?.sharing_link || 'direct';
+    
+    console.log(`[send-delivery-notification ${VERSION}] Sharing link lookup:`, {
+      originalEmail: userEmail,
+      normalizedEmail,
+      foundCustomer: !!customer,
+      customerEmailNormalized: customer?.email_normalized,
+      sharingLink
+    });
+    
+    // Generate shareable URL - use frontendUrl if provided, fallback to FRONTEND_URL env var, then production
+    const appUrl = frontendUrl || Deno.env.get('FRONTEND_URL') || 'https://canary.cards';
+    const shareUrl = `${appUrl}/share?ref=${encodeURIComponent(sharingLink)}`;
     
     // Calculate expected delivery date (9 days from sentAt or now)
     const baseDate = sentAt ? new Date(sentAt) : new Date();
@@ -457,7 +512,7 @@ const handler = async (req) => {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 16px;">
                   <tr>
                     <td align="center">
-                      <a href="https://pugnjgvdisdbdkbofwrc.supabase.co/functions/v1/smart-share?ref=delivery&postcard=${postcardId || ''}" style="background-color: #FFD44D; color: #2F4156; border: 2px solid #2F4156; text-decoration: none; display: inline-block; padding: 14px 24px; border-radius: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 16px; max-width: 280px; min-width: 200px;">
+                      <a href="${shareUrl}" style="background-color: #FFD44D; color: #2F4156; border: 2px solid #2F4156; text-decoration: none; display: inline-block; padding: 14px 24px; border-radius: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; font-size: 16px; max-width: 280px; min-width: 200px;">
                         Share Canary with Friends ↗
                       </a>
                     </td>
@@ -465,7 +520,7 @@ const handler = async (req) => {
                 </table>
                 
                 <p class="meta-text" style="text-align: center; margin-top: 12px;">
-                  Or copy: <a href="https://canary.cards" style="color: #2F4156; font-weight: 600; text-decoration: none;">https://canary.cards</a>
+                  Or copy: <a href="${shareUrl}" style="color: #2F4156; font-weight: 600; text-decoration: none;">${shareUrl}</a>
                 </p>
                 
               </div>

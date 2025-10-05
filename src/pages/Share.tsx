@@ -6,7 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Share as ShareIcon } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { MetaTags } from '@/components/MetaTags';
-import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
+import { SharedBanner } from '@/components/SharedBanner';
+import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION, formatSharingLinkForDisplay } from '@/lib/shareUtils';
 
 export default function Share() {
   const [searchParams] = useSearchParams();

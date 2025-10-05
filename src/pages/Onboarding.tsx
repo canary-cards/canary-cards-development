@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
+import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
 
 const SLIDE_DURATION = 6500;
@@ -10,7 +11,7 @@ const TOTAL_SLIDES = 4;
 
 const slides = [
   {
-    title: "Handwritten postcards are the gold standard in D.C",
+    title: "Handwritten postcards are the gold standard in Washington D.C.",
     subtitle: "96% of Capitol Hill staff say personalized letters influence undecided congressional votes",
     finePrint: "— Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation",
     iconPlaceholder: "ICON / WHY POSTCARDS",
@@ -32,7 +33,7 @@ const slides = [
     imageAlt: "Real handwriting with ink and pen"
   },
   {
-    title: "No stamps. No hassle",
+    title: "No stamps, no hassle",
     subtitle: "Your postcard is mailed straight to your representative's desk",
     iconPlaceholder: "ICON / MAILED FOR YOU",
     assetName: "onboarding_icon_4.svg",
@@ -54,10 +55,18 @@ export default function Onboarding() {
   // Check for shared link
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const sharedByParam = urlParams.get('shared_by');
+    const ref = urlParams.get('ref');
     
-    if (sharedByParam) {
-      setSharedBy(decodeURIComponent(sharedByParam));
+    console.log('[Onboarding] Checking for ref parameter:', { 
+      ref, 
+      locationSearch: location.search,
+      shouldShowBanner: !!(ref && ref !== 'direct')
+    });
+    
+    if (ref && ref !== 'direct') {
+      const formattedName = formatSharingLinkForDisplay(ref);
+      console.log('[Onboarding] Showing shared banner for:', formattedName);
+      setSharedBy(formattedName);
       setShowSharedBanner(true);
     }
   }, [location.search]);
@@ -217,21 +226,23 @@ export default function Onboarding() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background h-[100dvh] overflow-hidden">
-      {/* Shared Banner */}
+    <div className="fixed inset-0 z-50 bg-background h-[100dvh] overflow-hidden flex flex-col">
+      {/* Shared Banner - Above everything */}
       {showSharedBanner && (
-        <SharedBanner 
-          sharedBy={sharedBy} 
-          onDismiss={() => setShowSharedBanner(false)} 
-        />
+        <div className="flex-shrink-0">
+          <SharedBanner 
+            sharedBy={sharedBy} 
+            onDismiss={() => setShowSharedBanner(false)}
+            variant="onboarding"
+          />
+        </div>
       )}
 
       {/* Header with X Button and Progress Strips */}
       <div 
-        className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
+        className="flex-shrink-0 flex items-center justify-between px-4 py-4 z-40"
         style={{ 
-          top: showSharedBanner ? '3.25rem' : 0,
-          paddingTop: 'env(safe-area-inset-top, 0px)'
+          paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
       >
         {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
@@ -258,10 +269,7 @@ export default function Onboarding() {
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative h-full w-full touch-pan-x select-none"
-        style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 4.5rem)' : '4.5rem'
-        }}
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
       >
 

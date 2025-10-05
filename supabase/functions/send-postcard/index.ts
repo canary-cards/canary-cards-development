@@ -40,7 +40,8 @@ const RequestSchema = z.object({
   postcardData: PostcardDataSchema,
   orderId: z.string().uuid(),
   simulateFailure: z.number().int().min(0).max(1).optional(),
-  simulatedFailed: z.number().int().min(0).max(10).optional()
+  simulatedFailed: z.number().int().min(0).max(10).optional(),
+  frontendUrl: z.string().url().optional()
 });
 
 serve(async (req) => {
@@ -80,7 +81,7 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData, orderId, simulateFailure, simulatedFailed } = validation.data;
+    const { postcardData, orderId, simulateFailure, simulatedFailed, frontendUrl } = validation.data;
     
     // Check environment and origin to enable simulation - only in non-production
     const environment = Deno.env.get('ENVIRONMENT') || 'development';
@@ -582,7 +583,8 @@ serve(async (req) => {
               totalSent: successCount,
               totalFailed: errorCount,
               total: results.length
-            }
+            },
+            frontendUrl
           }
         });
         

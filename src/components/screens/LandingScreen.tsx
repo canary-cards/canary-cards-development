@@ -41,11 +41,15 @@ export function LandingScreen() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // Check for shared link
-    const sharedBy = urlParams.get('shared_by');
-    if (sharedBy) {
-      setSharedByName(decodeURIComponent(sharedBy));
-      setShowSharedDialog(true);
+    // Check for ref parameter (sharing link)
+    const ref = urlParams.get('ref');
+    if (ref) {
+      // Import formatSharingLinkForDisplay dynamically
+      import('@/lib/shareUtils').then(({ formatSharingLinkForDisplay }) => {
+        const formattedName = formatSharingLinkForDisplay(decodeURIComponent(ref));
+        setSharedByName(formattedName);
+        setShowSharedDialog(true);
+      });
       // Don't remove the query param - keep it for persistence
     }
     
@@ -110,6 +114,7 @@ export function LandingScreen() {
   };
   const handleContinue = () => {
     if (selectedRep) {
+      setShowSharedDialog(false); // Dismiss share banner before moving to next step
       dispatch({
         type: 'UPDATE_POSTCARD_DATA',
         payload: {
@@ -125,15 +130,15 @@ export function LandingScreen() {
   };
   return <>
       {/* Shared Link Banner */}
-      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} />}
+      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
 
-      <div className={`min-h-screen bg-background ${showSharedDialog ? 'pt-16' : ''}`}>
+      <div className="min-h-screen bg-background">
       <div className="mx-auto px-4 max-w-2xl pb-1">
         {/* Mobile-First Hero Section */}
         <div className="text-center">
           {/* Hero Text */}
           <div className="w-full p-6 pb-0">
-            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative in D.C. </h1>
+            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative on capitol hill</h1>
             <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
           </div>
         </div>

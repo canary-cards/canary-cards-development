@@ -40,10 +40,10 @@ const animationUrls = [
 ];
 
 const draftingMessages = [
-  "Synthesizing your concerns.",
-  "Researching trusted local sources.",
-  "Polishing your message.",
-  "Completing draft — amplifying your voice."
+  "Synthesizing your concerns",
+  "Researching trusted local sources",
+  "Polishing your message",
+  "Completing draft — amplifying your voice"
 ];
 
 export function DraftingScreen() {
@@ -352,13 +352,18 @@ export function DraftingScreen() {
           zipCode: state.postcardData.zipCode
         });
 
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+
         // Call the edge function to draft the message
         const { data, error } = await supabase.functions.invoke('draft-postcard-message', {
           body: {
             concerns,
             personalImpact,
             representative: state.postcardData.representative,
-            zipCode: state.postcardData.zipCode
+            zipCode: state.postcardData.zipCode,
+            inviteCode: refCode
           }
         });
 
@@ -489,7 +494,7 @@ export function DraftingScreen() {
             type: 'UPDATE_POSTCARD_DATA',
             payload: {
               originalMessage: `${state.postcardData.concerns}\n\n${state.postcardData.personalImpact}`,
-              draftMessage: "Canary just returned from a long flight and needs a moment to catch its breath. Please write your message below, and we'll make sure it reaches your representative.",
+              draftMessage: "Canary just returned from a long flight and needs a moment to catch its breath Please write your message below, and we'll make sure it reaches your representative",
               sources: [],
               draftId: undefined, // No draft ID since we timed out
               isFallbackPlaceholder: true // This flag makes it show as placeholder
@@ -523,7 +528,7 @@ export function DraftingScreen() {
                 Something went wrong
               </h1>
               <p className="text-base text-muted-foreground">
-                We couldn't draft your postcard. Please try again.
+                We couldn't draft your postcard Please try again
               </p>
             </div>
             <Button onClick={handleRetry} size="lg">

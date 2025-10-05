@@ -7,7 +7,7 @@ interface RobotLoadingScreenProps {
 }
 
 export const RobotLoadingScreen = ({ status, message, onRetry }: RobotLoadingScreenProps) => {
-  const staticMessage = "Your payment went through. Our robots are picking up their pens. This only takes a few seconds.";
+  const staticMessage = "Your payment went through Our robots are picking up their pens This only takes a few seconds";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 flex items-center justify-center p-4">
@@ -50,7 +50,7 @@ export const RobotLoadingScreen = ({ status, message, onRetry }: RobotLoadingScr
             {status === 'error' && (
               <div className="space-y-4">
                 <p className="text-lg text-muted-foreground">
-                  {message || "There was an issue processing your postcard order. Don't worry - your payment was successful."}
+                  {message || "There was an issue processing your postcard order Don't worry - your payment was successful"}
                 </p>
                 {onRetry && (
                   <button
@@ -71,7 +71,7 @@ export const RobotLoadingScreen = ({ status, message, onRetry }: RobotLoadingScr
             <div className="space-y-2">
               <p className="eyebrow text-accent-foreground">Did you know?</p>
               <p className="text-sm text-muted-foreground">
-                Our robots use real pens so your card looks just like one you'd write yourself.
+                Our robots use real pens so your card looks just like one you'd write yourself
               </p>
             </div>
           </div>

@@ -140,7 +140,8 @@ export default function PaymentReturn() {
               sessionId: searchParams.get('session_id'),
               orderId: data.orderId,
               orderingResults: data,
-              actualMailingDate: data.actualMailingDate
+              actualMailingDate: data.actualMailingDate,
+              sharingLink: data.sharingLink
             }
           });
         }, remainingTime);
@@ -250,7 +251,10 @@ export default function PaymentReturn() {
     try {
       // Verify payment with Stripe
       const { data: verificationResult, error: verificationError } = await supabase.functions.invoke('verify-payment', {
-        body: { sessionId }
+        body: { 
+          sessionId,
+          frontendUrl: window.location.origin
+        }
       });
       
       if (verificationError) {
@@ -293,11 +297,12 @@ export default function PaymentReturn() {
         
         // Handle postcard results from verify-payment (server-side orchestration)
         if (verificationResult.postcardResults) {
-          // Add orderId and actualMailingDate to the results for proper navigation
+          // Add orderId, actualMailingDate, and sharingLink to the results for proper navigation
           const resultsWithOrderId = {
             ...verificationResult.postcardResults,
             orderId: verificationResult.orderId,
-            actualMailingDate: verificationResult.actualMailingDate
+            actualMailingDate: verificationResult.actualMailingDate,
+            sharingLink: verificationResult.sharingLink
           };
           handlePostcardResults(resultsWithOrderId);
         } else {
@@ -313,7 +318,8 @@ export default function PaymentReturn() {
                 sessionId: searchParams.get('session_id'),
                 orderId: verificationResult.orderId,
                 orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } },
-                actualMailingDate: verificationResult.actualMailingDate
+                actualMailingDate: verificationResult.actualMailingDate,
+                sharingLink: verificationResult.sharingLink
               }
             });
           }, remainingTime);
