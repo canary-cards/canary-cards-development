@@ -82,27 +82,13 @@ export const copyShareContent = async (url: string, customText?: string): Promis
 
 /**
  * Share content using native Web Share API with fallback to clipboard
- * Includes URL both in text and as separate parameter for optimal platform compatibility
  */
 export const shareContent = async (url: string, customText?: string): Promise<void> => {
   const text = customText || SHARE_TEXT;
-  const message = `${text}\n${url}`;
-
-  // Prefer SMS on iOS to ensure body text appears in Messages
-  const isIOS = typeof navigator !== 'undefined' && (
-    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.userAgent.includes('Mac') && typeof document !== 'undefined' && 'ontouchend' in document)
-  );
-  if (isIOS) {
-    // Use SMS deep link so the body is preserved in iMessage
-    shareViaSMS(url, text);
-    return;
-  }
-
-  // Include URL in both text and as separate parameter for optimal platform compatibility
+  
   const shareData = {
     title: SHARE_TITLE,
-    text: message,
+    text: text,
     url: url
   };
 
