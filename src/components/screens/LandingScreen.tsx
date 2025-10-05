@@ -114,6 +114,7 @@ export function LandingScreen() {
   };
   const handleContinue = () => {
     if (selectedRep) {
+      setShowSharedDialog(false); // Dismiss share banner before moving to next step
       dispatch({
         type: 'UPDATE_POSTCARD_DATA',
         payload: {
