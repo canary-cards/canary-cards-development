@@ -380,7 +380,7 @@ export function CheckoutScreen() {
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="display-title mb-2">Let's get your masterful postcard out the door</h1>
-            <h3 className="subtitle text-base">You have three congresspeople in DC, most send to all of them</h3>
+            <h3 className="subtitle text-base">You have three congresspeople in D.C. and most people send to all of them</h3>
           </div>
 
           {/* Section 1 - Recipients Panel */}
