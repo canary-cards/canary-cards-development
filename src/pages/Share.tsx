@@ -12,8 +12,6 @@ import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION, formatSharingLinkF
 export default function Share() {
   const [searchParams] = useSearchParams();
   const [isNativeShareAvailable, setIsNativeShareAvailable] = useState(false);
-  const [showSharedBanner, setShowSharedBanner] = useState(false);
-  const [sharedBy, setSharedBy] = useState('');
   const { toast } = useToast();
 
   const ref = searchParams.get('ref') || 'direct';
@@ -21,14 +19,6 @@ export default function Share() {
 
   // Build referral URL using centralized utilities
   const referralUrl = generateReferralUrl(ref);
-
-  // Check for shared link
-  useEffect(() => {
-    if (ref && ref !== 'direct') {
-      setSharedBy(formatSharingLinkForDisplay(ref));
-      setShowSharedBanner(true);
-    }
-  }, [ref]);
 
   const handleShare = async () => {
     const { shareContent: shareUtils } = await import('@/lib/shareUtils');
@@ -54,13 +44,6 @@ export default function Share() {
         image="https://canary.cards/lovable-uploads/new_icon_for_preview.png"
         url={referralUrl}
       />
-      {showSharedBanner && (
-        <SharedBanner 
-          sharedBy={sharedBy} 
-          onDismiss={() => setShowSharedBanner(false)}
-          variant="app"
-        />
-      )}
       <Header />
       
       {/* Content Container */}
