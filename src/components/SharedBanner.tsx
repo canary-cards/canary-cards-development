@@ -26,8 +26,8 @@ export function SharedBanner({ sharedBy, onDismiss, variant = 'default' }: Share
   const getPositionClasses = () => {
     switch (variant) {
       case 'onboarding':
-        // Position very tight below progress bar
-        return 'absolute top-[3.5rem] left-0 right-0 z-[100]';
+        // Relative positioning to stay in flex flow and push content down
+        return 'relative w-full z-[100]';
       case 'app':
         // Position to cover StepDots (which appears below header)
         return 'fixed left-0 right-0 z-[100]' + ' top-[3.5rem]';
