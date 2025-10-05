@@ -30,8 +30,10 @@ export function ReviewEditScreen() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [validationError, setValidationError] = useState('');
   const charCount = editedMessage.length;
   const maxChars = 300;
+  const minChars = 10;
 
   // Log fallback state for debugging  
   console.log('🎯 ReviewEditScreen: isFallbackPlaceholder:', isFallbackPlaceholder);
@@ -64,12 +66,21 @@ ${userInfo?.fullName}`;
     }, 2000);
   };
   const handleContinue = async () => {
+    // Validate message
     if (!editedMessage.trim()) {
+      setValidationError('Please enter a message');
       return;
     }
-    if (editedMessage.length > 300) {
+    if (editedMessage.length < minChars) {
+      setValidationError(`Message must be at least ${minChars} characters`);
       return;
     }
+    if (editedMessage.length > maxChars) {
+      setValidationError(`Message cannot exceed ${maxChars} characters`);
+      return;
+    }
+    
+    setValidationError('');
     setIsUpdating(true);
     try {
       let draftId = state.postcardData.draftId;
@@ -120,9 +131,21 @@ ${userInfo?.fullName}`;
       });
       if (error) {
         console.error('Error approving postcard draft:', error);
+        
+        // Try to extract validation error from response
+        let errorMessage = 'Failed to save your changes. Please try again.';
+        try {
+          const errorData = JSON.parse(error.message || '{}');
+          if (errorData.details && errorData.details.length > 0) {
+            errorMessage = errorData.details[0].message;
+          }
+        } catch (e) {
+          // Keep default message if parsing fails
+        }
+        
         toast({
           title: 'Error',
-          description: 'Failed to save your changes. Please try again.',
+          description: errorMessage,
           variant: 'destructive'
         });
         return;
@@ -198,12 +221,18 @@ ${userInfo?.fullName}`;
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">Your message</label>
-                  <span className={`text-xs ${charCount > maxChars ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  <span className={`text-xs ${charCount > maxChars || charCount < minChars && charCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {charCount}/{maxChars}
                   </span>
                 </div>
+                {validationError && (
+                  <p className="text-sm text-destructive">{validationError}</p>
+                )}
                 <div className="relative">
-                  <Textarea ref={textareaRef} value={editedMessage} onChange={e => setEditedMessage(e.target.value)} className="input-warm h-[300px] md:h-[150px] resize-none pr-12 overflow-y-auto" maxLength={maxChars} placeholder={placeholderText} data-attr="input-review-edit-message" />
+                  <Textarea ref={textareaRef} value={editedMessage} onChange={e => {
+                    setEditedMessage(e.target.value);
+                    setValidationError('');
+                  }} className="input-warm h-[300px] md:h-[150px] resize-none pr-12 overflow-y-auto" maxLength={maxChars} placeholder={placeholderText} data-attr="input-review-edit-message" />
                   <button onClick={handleEditClick} className="absolute bottom-3 right-3 bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation" style={{
                   width: '40px',
                   height: '40px',
@@ -220,7 +249,7 @@ ${userInfo?.fullName}`;
               {state.postcardData.sources && state.postcardData.sources.length > 0 && <CollapsibleSources sources={state.postcardData.sources} />}
 
               <div className="space-y-3 pt-4">
-                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars} className={`w-full h-12 text-base ${isUpdating ? 'bg-[hsl(var(--primary-pressed))] hover-safe:bg-[hsl(var(--primary-pressed))] active:bg-[hsl(var(--primary-pressed))]' : ''}`} style={isUpdating ? {
+                <Button onClick={handleContinue} disabled={!editedMessage.trim() || charCount > maxChars || charCount < minChars} className={`w-full h-12 text-base ${isUpdating ? 'bg-[hsl(var(--primary-pressed))] hover-safe:bg-[hsl(var(--primary-pressed))] active:bg-[hsl(var(--primary-pressed))]' : ''}`} style={isUpdating ? {
                 pointerEvents: 'none'
               } : undefined} data-attr="submit-review-edit-continue">
                   <span>{isUpdating ? 'Saving...' : 'Looks Good, Continue'}</span>
