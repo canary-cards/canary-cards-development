@@ -57,7 +57,8 @@ export default function Share() {
       {showSharedBanner && (
         <SharedBanner 
           sharedBy={sharedBy} 
-          onDismiss={() => setShowSharedBanner(false)} 
+          onDismiss={() => setShowSharedBanner(false)}
+          variant="app"
         />
       )}
       <Header />

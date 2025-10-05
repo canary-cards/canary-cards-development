@@ -231,7 +231,8 @@ export default function Onboarding() {
       {showSharedBanner && (
         <SharedBanner 
           sharedBy={sharedBy} 
-          onDismiss={() => setShowSharedBanner(false)} 
+          onDismiss={() => setShowSharedBanner(false)}
+          variant="onboarding"
         />
       )}
 
@@ -239,7 +240,7 @@ export default function Onboarding() {
       <div 
         className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
         style={{ 
-          top: showSharedBanner ? '3.25rem' : 0,
+          top: 0,
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
@@ -269,7 +270,7 @@ export default function Onboarding() {
         id="onboarding-container"
         className="relative h-full w-full touch-pan-x select-none"
         style={{ 
-          paddingTop: showSharedBanner ? 'calc(3.25rem + 4.5rem)' : '4.5rem'
+          paddingTop: '4.5rem'
         }}
         onClick={handleClick}
       >
