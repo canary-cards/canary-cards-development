@@ -226,22 +226,23 @@ export default function Onboarding() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background h-[100dvh] overflow-hidden">
-      {/* Shared Banner */}
+    <div className="fixed inset-0 z-50 bg-background h-[100dvh] overflow-hidden flex flex-col">
+      {/* Shared Banner - Above everything */}
       {showSharedBanner && (
-        <SharedBanner 
-          sharedBy={sharedBy} 
-          onDismiss={() => setShowSharedBanner(false)}
-          variant="onboarding"
-        />
+        <div className="flex-shrink-0">
+          <SharedBanner 
+            sharedBy={sharedBy} 
+            onDismiss={() => setShowSharedBanner(false)}
+            variant="onboarding"
+          />
+        </div>
       )}
 
       {/* Header with X Button and Progress Strips */}
       <div 
-        className="fixed left-0 right-0 z-40 flex items-center justify-between px-4 py-4"
+        className="flex-shrink-0 flex items-center justify-between px-4 py-4 z-40"
         style={{ 
-          top: 0,
-          paddingTop: 'env(safe-area-inset-top, 0px)'
+          paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
       >
         {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
@@ -268,10 +269,7 @@ export default function Onboarding() {
       {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative h-full w-full touch-pan-x select-none"
-        style={{ 
-          paddingTop: '4.5rem'
-        }}
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
       >
 
