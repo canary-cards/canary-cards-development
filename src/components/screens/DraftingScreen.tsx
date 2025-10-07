@@ -381,11 +381,6 @@ export function DraftingScreen() {
           });
           setApiCompleted(true);
           setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "Failed to Draft Message",
-            description: error.message || "An error occurred while drafting your message.",
-          });
           return;
         }
 
@@ -393,11 +388,6 @@ export function DraftingScreen() {
           console.error('No data in response');
           setApiCompleted(true);
           setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "No Response",
-            description: "No response from AI service. Please try again.",
-          });
           return;
         }
 
@@ -406,11 +396,6 @@ export function DraftingScreen() {
           console.error('No draft message or draft ID in response:', data);
           setApiCompleted(true);
           setHasError(true);
-          toast({
-            variant: "destructive",
-            title: "Invalid Response",
-            description: "Invalid response from AI service. Please try again.",
-          });
           return;
         }
 
@@ -471,11 +456,6 @@ export function DraftingScreen() {
         });
         setApiCompleted(true);
         setHasError(true);
-        toast({
-          variant: "destructive",
-          title: "Error Occurred",
-          description: "An unexpected error occurred while drafting your message.",
-        });
       }
     };
 
