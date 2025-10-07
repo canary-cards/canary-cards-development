@@ -130,7 +130,7 @@ export function LandingScreen() {
   };
   return <>
       {/* Shared Link Banner */}
-      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
+      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="onboarding" />}
 
       <div className="min-h-screen bg-background">
       <div className="mx-auto px-4 max-w-2xl pb-1">
