@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { decodeHtmlEntities } from '../_shared/decodeHtmlEntities.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -309,7 +310,10 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     if (lastTitleIdx !== -1 && (urlIndex - lastTitleIdx) < 300) {
       const afterTitle = searchText.substring(lastTitleIdx + marker.length, urlIndex);
       const firstLine = afterTitle.split(/\r?\n/)[0].trim();
-      if (firstLine) return firstLine.replace(/^[*-]\s*/, '').trim();
+      if (firstLine) {
+        const cleanTitle = firstLine.replace(/^[*-]\s*/, '').trim();
+        return decodeHtmlEntities(cleanTitle);
+      }
     }
     
     return '';
@@ -445,7 +449,7 @@ Focus on news from the last 30 days. Provide relevance scores to help identify t
     sources.push({
       url: candidate.url,
       outlet: candidate.outlet,
-      headline,
+      headline: decodeHtmlEntities(headline),
       relevanceScore: candidate.relevanceScore,
       localPriority: candidate.localPriority
     });
