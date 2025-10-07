@@ -74,46 +74,65 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Text area - responsive spacing from icon with conditional vertical scroll */}
-      <div 
-        ref={textAreaRef}
-        className={`absolute inset-x-0 px-4 sm:px-6 text-center ${isFirstSlide ? 'overflow-y-auto' : 'overflow-hidden'}`}
-        style={{
-          top: isMobile ? '48%' : '47%',
-          bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
-          ...(isFirstSlide && {
-            touchAction: 'pan-y', // Allow vertical panning only on first slide
-            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
-          }),
-        }}
-      >
-        <div className="space-y-4">
-          <h2 className="display-title leading-tight">
-            {title}
-          </h2>
-          <h3 className="subtitle text-base leading-relaxed">
-            {subtitle}
-          </h3>
-          {finePrint && (
-            <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
-              <CollapsibleTrigger 
-                className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Source
-                <ChevronDown 
-                  className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
-                />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                  {finePrint}
-                </p>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+      {/* Text area - different rendering for first slide vs others */}
+      {isFirstSlide ? (
+        /* First slide: Scrollable container for expandable source */
+        <div 
+          ref={textAreaRef}
+          className="absolute inset-x-0 overflow-y-auto px-4 sm:px-6 text-center"
+          style={{
+            top: isMobile ? '48%' : '47%',
+            bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          <div className="space-y-4">
+            <h2 className="display-title leading-tight">
+              {title}
+            </h2>
+            <h3 className="subtitle text-base leading-relaxed">
+              {subtitle}
+            </h3>
+            {finePrint && (
+              <Collapsible open={isSourceOpen} onOpenChange={setIsSourceOpen}>
+                <CollapsibleTrigger 
+                  className="text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Source
+                  <ChevronDown 
+                    className={`w-3 h-3 transition-transform ${isSourceOpen ? 'rotate-180' : ''}`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                    {finePrint}
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Other slides: Static positioning with no scroll */
+        <div 
+          className="absolute inset-x-0 px-4 sm:px-6 text-center"
+          style={{
+            top: isMobile ? '48%' : '47%',
+            bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
+          }}
+        >
+          <div className="space-y-4">
+            <h2 className="display-title leading-tight">
+              {title}
+            </h2>
+            <h3 className="subtitle text-base leading-relaxed">
+              {subtitle}
+            </h3>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
