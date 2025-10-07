@@ -129,10 +129,9 @@ export function LandingScreen() {
     }
   };
   return <>
+      <div className="min-h-screen bg-background relative">
       {/* Shared Link Banner */}
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
-
-      <div className="min-h-screen bg-background">
       <div className="mx-auto px-4 max-w-2xl pb-1">
         {/* Mobile-First Hero Section */}
         <div className="text-center">
