@@ -18,6 +18,17 @@ interface SlideProps {
 export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   const isMobile = useIsMobile();
   const [isSourceOpen, setIsSourceOpen] = useState(false);
+  const textAreaRef = React.useRef<HTMLDivElement>(null);
+  
+  // Reset scroll position when slide changes
+  React.useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.scrollTop = 0;
+    }
+  }, [currentSlide]);
+  
+  // Only enable scrolling on first slide (which has finePrint)
+  const isFirstSlide = currentSlide === 0;
   
   return (
     <div className="relative h-full">
@@ -63,14 +74,17 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Text area - responsive spacing from icon with vertical scroll */}
+      {/* Text area - responsive spacing from icon with conditional vertical scroll */}
       <div 
-        className="absolute inset-x-0 overflow-y-auto px-4 sm:px-6 text-center"
+        ref={textAreaRef}
+        className={`absolute inset-x-0 px-4 sm:px-6 text-center ${isFirstSlide ? 'overflow-y-auto' : 'overflow-hidden'}`}
         style={{
           top: isMobile ? '48%' : '47%',
           bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
-          touchAction: 'pan-y', // Allow vertical panning without triggering swipes
-          WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+          ...(isFirstSlide && {
+            touchAction: 'pan-y', // Allow vertical panning only on first slide
+            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+          }),
         }}
       >
         <div className="space-y-4">
