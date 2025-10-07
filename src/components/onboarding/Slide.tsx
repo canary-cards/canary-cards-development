@@ -63,12 +63,14 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
         </div>
       </div>
 
-      {/* Text area - responsive spacing from icon */}
+      {/* Text area - responsive spacing from icon with vertical scroll */}
       <div 
-        className="absolute inset-x-0 px-4 sm:px-6 text-center"
+        className="absolute inset-x-0 overflow-y-auto px-4 sm:px-6 text-center"
         style={{
           top: isMobile ? '48%' : '47%',
           bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
+          touchAction: 'pan-y', // Allow vertical panning without triggering swipes
+          WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
         }}
       >
         <div className="space-y-4">
