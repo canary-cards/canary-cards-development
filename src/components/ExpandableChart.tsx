@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Expand } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { DynamicSvg } from "./DynamicSvg";
 import {
   Dialog,
@@ -36,7 +36,7 @@ export const ExpandableChart = ({ assetName, alt, className }: ExpandableChartPr
                 />
                 {/* Persistent expand icon */}
                 <div className="absolute top-2 right-0 bg-background/90 p-2 rounded-lg shadow-lg border border-border transition-all duration-200 group-hover:bg-accent group-hover:scale-110">
-                  <Expand className="h-5 w-5 text-primary" />
+                  <Maximize2 className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </DialogTrigger>
