@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -143,15 +144,18 @@ export function DesktopNav() {
         </Button>
       </div>
 
-      {/* Custom backdrop below header, above page content */}
-      {currentView !== null && (
-        <div 
-          className="fixed inset-0 bg-black/80 z-35 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-          style={{ top: 'var(--header-h, 4rem)' }}
-          onClick={handleClose}
-          aria-hidden="true"
-        />
-      )}
+      {/* Custom backdrop below header, above page content via portal */}
+      {currentView !== null &&
+        createPortal(
+          <div
+            className="fixed left-0 right-0 bottom-0 bg-black/80 z-30 animate-in fade-in-0 duration-200"
+            style={{ top: 'var(--header-h, 4rem)' }}
+            onClick={handleClose}
+            aria-hidden="true"
+          />,
+          document.body
+        )
+      }
 
       <Dialog modal={false} open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
