@@ -143,7 +143,7 @@ export function DesktopNav() {
         </Button>
       </div>
 
-      <Dialog open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
+      <Dialog modal={false} open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
             className="max-w-2xl max-h-[80vh] overflow-y-auto"
             onInteractOutside={(e) => {
