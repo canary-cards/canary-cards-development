@@ -143,13 +143,13 @@ export function DesktopNav() {
         </Button>
       </div>
 
-      <Dialog modal={false} open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
+      <Dialog open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
             className="max-w-2xl max-h-[80vh] overflow-y-auto"
             onInteractOutside={(e) => {
               const target = e.target as Node | null;
               if (headerRef.current && target && headerRef.current.contains(target)) {
-                e.preventDefault(); // keep dialog open when interacting with header/nav
+                e.preventDefault();
               }
             }}
         >
