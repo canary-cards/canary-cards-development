@@ -23,7 +23,7 @@ export const ExpandableChart = ({ assetName, alt, className }: ExpandableChartPr
   const [open, setOpen] = useState(false);
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={300}>
       <Dialog open={open} onOpenChange={setOpen}>
         <Tooltip>
           <TooltipTrigger asChild>
