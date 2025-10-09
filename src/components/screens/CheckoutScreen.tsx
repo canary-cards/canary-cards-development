@@ -547,11 +547,8 @@ export function CheckoutScreen() {
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Divider */}
-              <div className="border-t border-border"></div>
-
-              {/* Email Input */}
-              <div className="space-y-2">
+              {/* Email Input - Mobile only */}
+              <div className="lg:hidden space-y-2 border-t pt-4">
                 <span className="display-title text-lg">Your Email</span>
                 <div className="relative">
                   <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} onBlur={handleEmailBlur} className={`bg-white pr-10 ${emailError ? 'border-destructive focus-visible:border-destructive' : ''}`} data-attr="input-checkout-email" />
@@ -638,6 +635,22 @@ export function CheckoutScreen() {
                       <span>Total</span>
                       <span className="text-lg">${getTotalPrice()}</span>
                     </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-border"></div>
+
+                  {/* Email Input - Moved to right column */}
+                  <div className="space-y-2">
+                    <span className="display-title text-lg">Your Email</span>
+                    <div className="relative">
+                      <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => handleEmailChange(e.target.value)} onBlur={handleEmailBlur} className={`bg-white pr-10 ${emailError ? 'border-destructive focus-visible:border-destructive' : ''}`} data-attr="input-checkout-email" />
+                      {emailValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
+                    </div>
+                    {emailError && <div className="text-sm text-destructive">
+                        {emailError}
+                      </div>}
+                    <p className="text-sm text-muted-foreground">We'll send you an order confirmation here after checkout and when your card is mailed.</p>
                   </div>
                 </CardContent>
               </Card>
