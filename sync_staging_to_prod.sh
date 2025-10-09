@@ -426,6 +426,7 @@ if [ "$DRY_RUN" = false ]; then
         for dir in supabase/functions/*; do
             [ -d "$dir" ] || continue
             fn="$(basename "$dir")"
+            [[ "$fn" == _* ]] && continue
             echo " • $fn"
             supabase functions deploy "$fn" --project-ref "$SUPABASE_PROD_REF" || echo "  ⚠️ $fn deploy failed (continuing)"
         done
