@@ -143,6 +143,15 @@ export function DesktopNav() {
         </Button>
       </div>
 
+      {/* Custom backdrop that starts below header */}
+      {currentView !== null && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-40 animate-in fade-in-0 duration-200"
+          style={{ top: 'var(--header-h, 4rem)' }}
+          onClick={handleClose}
+        />
+      )}
+
       <Dialog modal={false} open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
             className="max-w-2xl max-h-[80vh] overflow-y-auto"
