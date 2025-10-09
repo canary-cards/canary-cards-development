@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ export function DesktopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch } = useAppContext();
+
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   const handleNavClick = (view: NavView) => {
     setCurrentView(view);
@@ -70,7 +72,7 @@ export function DesktopNav() {
 
   return (
     <>
-      <div className="flex items-center justify-between flex-1 ml-8">
+      <div ref={headerRef} className="flex items-center justify-between flex-1 ml-8">
         {/* Center: Main Navigation */}
         <nav className="flex items-center gap-6 mx-auto" aria-label="Main navigation">
           <button
@@ -142,7 +144,15 @@ export function DesktopNav() {
       </div>
 
       <Dialog open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent 
+            className="max-w-2xl max-h-[80vh] overflow-y-auto"
+            onInteractOutside={(e) => {
+              const target = e.target as Node | null;
+              if (headerRef.current && target && headerRef.current.contains(target)) {
+                e.preventDefault(); // keep dialog open when interacting with header/nav
+              }
+            }}
+        >
           <DialogHeader>
             <DialogTitle className="display-title text-2xl">{getDialogTitle()}</DialogTitle>
           </DialogHeader>
