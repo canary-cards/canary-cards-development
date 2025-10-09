@@ -257,7 +257,7 @@ export function HamburgerMenu({
               /* Content Views */
               <div className="px-4 md:px-5 lg:px-6 py-4 animate-fade-in">
           {currentView === 'about' && <AboutContent />}
-          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} onSeePrivacy={() => setCurrentView('privacy-terms')} />}
+          {currentView === 'faq' && <FAQContent onSeeResearch={() => setCurrentView('research')} />}
           {currentView === 'contact' && <ContactContent />}
                  {currentView === 'privacy-terms' && <PrivacyTermsContent />}
                  {currentView === 'research' && <ResearchContent />}

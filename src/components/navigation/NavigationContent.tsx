@@ -21,7 +21,7 @@ export function AboutContent() {
   );
 }
 
-export function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: () => void; onSeePrivacy?: () => void }) {
+export function FAQContent({ onSeeResearch }: { onSeeResearch?: () => void }) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -83,19 +83,9 @@ export function FAQContent({ onSeeResearch, onSeePrivacy }: { onSeeResearch?: ()
         <h4 className="eyebrow normal-case text-secondary">
           Do you sell my personal information?
         </h4>
-        <div>
-          <p className="body-text">
-            No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
-          </p>
-          {onSeePrivacy && (
-            <button
-              onClick={onSeePrivacy}
-              className="text-blue-600 underline hover:text-blue-800 cursor-pointer block mt-1"
-            >
-              Read full Privacy & Terms
-            </button>
-          )}
-        </div>
+        <p className="body-text">
+          No. We don't sell your personal data (names, addresses, emails, or individual postcard content). We may sell aggregated, anonymized data at the house district level to help organizations understand community engagement trends.
+        </p>
       </div>
 
       <div className="space-y-3">

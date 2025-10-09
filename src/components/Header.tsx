@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { HamburgerMenu } from './HamburgerMenu';
@@ -17,6 +16,17 @@ export function Header({ className, isDark = false }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch } = useAppContext();
+  const [scrolled, setScrolled] = useState(false);
+
+  // Add scroll listener for shadow effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogoClick = () => {
     console.log('🖱️ Logo clicked - current path:', location.pathname);
@@ -33,14 +43,24 @@ export function Header({ className, isDark = false }: HeaderProps) {
   };
 
   return (
-    <header className={`h-14 md:h-16 ${isDark ? 'bg-primary' : 'bg-background'} ${className || ''}`}>
-      <div className="flex items-center px-4 h-full">
-         <button 
-           onClick={handleLogoClick}
-           className="flex items-center space-x-3 hover-safe:opacity-80 transition-opacity"
-           aria-label="Go to home"
-           data-attr="click-header-logo"
-         >
+    <header 
+      className={`
+        h-16 md:h-18 
+        sticky top-0 z-50
+        ${isDark ? 'bg-primary' : 'bg-surface'} 
+        ${scrolled ? 'shadow-md' : ''} 
+        transition-shadow duration-200
+        ${className || ''}
+      `}
+    >
+      <div className="flex items-center justify-between px-4 md:px-6 h-full max-w-7xl mx-auto">
+        {/* Left: Logo */}
+        <button 
+          onClick={handleLogoClick}
+          className="flex items-center space-x-3 hover-safe:opacity-80 transition-opacity"
+          aria-label="Go to home"
+          data-attr="click-header-logo"
+        >
           <Logo className="h-10" />
           <div className="hidden">
             <span className={`font-patrick-hand text-3xl text-left ${isDark ? 'text-background' : 'text-primary'}`}>
@@ -57,9 +77,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
                 <HamburgerMenu isDark={isDark} />
               </div>
             ) : (
-              <div className="ml-8">
-                <DesktopNav />
-              </div>
+              <DesktopNav />
             )}
           </>
         )}

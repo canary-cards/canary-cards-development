@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAppContext } from '@/context/AppContext';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,14 +12,16 @@ import {
   AboutContent,
   FAQContent,
   ContactContent,
-  PrivacyTermsContent,
   ResearchContent,
 } from './NavigationContent';
 
-type NavView = 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research' | null;
+type NavView = 'how-it-works' | 'faq' | 'contact' | 'research' | null;
 
 export function DesktopNav() {
   const [currentView, setCurrentView] = useState<NavView>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { dispatch } = useAppContext();
 
   const handleNavClick = (view: NavView) => {
     setCurrentView(view);
@@ -26,12 +31,19 @@ export function DesktopNav() {
     setCurrentView(null);
   };
 
+  const handleSendCardClick = () => {
+    if (location.pathname === '/') {
+      dispatch({ type: 'RESET_TO_HOME' });
+    } else {
+      navigate('/', { state: { skipOnboarding: true } });
+    }
+  };
+
   const getDialogTitle = () => {
     switch (currentView) {
-      case 'about': return 'About Canary';
+      case 'how-it-works': return 'How It Works';
       case 'faq': return 'FAQ';
       case 'contact': return 'Contact';
-      case 'privacy-terms': return 'Privacy & Terms';
       case 'research': return 'The Research';
       default: return '';
     }
@@ -39,19 +51,16 @@ export function DesktopNav() {
 
   const getDialogContent = () => {
     switch (currentView) {
-      case 'about':
+      case 'how-it-works':
         return <AboutContent />;
       case 'faq':
         return (
           <FAQContent
             onSeeResearch={() => setCurrentView('research')}
-            onSeePrivacy={() => setCurrentView('privacy-terms')}
           />
         );
       case 'contact':
         return <ContactContent />;
-      case 'privacy-terms':
-        return <PrivacyTermsContent />;
       case 'research':
         return <ResearchContent />;
       default:
@@ -61,38 +70,44 @@ export function DesktopNav() {
 
   return (
     <>
-      <nav className="flex items-center gap-6">
-        <button
-          onClick={() => handleNavClick('about')}
-          className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+      <div className="flex items-center justify-between flex-1 ml-8">
+        {/* Center: Main Navigation */}
+        <nav className="flex items-center gap-6 mx-auto" aria-label="Main navigation">
+          <button
+            onClick={() => handleNavClick('how-it-works')}
+            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+          >
+            How It Works
+          </button>
+          <button
+            onClick={() => handleNavClick('faq')}
+            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+          >
+            FAQ
+          </button>
+          <button
+            onClick={() => handleNavClick('research')}
+            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+          >
+            The Research
+          </button>
+          <button
+            onClick={() => handleNavClick('contact')}
+            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+          >
+            Contact
+          </button>
+        </nav>
+
+        {/* Right: CTA Button */}
+        <Button
+          onClick={handleSendCardClick}
+          className="bg-accent text-primary border-2 border-primary hover:bg-accent/90 font-medium"
+          data-attr="click-nav-send-card"
         >
-          About
-        </button>
-        <button
-          onClick={() => handleNavClick('faq')}
-          className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
-        >
-          FAQ
-        </button>
-        <button
-          onClick={() => handleNavClick('research')}
-          className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
-        >
-          The Research
-        </button>
-        <button
-          onClick={() => handleNavClick('contact')}
-          className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
-        >
-          Contact
-        </button>
-        <button
-          onClick={() => handleNavClick('privacy-terms')}
-          className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
-        >
-          Privacy & Terms
-        </button>
-      </nav>
+          Send a Card
+        </Button>
+      </div>
 
       <Dialog open={currentView !== null} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
