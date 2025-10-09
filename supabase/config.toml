@@ -4,7 +4,7 @@ project_id = "pugnjgvdisdbdkbofwrc"
 verify_jwt = false
 
 [functions.draft-postcard-message] 
-verify_jwt = true
+verify_jwt = false
 
 [functions.env-diagnostics]
 verify_jwt = true

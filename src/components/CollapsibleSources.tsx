@@ -3,6 +3,7 @@ import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
 import { supabase } from '@/integrations/supabase/client';
+import { decodeHtmlEntities } from '@/lib/decodeHtmlEntities';
 import type { Source } from '@/types';
 
 interface EnhancedSource extends Source {
@@ -232,8 +233,9 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
           const enhancedSource = source as EnhancedSource;
           
           // Use enhanced title from link preview, or fallback to domain
-          const displayTitle = enhancedSource.enhancedTitle || domain;
-          const displayDescription = enhancedSource.enhancedDescription;
+          // Decode HTML entities as a safety fallback
+          const displayTitle = decodeHtmlEntities(enhancedSource.enhancedTitle || domain);
+          const displayDescription = decodeHtmlEntities(enhancedSource.enhancedDescription);
           
           return (
             <div key={index} className="space-y-2">

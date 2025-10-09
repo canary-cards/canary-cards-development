@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { decodeHtmlEntities } from '../_shared/decodeHtmlEntities.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,10 +61,10 @@ serve(async (req) => {
       const nameRegex = new RegExp(`<meta\\s+name=["']${property}["']\\s+content=["']([^"']+)["']`, 'i');
       
       const ogMatch = html.match(ogRegex);
-      if (ogMatch) return ogMatch[1];
+      if (ogMatch) return decodeHtmlEntities(ogMatch[1]);
       
       const nameMatch = html.match(nameRegex);
-      if (nameMatch) return nameMatch[1];
+      if (nameMatch) return decodeHtmlEntities(nameMatch[1]);
       
       return undefined;
     };
@@ -72,14 +73,8 @@ serve(async (req) => {
     const extractTitle = (): string | undefined => {
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
       if (titleMatch?.[1]) {
-        return titleMatch[1]
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&mdash;/g, '—')
-          .replace(/&ndash;/g, '–')
+        const decodedTitle = decodeHtmlEntities(titleMatch[1]);
+        return decodedTitle
           .replace(/\s+/g, ' ')
           .trim();
       }

@@ -29,8 +29,8 @@ export function SharedBanner({ sharedBy, onDismiss, variant = 'default' }: Share
         // Relative positioning to stay in flex flow and push content down
         return 'relative w-full z-[100]';
       case 'app':
-        // Position to cover StepDots (which appears below header)
-        return 'fixed left-0 right-0 z-[100]' + ' top-[3.5rem]';
+        // Absolute positioning with negative top to cover StepDots progress bar
+        return 'absolute left-0 right-0 z-[100] -top-8';
       default:
         return 'fixed top-0 left-0 right-0 z-[100]';
     }

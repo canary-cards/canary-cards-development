@@ -171,7 +171,8 @@ export default function Onboarding() {
       const deltaY = endY - startY;
 
       // Only trigger if horizontal swipe is more significant than vertical
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      // Increased threshold to 75px for better scroll vs swipe distinction
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 75) {
         if (deltaX > 0) {
           prevSlide();
         } else {

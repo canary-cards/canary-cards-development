@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAppContext } from '../../context/AppContext';
 import { PostcardHero } from '../PostcardHero';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import posthog from 'posthog-js';
 
 export function ReviewCardScreen() {
   const { state, dispatch } = useAppContext();
@@ -13,6 +14,11 @@ export function ReviewCardScreen() {
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
   const finalMessage = state.postcardData.finalMessage;
+
+  // Track page view on mount
+  useEffect(() => {
+    posthog.capture('review_card_viewed');
+  }, []);
 
   // Replace placeholders in the message with actual user data
   const replacePlaceholders = (message: string) => {
