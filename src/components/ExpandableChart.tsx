@@ -41,7 +41,7 @@ export const ExpandableChart = ({ assetName, alt, className }: ExpandableChartPr
               </div>
             </DialogTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
+          <TooltipContent side="left" align="center" sideOffset={-100}>
             <p>Click to expand</p>
           </TooltipContent>
         </Tooltip>
