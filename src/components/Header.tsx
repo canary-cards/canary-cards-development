@@ -50,10 +50,8 @@ export function Header({ className, isDark = false }: HeaderProps) {
         ${isDark ? 'bg-primary' : 'bg-surface'} 
         ${scrolled ? 'shadow-md' : ''} 
         transition-shadow duration-200
-        backdrop-blur-sm
         ${className || ''}
       `}
-      style={{ backgroundColor: isDark ? undefined : 'var(--surface)' }}
     >
       <div className="flex items-center justify-between px-4 md:px-6 h-full max-w-7xl mx-auto">
         {/* Left: Logo */}
