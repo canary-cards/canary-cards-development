@@ -3,7 +3,9 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { HamburgerMenu } from './HamburgerMenu';
+import { DesktopNav } from './navigation/DesktopNav';
 import { Logo } from './Logo';
+import { useIsMobile } from '../hooks/use-mobile';
 
 interface HeaderProps {
   className?: string;
@@ -11,6 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ className, isDark = false }: HeaderProps) {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch } = useAppContext();
@@ -46,9 +49,15 @@ export function Header({ className, isDark = false }: HeaderProps) {
           </div>
         </button>
         
-        {/* Only show hamburger menu if NOT on onboarding page */}
+        {/* Only show navigation if NOT on onboarding page */}
         {!location.pathname.startsWith('/onboarding') && (
-          <HamburgerMenu isDark={isDark} />
+          <>
+            {isMobile ? (
+              <HamburgerMenu isDark={isDark} />
+            ) : (
+              <DesktopNav />
+            )}
+          </>
         )}
       </div>
     </header>
