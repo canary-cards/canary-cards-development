@@ -81,7 +81,7 @@ export function DesktopNav() {
               border-b-2
               ${currentView === 'how-it-works' 
                 ? 'border-accent' 
-                : 'border-transparent hover-safe:border-accent'
+                : 'border-transparent hover:border-accent'
               }
             `}
           >
@@ -95,7 +95,7 @@ export function DesktopNav() {
               border-b-2
               ${currentView === 'faq' 
                 ? 'border-accent' 
-                : 'border-transparent hover-safe:border-accent'
+                : 'border-transparent hover:border-accent'
               }
             `}
           >
@@ -109,7 +109,7 @@ export function DesktopNav() {
               border-b-2
               ${currentView === 'research' 
                 ? 'border-accent' 
-                : 'border-transparent hover-safe:border-accent'
+                : 'border-transparent hover:border-accent'
               }
             `}
           >
@@ -123,7 +123,7 @@ export function DesktopNav() {
               border-b-2
               ${currentView === 'contact' 
                 ? 'border-accent' 
-                : 'border-transparent hover-safe:border-accent'
+                : 'border-transparent hover:border-accent'
               }
             `}
           >
