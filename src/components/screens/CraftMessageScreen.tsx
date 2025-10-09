@@ -301,8 +301,12 @@ export function CraftMessageScreen() {
     });
   };
   return <div className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 py-4 max-w-2xl pb-24">
-        <Card className="card-warm">
+      <div className="container mx-auto px-4 py-4 max-w-4xl pb-24">
+        {/* Desktop two-column layout */}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+          {/* Left column - Form inputs */}
+          <div>
+            <Card className="card-warm">
           <CardContent className="p-6">
             <div className="text-center mb-3">
               <h1 className="display-title mb-2">What's on your mind?</h1>
@@ -419,6 +423,31 @@ export function CraftMessageScreen() {
             </div>
           </CardContent>
         </Card>
+          </div>
+
+          {/* Right column - Tips and context (desktop only) */}
+          <div className="hidden lg:block">
+            <Card className="card-warm sticky top-4">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="display-title text-lg">Tips for your message</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex gap-3">
+                    <span className="text-primary">💡</span>
+                    <p className="body-text">Be specific about how the issue affects you or your community</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-primary">✍️</span>
+                    <p className="body-text">Personal stories are more compelling than statistics</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-primary">🎯</span>
+                    <p className="body-text">Our AI will craft a professional message based on your input</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>;
 }

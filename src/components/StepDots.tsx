@@ -7,7 +7,7 @@ interface StepDotsProps {
 
 export function StepDots({ currentStep, totalSteps }: StepDotsProps) {
   return (
-    <div className="flex gap-1 px-4 pt-2 pb-4 max-w-2xl mx-auto">
+    <div className="flex gap-1 px-4 pt-2 pb-4 max-w-4xl mx-auto">
       {Array.from({ length: totalSteps }, (_, index) => {
         const stepNumber = index + 1;
         const isCompleted = stepNumber < currentStep;

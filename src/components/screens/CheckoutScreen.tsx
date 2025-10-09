@@ -376,12 +376,17 @@ export function CheckoutScreen() {
   }
   return <>
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 pb-24 max-w-2xl">
+        <div className="container mx-auto px-4 pb-24 max-w-4xl">
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="display-title mb-2">Let's get your masterful postcard out the door</h1>
             <h3 className="subtitle text-base">You have three congresspeople in D.C. and most people send to all of them</h3>
           </div>
+
+          {/* Desktop two-column layout */}
+          <div className="lg:grid lg:grid-cols-[1fr_400px] lg:gap-8">
+            {/* Left column - Payment options and form */}
+            <div className="space-y-6">
 
           {/* Section 1 - Recipients Panel */}
           {/* Single Voice Card */}
@@ -567,11 +572,82 @@ export function CheckoutScreen() {
               </div>
             </div>
           </div>
+            </div>
+
+            {/* Right column - Order summary (desktop only) */}
+            <div className="hidden lg:block">
+              <Card className="card-warm sticky top-4">
+                <CardContent className="p-6 space-y-4">
+                  <h3 className="display-title text-lg">Order Summary</h3>
+                  
+                  {/* Selected Recipients */}
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">Sending to:</p>
+                    <div className="space-y-2">
+                      {getSelectedRecipients().representative && rep && (
+                        <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                          <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
+                            {rep.photo ? (
+                              <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs">
+                                {rep.name.split(' ').map(n => n[0]).join('')}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{rep.name}</p>
+                            <p className="text-xs text-muted-foreground">Representative</p>
+                          </div>
+                          <span className="text-sm font-medium">$5</span>
+                        </div>
+                      )}
+                      {getSelectedSenators().map((senator, idx) => (
+                        <div key={senator.id} className="flex items-center gap-3 p-2 rounded bg-background/50">
+                          <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
+                            {senator.photo ? (
+                              <img src={senator.photo} alt={senator.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs">
+                                {senator.name.split(' ').map(n => n[0]).join('')}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{senator.name}</p>
+                            <p className="text-xs text-muted-foreground">Senator</p>
+                          </div>
+                          <span className="text-sm font-medium">$5</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal</span>
+                      <span>${getSelectedCount() * 5}</span>
+                    </div>
+                    {getSelectedCount() === 3 && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Savings</span>
+                        <span>-$3</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold border-t pt-2">
+                      <span>Total</span>
+                      <span className="text-lg">${getTotalPrice()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
 
         {/* Sticky CTA for Both Mobile and Desktop */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40 space-y-2 pb-[env(safe-area-inset-bottom)]">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <Button onClick={handlePayment} disabled={!email || !emailValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium" data-attr="submit-checkout-payment">
               {isProcessing ? <>
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />

@@ -47,7 +47,7 @@ export default function Share() {
       <Header />
       
       {/* Content Container */}
-      <div className="mx-auto max-w-2xl px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-4xl px-4 py-12 md:py-20">
         <Card className="p-8 md:p-12">
           <div className="text-center">
             {/* Postcard Icon */}
