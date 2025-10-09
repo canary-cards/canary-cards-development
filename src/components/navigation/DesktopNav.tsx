@@ -75,25 +75,57 @@ export function DesktopNav() {
         <nav className="flex items-center gap-6 mx-auto" aria-label="Main navigation">
           <button
             onClick={() => handleNavClick('how-it-works')}
-            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+            className={`
+              body-text text-primary px-3 py-2 rounded-md
+              transition-all duration-[120ms] ease-out
+              border-b-2
+              ${currentView === 'how-it-works' 
+                ? 'border-accent' 
+                : 'border-transparent hover-safe:border-accent'
+              }
+            `}
           >
             How It Works
           </button>
           <button
             onClick={() => handleNavClick('faq')}
-            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+            className={`
+              body-text text-primary px-3 py-2 rounded-md
+              transition-all duration-[120ms] ease-out
+              border-b-2
+              ${currentView === 'faq' 
+                ? 'border-accent' 
+                : 'border-transparent hover-safe:border-accent'
+              }
+            `}
           >
             FAQ
           </button>
           <button
             onClick={() => handleNavClick('research')}
-            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+            className={`
+              body-text text-primary px-3 py-2 rounded-md
+              transition-all duration-[120ms] ease-out
+              border-b-2
+              ${currentView === 'research' 
+                ? 'border-accent' 
+                : 'border-transparent hover-safe:border-accent'
+              }
+            `}
           >
             The Research
           </button>
           <button
             onClick={() => handleNavClick('contact')}
-            className="body-text text-primary hover-safe:bg-primary/10 px-3 py-2 rounded-md transition-colors"
+            className={`
+              body-text text-primary px-3 py-2 rounded-md
+              transition-all duration-[120ms] ease-out
+              border-b-2
+              ${currentView === 'contact' 
+                ? 'border-accent' 
+                : 'border-transparent hover-safe:border-accent'
+              }
+            `}
           >
             Contact
           </button>
@@ -102,7 +134,7 @@ export function DesktopNav() {
         {/* Right: CTA Button */}
         <Button
           onClick={handleSendCardClick}
-          className="bg-accent text-primary border-2 border-primary hover:bg-accent/90 font-medium"
+          className="bg-accent text-primary border-2 border-primary hover:bg-accent/90 font-medium transition-all duration-[120ms]"
           data-attr="click-nav-send-card"
         >
           Send a Card
