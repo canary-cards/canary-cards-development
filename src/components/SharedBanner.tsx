@@ -27,12 +27,12 @@ export function SharedBanner({ sharedBy, onDismiss, variant = 'default' }: Share
     switch (variant) {
       case 'onboarding':
         // Relative positioning to stay in flex flow and push content down
-        return 'relative w-full z-[100]';
+        return 'relative w-full z-40';
       case 'app':
         // Absolute positioning with negative top to cover StepDots progress bar
-        return 'absolute left-0 right-0 z-[100] -top-8';
+        return 'absolute left-0 right-0 z-40 -top-8';
       default:
-        return 'fixed top-0 left-0 right-0 z-[100]';
+        return 'fixed top-0 left-0 right-0 z-40';
     }
   };
   
