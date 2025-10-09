@@ -72,7 +72,7 @@ export function DesktopNav() {
     <>
       <div className="flex items-center justify-between flex-1 ml-8">
         {/* Center: Main Navigation */}
-        <nav className="flex items-center gap-6 mx-auto" aria-label="Main navigation">
+        <nav className="flex items-center gap-6 mx-auto relative z-[210]" aria-label="Main navigation">
           <button
             onClick={() => handleNavClick('how-it-works')}
             className={`
