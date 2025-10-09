@@ -301,12 +301,12 @@ export function CraftMessageScreen() {
     });
   };
   return <div className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 py-4 max-w-4xl pb-24">
+      <div className="container mx-auto px-4 py-4 max-w-6xl pb-24">
         {/* Desktop two-column layout */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+        <div className="lg:grid lg:grid-cols-[2fr_1fr] lg:gap-8">
           {/* Left column - Form inputs */}
-          <div>
-            <Card className="card-warm">
+          <div className="w-full">
+            <Card className="card-warm w-full">
           <CardContent className="p-6">
             <div className="text-center mb-3">
               <h1 className="display-title mb-2">What's on your mind?</h1>

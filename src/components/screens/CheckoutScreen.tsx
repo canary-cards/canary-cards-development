@@ -376,7 +376,7 @@ export function CheckoutScreen() {
   }
   return <>
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 pb-24 max-w-4xl">
+        <div className="container mx-auto px-4 pb-24 max-w-6xl">
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="display-title mb-2">Let's get your masterful postcard out the door</h1>
@@ -384,9 +384,9 @@ export function CheckoutScreen() {
           </div>
 
           {/* Desktop two-column layout */}
-          <div className="lg:grid lg:grid-cols-[1fr_400px] lg:gap-8">
+          <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8">
             {/* Left column - Payment options and form */}
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
 
           {/* Section 1 - Recipients Panel */}
           {/* Single Voice Card */}
@@ -647,7 +647,7 @@ export function CheckoutScreen() {
 
         {/* Sticky CTA for Both Mobile and Desktop */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-40 space-y-2 pb-[env(safe-area-inset-bottom)]">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <Button onClick={handlePayment} disabled={!email || !emailValid || isProcessing} variant="spotlight" className="w-full h-12 text-base font-medium" data-attr="submit-checkout-payment">
               {isProcessing ? <>
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
