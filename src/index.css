@@ -65,10 +65,6 @@ All colors MUST be HSL.
 
     /* Responsive drawer widths */
     --drawer-width: min(92vw, 360px);
-
-    /* Header + overlay defaults */
-    --header-h: 4rem; /* default header height */
-    --dialog-overlay-top: var(--header-h); /* overlay starts below header by default */
   }
 
   .dark {
@@ -343,14 +339,14 @@ All colors MUST be HSL.
     min-height: 44px;
   }
 
-  /* Mobile viewport safe area handling for sheet/dialog overlays */
+  /* Mobile viewport safe area handling for sheet overlays */
   [data-radix-dialog-overlay] {
     /* Ensure overlay covers full mobile viewport including safe areas */
     height: 100vh !important;
     height: 100dvh !important;
     min-height: 100vh !important;
     min-height: 100dvh !important;
-    top: var(--dialog-overlay-top, 0) !important; /* allow header-safe offset */
+    top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;

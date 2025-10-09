@@ -216,7 +216,7 @@ export function ReturnAddressScreen() {
   };
   const isFormComplete = fullName.trim() && streetAddress.trim();
   return <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pb-8 max-w-4xl">
+      <div className="container mx-auto px-4 pb-8 max-w-2xl">
         <Card className="card-warm">
           <CardContent className="p-8">
             <div className="text-center mb-8">

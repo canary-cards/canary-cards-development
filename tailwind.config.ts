@@ -109,9 +109,6 @@ export default {
 			},
 			scale: {
 				'130': '1.3'
-			},
-			zIndex: {
-				'35': '35'
 			}
 		}
 	},

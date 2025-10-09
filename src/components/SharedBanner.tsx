@@ -38,7 +38,7 @@ export function SharedBanner({ sharedBy, onDismiss, variant = 'default' }: Share
   
   return (
     <div className={`${getPositionClasses()} bg-primary text-primary-foreground px-4 py-3 shadow-md`}>
-      <div className="container mx-auto max-w-4xl relative">
+      <div className="container mx-auto max-w-2xl relative">
         <div className="flex items-center justify-center gap-2">
           <Heart className="h-4 w-4 text-primary-foreground/80" />
           <span className="text-sm font-medium">

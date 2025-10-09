@@ -132,7 +132,7 @@ export function LandingScreen() {
       <div className="min-h-screen bg-background relative">
       {/* Shared Link Banner */}
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
-      <div className="mx-auto px-4 max-w-4xl pb-1">
+      <div className="mx-auto px-4 max-w-2xl pb-1">
         {/* Mobile-First Hero Section */}
         <div className="text-center">
           {/* Hero Text */}
@@ -266,7 +266,7 @@ export function LandingScreen() {
       {/* Sticky CTA */}
       {selectedRep && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg animate-slide-in-right">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <Button 
               ref={continueButtonRef}
               onClick={handleContinue} 

@@ -8,7 +8,7 @@ interface FinalizingOrderScreenProps {
 export const FinalizingOrderScreen = ({ status, onRetry }: FinalizingOrderScreenProps) => {
   return (
     <div className="h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex items-center justify-center bg-background px-4">
-      <div className="text-center space-y-6 max-w-4xl">
+      <div className="text-center space-y-6 max-w-2xl">
           {status === 'loading' && (
             <div className="space-y-6">
               <div className="flex flex-col items-center space-y-6">

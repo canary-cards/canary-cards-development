@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { Maximize2 } from "lucide-react";
 import { DynamicSvg } from "./DynamicSvg";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ExpandableChartProps {
   assetName: string;
@@ -23,36 +16,23 @@ export const ExpandableChart = ({ assetName, alt, className }: ExpandableChartPr
   const [open, setOpen] = useState(false);
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <div className={`${className} relative cursor-pointer group`}>
-                <DynamicSvg
-                  assetName={assetName}
-                  alt={alt}
-                  className="w-full h-auto"
-                />
-                {/* Persistent expand icon */}
-                <div className="absolute top-2 right-0 bg-background/90 p-2 rounded-lg shadow-lg border border-border transition-all duration-200 group-hover:bg-accent group-hover:scale-110">
-                  <Maximize2 className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="left" align="center" sideOffset={-100}>
-            <p>Click to expand</p>
-          </TooltipContent>
-        </Tooltip>
-        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-auto">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <div className={className}>
           <DynamicSvg
             assetName={assetName}
-            alt={`${alt} - expanded view`}
+            alt={alt}
             className="w-full h-auto"
           />
-        </DialogContent>
-      </Dialog>
-    </TooltipProvider>
+        </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-auto">
+        <DynamicSvg
+          assetName={assetName}
+          alt={`${alt} - expanded view`}
+          className="w-full h-auto"
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
