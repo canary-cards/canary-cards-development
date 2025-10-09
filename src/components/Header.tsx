@@ -47,7 +47,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
       className={`
         h-16 md:h-18 
         sticky top-0 z-[100]
-        ${isDark ? 'bg-primary' : 'bg-surface'} 
+        ${isDark ? 'bg-primary' : 'bg-background'} 
         ${scrolled ? 'shadow-md' : ''} 
         transition-shadow duration-200
         ${className || ''}
