@@ -81,7 +81,7 @@ export function DesktopNav() {
             className={`
               body-text text-primary px-3 py-2 rounded-md
               transition-all duration-[120ms] ease-out
-              border-b-2
+              border-b-2 relative z-50
               ${currentView === 'how-it-works' 
                 ? 'border-accent' 
                 : 'border-transparent hover:border-accent'
@@ -95,7 +95,7 @@ export function DesktopNav() {
             className={`
               body-text text-primary px-3 py-2 rounded-md
               transition-all duration-[120ms] ease-out
-              border-b-2
+              border-b-2 relative z-50
               ${currentView === 'faq' 
                 ? 'border-accent' 
                 : 'border-transparent hover:border-accent'
@@ -109,7 +109,7 @@ export function DesktopNav() {
             className={`
               body-text text-primary px-3 py-2 rounded-md
               transition-all duration-[120ms] ease-out
-              border-b-2
+              border-b-2 relative z-50
               ${currentView === 'research' 
                 ? 'border-accent' 
                 : 'border-transparent hover:border-accent'
@@ -123,7 +123,7 @@ export function DesktopNav() {
             className={`
               body-text text-primary px-3 py-2 rounded-md
               transition-all duration-[120ms] ease-out
-              border-b-2
+              border-b-2 relative z-50
               ${currentView === 'contact' 
                 ? 'border-accent' 
                 : 'border-transparent hover:border-accent'
