@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { HamburgerMenu } from './HamburgerMenu';
@@ -17,15 +17,29 @@ export function Header({ className, isDark = false }: HeaderProps) {
   const location = useLocation();
   const { dispatch } = useAppContext();
   const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   // Add scroll listener for shadow effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 0);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Measure header height and expose it as CSS variables for overlays
+  useEffect(() => {
+    const updateHeaderVars = () => {
+      const h = headerRef.current?.offsetHeight ?? 0;
+      const px = `${h}px`;
+      document.documentElement.style.setProperty('--header-h', px);
+      document.documentElement.style.setProperty('--dialog-overlay-top', px);
+    };
+    updateHeaderVars();
+    window.addEventListener('resize', updateHeaderVars);
+    return () => window.removeEventListener('resize', updateHeaderVars);
   }, []);
 
   const handleLogoClick = () => {
@@ -44,6 +58,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
 
   return (
     <header 
+      ref={headerRef}
       className={`
         h-16 md:h-18 
         sticky top-0 z-50
