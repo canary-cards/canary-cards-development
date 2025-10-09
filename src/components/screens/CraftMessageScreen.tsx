@@ -301,7 +301,7 @@ export function CraftMessageScreen() {
     });
   };
   return <div className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 py-4 max-w-6xl pb-24">
+      <div className="container mx-auto px-4 py-4 max-w-4xl pb-24">
         {/* Desktop two-column layout */}
         <div className="lg:grid lg:grid-cols-[2fr_1fr] lg:gap-8">
           {/* Left column - Form inputs */}

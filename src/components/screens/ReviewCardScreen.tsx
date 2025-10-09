@@ -44,7 +44,7 @@ export function ReviewCardScreen() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pb-20 max-w-6xl">
+      <div className="container mx-auto px-4 pb-20 max-w-4xl">
         
         {/* Desktop two-column layout */}
         <div className="lg:grid lg:grid-cols-[2fr_1fr] lg:gap-8">
@@ -142,7 +142,7 @@ export function ReviewCardScreen() {
 
       {/* Navigation Buttons - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-4xl">
             <div className="flex gap-3">
               <Button 
                 type="button" 
