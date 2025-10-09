@@ -35,7 +35,7 @@ export const ExpandableChart = ({ assetName, alt, className }: ExpandableChartPr
                   className="w-full h-auto"
                 />
                 {/* Persistent expand icon */}
-                <div className="absolute top-4 right-4 bg-background/90 p-2 rounded-lg shadow-lg border border-border transition-all duration-200 group-hover:bg-accent group-hover:scale-110">
+                <div className="absolute top-2 right-2 bg-background/90 p-2 rounded-lg shadow-lg border border-border transition-all duration-200 group-hover:bg-accent group-hover:scale-110">
                   <Expand className="h-5 w-5 text-primary" />
                 </div>
               </div>
