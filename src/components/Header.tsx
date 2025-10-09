@@ -34,7 +34,7 @@ export function Header({ className, isDark = false }: HeaderProps) {
 
   return (
     <header className={`h-14 md:h-16 ${isDark ? 'bg-primary' : 'bg-background'} ${className || ''}`}>
-      <div className="flex items-center justify-between px-4 h-full">
+      <div className="flex items-center px-4 h-full">
          <button 
            onClick={handleLogoClick}
            className="flex items-center space-x-3 hover-safe:opacity-80 transition-opacity"
@@ -53,9 +53,13 @@ export function Header({ className, isDark = false }: HeaderProps) {
         {!location.pathname.startsWith('/onboarding') && (
           <>
             {isMobile ? (
-              <HamburgerMenu isDark={isDark} />
+              <div className="ml-auto">
+                <HamburgerMenu isDark={isDark} />
+              </div>
             ) : (
-              <DesktopNav />
+              <div className="ml-8">
+                <DesktopNav />
+              </div>
             )}
           </>
         )}
