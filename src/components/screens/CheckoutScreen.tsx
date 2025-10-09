@@ -499,11 +499,19 @@ export function CheckoutScreen() {
             </div>
           </div>
 
+          {/* Back Navigation - After mix & match */}
+          <div className="mb-6">
+            <Button type="button" variant="secondary" onClick={goBack} className="w-full sm:w-auto px-3 sm:px-4" data-attr="click-checkout-back">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="text-sm sm:text-base">Back</span>
+            </Button>
+          </div>
+
           {/* Validation Error */}
           {validationError && <p className="text-sm text-destructive mb-4">{validationError}</p>}
 
-          {/* Section 3 - Combined Order Summary & Email */}
-          <div className="rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
+          {/* Section 3 - Combined Order Summary & Email (Mobile only) */}
+          <div className="lg:hidden rounded-lg border-2 border-border p-4 transition-all mb-6 bg-white">
             <div className="space-y-6">
               {/* Order Summary (Expandable) */}
               <Collapsible open={isOrderSummaryOpen} onOpenChange={setIsOrderSummaryOpen}>
@@ -558,14 +566,6 @@ export function CheckoutScreen() {
                     {emailError}
                   </div>}
                 <p className="text-sm text-muted-foreground">We'll send you an order confirmation here after checkout and when your card is mailed.</p>
-              </div>
-
-              {/* Navigation */}
-              <div className="flex gap-2 sm:gap-4 pt-4 border-t">
-                <Button type="button" variant="secondary" onClick={goBack} className="flex-shrink-0 px-3 sm:px-4" data-attr="click-checkout-back">
-                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="text-sm sm:text-base">Back</span>
-                </Button>
               </div>
             </div>
           </div>
