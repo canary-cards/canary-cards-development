@@ -228,11 +228,11 @@ export function DraftingScreen() {
     }
   };
 
-  // Sequential animation timing: first (6s) -> transition 1 (2s) -> second (8s) -> transition 2 (2s) -> third (stays until complete)
+  // Sequential animation timing: first (4.5s) -> transition 1 (2s) -> second (4s) -> transition 2 (2s) -> third (stays until complete)
   useEffect(() => {
     const timers: number[] = [];
 
-    // After 6s: go to Transition 1 (index 1)
+    // After 4.5s: go to Transition 1 (index 1)
     timers.push(window.setTimeout(() => {
       const prevLayer = activeLayerRef.current;
       transitionToAnimation(1);
@@ -247,11 +247,11 @@ export function DraftingScreen() {
         preloadHiddenLayer(2);
       }, 1500));
 
-      // At 2s into transition 1 (8s total): crossfade to the preloaded Animation 2
+      // At 2s into transition 1 (6.5s total): crossfade to the preloaded Animation 2
       timers.push(window.setTimeout(() => {
         const doCrossfade = () => {
           crossfadeToPreloaded(2);
-          // After 8s on Animation 2: go to Transition 2 (index 3)
+          // After 4s on Animation 2: go to Transition 2 (index 3)
           timers.push(window.setTimeout(() => {
             transitionToAnimation(3);
 
@@ -288,7 +288,7 @@ export function DraftingScreen() {
                 }, 1200));
               }
             }, 2000));
-          }, 8000));
+          }, 4000));
         };
 
         if (preloadedReadyRef.current) {
@@ -313,7 +313,7 @@ export function DraftingScreen() {
           }, 1200));
         }
       }, 2000));
-    }, 6000));
+    }, 4500));
 
     return () => {
       timers.forEach(clearTimeout);
@@ -408,9 +408,9 @@ export function DraftingScreen() {
           return;
         }
 
-        // Ensure minimum 24 second display time for better UX
+        // Ensure minimum 18.5 second display time for better UX
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, 24000 - elapsedTime);
+        const remainingTime = Math.max(0, 18500 - elapsedTime);
 
         setTimeout(() => {
           // Log the data for debugging
