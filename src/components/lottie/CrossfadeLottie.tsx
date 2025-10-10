@@ -43,29 +43,21 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
       timers.push(window.setTimeout(() => {
         console.log(`🎬 Animation ${nextIndex} loaded, starting crossfade`);
         
-        // SECOND: Fade out current player
+        setActivePlayer(nextPlayer);
+        
+        // Fade out current AND fade in next AT THE SAME TIME (overlapping)
         if (fromPlayer === 'A') {
           setPlayerAVisible(false);
+          setPlayerBVisible(true);
         } else {
           setPlayerBVisible(false);
+          setPlayerAVisible(true);
         }
 
-        // THIRD: As soon as fade-out completes, fade in next player
-        timers.push(window.setTimeout(() => {
-          setActivePlayer(nextPlayer);
-          
-          // Fade in next
-          if (nextPlayer === 'A') {
-            setPlayerAVisible(true);
-          } else {
-            setPlayerBVisible(true);
-          }
-
-          // Start playback
-          if (nextPlayerRef.current) {
-            nextPlayerRef.current.play();
-          }
-        }, FADE_DURATION)); // Wait for fade-out to complete
+        // Start playback immediately
+        if (nextPlayerRef.current) {
+          nextPlayerRef.current.play();
+        }
       }, 100)); // Wait for preload
     };
 
