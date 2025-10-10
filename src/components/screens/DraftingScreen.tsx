@@ -323,7 +323,7 @@ export function DraftingScreen() {
                     speed="1"
                     className={`w-full h-full max-w-2xl transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
                     autoplay
-                    loop={currentAnimationIndex === 2} // Only loop the final animation
+                    loop={currentAnimationIndex !== 1} // Loop animations 0 and 2, but not 1
                   />
                 </div>
               </Suspense>
