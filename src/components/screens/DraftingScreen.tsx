@@ -1,43 +1,11 @@
-import React, { useEffect, useState, Suspense, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { DynamicSvg } from '../DynamicSvg';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
-
-// Type declaration for lottie-player custom element
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'lottie-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        src?: string;
-        autoplay?: boolean;
-        loop?: boolean;
-        speed?: string;
-        background?: string;
-      };
-    }
-  }
-}
-
-// Load lottie-player web component
-if (typeof window !== 'undefined' && !customElements.get('lottie-player')) {
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
-  script.async = true;
-  document.head.appendChild(script);
-}
-
-// CDN-hosted animations (no transitions, just main animations)
-const animationUrls = [
-  "https://cdn.lottielab.com/l/DpA7DrGV7NdExu.json",      // Animation 0: 3 loops
-  "https://cdn.lottielab.com/l/2FdfJEUKxUWhCF.json",      // Animation 1: 1 loop
-  "https://cdn.lottielab.com/l/3Q5fRmtNUXVCDz.json"       // Animation 2: 2 loops
-];
-
-const animationLoops = [3, 1, 2];
+import { CrossfadeLottie } from '../lottie/CrossfadeLottie';
 
 const draftingMessages = [
   "Synthesizing your concerns",
@@ -50,9 +18,6 @@ export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
-  const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A'); // Which player is currently visible
-  const [playerAVisible, setPlayerAVisible] = useState(true);
-  const [playerBVisible, setPlayerBVisible] = useState(false);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -60,9 +25,6 @@ export function DraftingScreen() {
   const [hasError, setHasError] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
-  const playerARef = useRef<any>(null);
-  const playerBRef = useRef<any>(null);
-  const nextAnimationIndexRef = useRef(1); // Next animation to load
   
   // Update message based on current animation
   useEffect(() => {
@@ -77,138 +39,6 @@ export function DraftingScreen() {
       }, 200);
     }
   }, [currentAnimationIndex, currentMessage]);
-
-  // Animation sequence with dual-player approach - FIXED
-  useEffect(() => {
-    console.log('🎬 Animation effect mounted, scheduling transitions');
-    const timers: number[] = [];
-    const listeners: Array<{ element: any; event: string; handler: any }> = [];
-    const FADE_DURATION = 1500; // 1.5 second fade
-    const WATCHDOG_TIMEOUT = 3000; // 3s watchdog
-    const ANIMATION_0_DURATION = 4500; // 4.5 seconds
-    const ANIMATION_1_DURATION = 4000; // 4 seconds
-    
-    const addListener = (element: any, event: string, handler: any) => {
-      element.addEventListener(event, handler, { once: true });
-      listeners.push({ element, event, handler });
-    };
-    
-    const removeListener = (element: any, event: string, handler: any) => {
-      element.removeEventListener(event, handler);
-    };
-    
-    const switchToNextAnimation = (currentActive: 'A' | 'B', nextIndex: number) => {
-      if (nextIndex > 2) return; // No more animations
-      
-      const nextActive = currentActive === 'A' ? 'B' : 'A';
-      const currentPlayer = currentActive === 'A' ? playerARef.current : playerBRef.current;
-      const nextPlayer = nextActive === 'A' ? playerARef.current : playerBRef.current;
-      
-      if (!currentPlayer || !nextPlayer) return;
-      
-      console.log(`🎬 Switching from ${currentActive} (anim ${currentAnimationIndex}) to ${nextActive} (anim ${nextIndex})`);
-      
-      let transitionExecuted = false;
-      const executeTransition = () => {
-        if (transitionExecuted) return;
-        transitionExecuted = true;
-        
-        console.log(`✅ Executing transition to animation ${nextIndex}`);
-        
-        // Pause current player
-        try {
-          currentPlayer.pause();
-        } catch (e) {
-          console.warn('Could not pause current player:', e);
-        }
-        
-        // Fade out current player
-        if (currentActive === 'A') {
-          setPlayerAVisible(false);
-        } else {
-          setPlayerBVisible(false);
-        }
-        
-        // After fade, switch active and fade in next
-        timers.push(window.setTimeout(() => {
-          setCurrentAnimationIndex(nextIndex);
-          setActivePlayer(nextActive);
-          
-          if (nextActive === 'A') {
-            setPlayerAVisible(true);
-          } else {
-            setPlayerBVisible(true);
-          }
-          
-          // Play the preloaded animation
-          try {
-            nextPlayer.seek(0);
-            nextPlayer.play();
-          } catch (e) {
-            console.warn('Could not play next player:', e);
-          }
-        }, FADE_DURATION));
-      };
-      
-      // Attach 'ready' listener BEFORE setting src
-      const handleReady = () => {
-        console.log(`🎯 Animation ${nextIndex} ready event fired`);
-        executeTransition();
-      };
-      
-      addListener(nextPlayer, 'load', handleReady);
-      addListener(nextPlayer, 'ready', handleReady);
-      
-      // Watchdog: if load/ready doesn't fire in time, proceed anyway
-      timers.push(window.setTimeout(() => {
-        console.warn(`⏱️ Watchdog: load/ready timeout for animation ${nextIndex}, proceeding anyway`);
-        removeListener(nextPlayer, 'load', handleReady);
-        removeListener(nextPlayer, 'ready', handleReady);
-        executeTransition();
-      }, WATCHDOG_TIMEOUT));
-      
-      // Preload next animation (autoplay=false to prevent premature start)
-      nextPlayer.autoplay = false;
-      nextPlayer.loop = nextIndex === 0 || nextIndex === 2;
-      nextPlayer.src = animationUrls[nextIndex];
-    };
-    
-    // Initialize Player A with animation 0
-    if (playerARef.current) {
-      console.log('🎬 Initializing Player A with animation 0');
-      playerARef.current.autoplay = true;
-      playerARef.current.loop = true;
-      playerARef.current.src = animationUrls[0];
-    }
-    
-    // Schedule transitions (run once on mount)
-    // Animation 0 → 1 at 4.5s
-    const timer1 = window.setTimeout(() => {
-      console.log(`🎬 Timer fired: switching to animation 1 (after ${ANIMATION_0_DURATION}ms)`);
-      switchToNextAnimation('A', 1);
-      
-      // Animation 1 → 2 at 4s after first transition completes
-      const timer2 = window.setTimeout(() => {
-        console.log(`🎬 Timer fired: switching to animation 2 (after ${ANIMATION_1_DURATION + FADE_DURATION * 2}ms)`);
-        switchToNextAnimation('B', 2);
-        // Animation 2 loops until API completes
-      }, ANIMATION_1_DURATION + FADE_DURATION * 2);
-      timers.push(timer2);
-    }, ANIMATION_0_DURATION);
-    timers.push(timer1);
-    
-    return () => {
-      console.log('🧹 Cleaning up animation timers and listeners');
-      timers.forEach(clearTimeout);
-      listeners.forEach(({ element, event, handler }) => {
-        try {
-          element.removeEventListener(event, handler);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      });
-    };
-  }, []); // Run once on mount only
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -407,52 +237,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] flex items-center justify-center ml-[13px]">
-              <Suspense fallback={
-                <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
-                  <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
-                </div>
-              }>
-                <div className="w-full h-full flex items-center justify-center relative">
-                  {/* Player A */}
-                  <div
-                    className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
-                    style={{
-                      opacity: playerAVisible ? 1 : 0,
-                      pointerEvents: playerAVisible ? 'auto' : 'none',
-                      willChange: 'opacity'
-                    }}
-                  >
-                    <lottie-player
-                      ref={playerARef}
-                      src={animationUrls[0]}
-                      speed="1"
-                      className="w-full h-full max-w-2xl"
-                      autoplay
-                      loop
-                    />
-                  </div>
-                  
-                  {/* Player B */}
-                  <div
-                    className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
-                    style={{
-                      opacity: playerBVisible ? 1 : 0,
-                      pointerEvents: playerBVisible ? 'auto' : 'none',
-                      willChange: 'opacity'
-                    }}
-                  >
-                    <lottie-player
-                      ref={playerBRef}
-                      speed="1"
-                      className="w-full h-full max-w-2xl"
-                      autoplay={false}
-                      loop={false}
-                    />
-                  </div>
-                </div>
-              </Suspense>
-            </div>
+            <CrossfadeLottie />
             <div className="text-center space-y-3">
               <h1 className="display-title">
                 Drafting your postcard
