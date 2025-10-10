@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/AppContext';
 import { getUnitPriceCents, getTotalPriceCents } from '@/lib/pricing';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
+import posthog from 'posthog-js';
 
 export default function PaymentReturn() {
   const [searchParams] = useSearchParams();
@@ -17,6 +18,16 @@ export default function PaymentReturn() {
   const [startTime] = useState<number>(Date.now()); // Remove setStartTime since we don't update it
   const { toast } = useToast();
   const { state, dispatch } = useAppContext();
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_payment_return', {
+        session_id: searchParams.get('session_id'),
+        status: status
+      });
+    }
+  }, [status]);
 
   // Enhanced validation for postcard data
   const validatePostcardData = (data: unknown): boolean => {

@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
 import { HamburgerMenu } from '@/components/HamburgerMenu';
+import posthog from 'posthog-js';
 
 export default function FAQ() {
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_faq_page');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

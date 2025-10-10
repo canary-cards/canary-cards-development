@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
+import posthog from 'posthog-js';
 
 export default function About() {
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_about_page');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

@@ -8,6 +8,7 @@ import { Header } from '@/components/Header';
 import { MetaTags } from '@/components/MetaTags';
 import { SharedBanner } from '@/components/SharedBanner';
 import { generateReferralUrl, SHARE_TITLE, SHARE_DESCRIPTION, formatSharingLinkForDisplay } from '@/lib/shareUtils';
+import posthog from 'posthog-js';
 
 export default function Share() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,17 @@ export default function Share() {
 
   // Build referral URL using centralized utilities
   const referralUrl = generateReferralUrl(ref);
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_share_page', {
+        ref: ref,
+        order_number: orderNumber,
+        has_native_share: isNativeShareAvailable
+      });
+    }
+  }, [isNativeShareAvailable]);
 
   const handleShare = async () => {
     const { shareContent: shareUtils } = await import('@/lib/shareUtils');
