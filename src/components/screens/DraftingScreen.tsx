@@ -79,11 +79,12 @@ export function DraftingScreen() {
     const timers: number[] = [];
     const FADE_DURATION = 500;
     
-    // Calculate duration for each animation based on loop count
-    // Assuming each loop is ~3 seconds
-    const getAnimationDuration = (index: number) => animationLoops[index] * 3000;
+    // Animation durations in milliseconds
+    const ANIMATION_0_DURATION = 4500; // 4.5 seconds (1.5s × 3 loops)
+    const ANIMATION_1_DURATION = 4000; // 4 seconds
+    // Animation 2 loops continuously after its initial duration
 
-    // Animation 0: 3 loops (9 seconds)
+    // Animation 0: Play for 4.5 seconds
     timers.push(window.setTimeout(() => {
       // Fade out animation 0
       setIsVisible(false);
@@ -93,7 +94,7 @@ export function DraftingScreen() {
         setCurrentAnimationIndex(1);
         setIsVisible(true);
         
-        // Animation 1: 1 loop (3 seconds)
+        // Animation 1: Play for 4 seconds
         timers.push(window.setTimeout(() => {
           // Fade out animation 1
           setIsVisible(false);
@@ -102,11 +103,11 @@ export function DraftingScreen() {
           timers.push(window.setTimeout(() => {
             setCurrentAnimationIndex(2);
             setIsVisible(true);
-            // Animation 2 loops indefinitely (2 loops minimum, then continues until API completes)
+            // Animation 2 loops indefinitely until API completes
           }, FADE_DURATION));
-        }, getAnimationDuration(1)));
+        }, ANIMATION_1_DURATION));
       }, FADE_DURATION));
-    }, getAnimationDuration(0)));
+    }, ANIMATION_0_DURATION));
 
     return () => {
       timers.forEach(clearTimeout);
