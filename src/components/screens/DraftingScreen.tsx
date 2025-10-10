@@ -80,6 +80,7 @@ export function DraftingScreen() {
 
   // Animation sequence with dual-player approach - FIXED
   useEffect(() => {
+    console.log('🎬 Animation effect mounted, scheduling transitions');
     const timers: number[] = [];
     const listeners: Array<{ element: any; event: string; handler: any }> = [];
     const FADE_DURATION = 1500; // 1.5 second fade
@@ -172,6 +173,7 @@ export function DraftingScreen() {
     
     // Initialize Player A with animation 0
     if (playerARef.current) {
+      console.log('🎬 Initializing Player A with animation 0');
       playerARef.current.autoplay = true;
       playerARef.current.loop = true;
       playerARef.current.src = animationUrls[0];
@@ -179,15 +181,19 @@ export function DraftingScreen() {
     
     // Schedule transitions (run once on mount)
     // Animation 0 → 1 at 4.5s
-    timers.push(window.setTimeout(() => {
+    const timer1 = window.setTimeout(() => {
+      console.log(`🎬 Timer fired: switching to animation 1 (after ${ANIMATION_0_DURATION}ms)`);
       switchToNextAnimation('A', 1);
       
       // Animation 1 → 2 at 4s after first transition completes
-      timers.push(window.setTimeout(() => {
+      const timer2 = window.setTimeout(() => {
+        console.log(`🎬 Timer fired: switching to animation 2 (after ${ANIMATION_1_DURATION + FADE_DURATION * 2}ms)`);
         switchToNextAnimation('B', 2);
         // Animation 2 loops until API completes
-      }, ANIMATION_1_DURATION + FADE_DURATION * 2));
-    }, ANIMATION_0_DURATION));
+      }, ANIMATION_1_DURATION + FADE_DURATION * 2);
+      timers.push(timer2);
+    }, ANIMATION_0_DURATION);
+    timers.push(timer1);
     
     return () => {
       console.log('🧹 Cleaning up animation timers and listeners');
