@@ -310,12 +310,35 @@ export default function PaymentSuccess() {
           </div>
         </div>
 
-        {/* Card 2 - What Happens Next */}
+        {/* Card 2 - Share section */}
         <Card className="shadow-sm mb-6">
+          <CardContent className="p-5">
+            <h3 className="subtitle mb-2">Friends listen to friends</h3>
+            
+            <p className="body-text mb-4">
+              Thanks for speaking up. Your postcard is part of a growing wave reaching leaders' desks.
+            </p>
+            
+            <Button 
+              variant="spotlight" 
+              size="lg" 
+              className="w-full" 
+              onClick={() => shareContent(shareableLink)}
+              disabled={isLoadingShareLink || !shareableLink}
+              data-attr="click-payment-success-share"
+            >
+              <Share className="w-4 h-4 mr-2" />
+              {isLoadingShareLink ? 'Loading...' : 'Invite Others to Take Action'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Card 3 - What Happens Next */}
+        <Card className="shadow-sm">
           <CardContent className="p-5">
             <h3 className="subtitle mb-4">What happens next</h3>
             
-            <div className="space-y-3">
+            <div className="space-y-3 mb-4">
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
                 <p className="body-text">A copy of your postcard is already in your inbox.</p>
@@ -329,35 +352,10 @@ export default function PaymentSuccess() {
                 <p className="body-text">You'll get an email once it's in the mail.</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3 - Share section */}
-        <Card className="shadow-sm">
-          <CardContent className="p-5">
-            <h3 className="subtitle mb-2">Friends listen to friends</h3>
             
-            <p className="body-text mb-4">
-              Thanks for speaking up. Your postcard is part of a growing wave reaching leaders' desks.
-            </p>
-            
-            <div className="space-y-4">
-              <Button 
-                variant="spotlight" 
-                size="lg" 
-                className="w-full" 
-                onClick={() => shareContent(shareableLink)}
-                disabled={isLoadingShareLink || !shareableLink}
-                data-attr="click-payment-success-share"
-              >
-                <Share className="w-4 h-4 mr-2" />
-                {isLoadingShareLink ? 'Loading...' : 'Invite Others to Take Action'}
-              </Button>
-              
-              <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
-                <Link to="/">Home</Link>
-              </Button>
-            </div>
+            <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
+              <Link to="/">Home</Link>
+            </Button>
           </CardContent>
         </Card>
 

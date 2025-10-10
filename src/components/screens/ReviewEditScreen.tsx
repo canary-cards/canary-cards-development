@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { ArrowLeft, Edit3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CollapsibleSources } from '@/components/CollapsibleSources';
+import posthog from 'posthog-js';
 export function ReviewEditScreen() {
   const {
     state,
@@ -43,6 +44,19 @@ export function ReviewEditScreen() {
   if (!initialMessage && !isFallbackPlaceholder && !isRegenerating) {
     console.warn('⚠️ ReviewEditScreen: Message is empty but no fallback flag detected - potential error state');
   }
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_edit_postcard_page', {
+        has_draft_message: !!state.postcardData.draftMessage,
+        is_fallback_placeholder: isFallbackPlaceholder,
+        character_count: charCount,
+        step: 3,
+        has_sources: state.postcardData.sources && state.postcardData.sources.length > 0
+      });
+    }
+  }, []); // Empty dependency array - only run once on mount
   const handleRegenerate = async () => {
     setIsRegenerating(true);
 

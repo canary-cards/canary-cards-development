@@ -1,43 +1,11 @@
-import React, { useEffect, useState, Suspense, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { DynamicSvg } from '../DynamicSvg';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
-
-// Type declaration for lottie-player custom element
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'lottie-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        src?: string;
-        autoplay?: boolean;
-        loop?: boolean;
-        speed?: string;
-        background?: string;
-      };
-    }
-  }
-}
-
-// Load lottie-player web component
-if (typeof window !== 'undefined' && !customElements.get('lottie-player')) {
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
-  script.async = true;
-  document.head.appendChild(script);
-}
-
-// CDN-hosted animations for better load times
-const animationUrls = [
-  "https://cdn.lottielab.com/l/DpA7DrGV7NdExu.json",
-  "https://cdn.lottielab.com/l/2hxdso7kaDCFVy.json", // Transition 1
-  "https://cdn.lottielab.com/l/2FdfJEUKxUWhCF.json",
-  "https://cdn.lottielab.com/l/5F5FU8Pgc7urZh.json", // Transition 2
-  "https://cdn.lottielab.com/l/3Q5fRmtNUXVCDz.json"
-];
+import { CrossfadeLottie } from '../lottie/CrossfadeLottie';
 
 const draftingMessages = [
   "Synthesizing your concerns",
@@ -49,276 +17,28 @@ const draftingMessages = [
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
-  const [activeLayer, setActiveLayer] = useState<'A' | 'B'>('A');
-  const activeLayerRef = useRef<'A' | 'B'>('A');
-  useEffect(() => { activeLayerRef.current = activeLayer; }, [activeLayer]);
-  const [layerAAnimationIndex, setLayerAAnimationIndex] = useState(0);
-  const [layerBAnimationIndex, setLayerBAnimationIndex] = useState(0); // Start same as A, will change on first transition
-  const [layerAVisible, setLayerAVisible] = useState(true);
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [animationError, setAnimationError] = useState(false);
   const [apiCompleted, setApiCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [animation3LoopCount, setAnimation3LoopCount] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
-  const transitionInProgress = useRef(false);
-  const layerARef = useRef<HTMLElement | null>(null);
-  const layerBRef = useRef<HTMLElement | null>(null);
-  const preloadedReadyRef = useRef(false);
-  
-  // Playback/crossfade helpers to prevent ghosting
-  const CROSSFADE_MS = 600; // must match CSS duration-600
-  const stopAndHideLayer = (layer: 'A' | 'B') => {
-    const el = layer === 'A' ? layerARef.current : layerBRef.current;
-    try {
-      // Disable looping first to prevent transition animations from restarting
-      if (el && 'loop' in el) {
-        (el as any).loop = false;
-      }
-      // Stop playback and completely remove from render tree to avoid GPU cached frames
-      (el as any)?.stop?.();
-      if (el) {
-        (el as HTMLElement).style.visibility = 'hidden';
-        (el as HTMLElement).style.display = 'none';
-      }
-    } catch {}
-  };
-  const showAndPlayLayer = (layer: 'A' | 'B') => {
-    const el = layer === 'A' ? layerARef.current : layerBRef.current;
-    try {
-      if (el) {
-        (el as HTMLElement).style.display = 'flex'; // restore layout
-        (el as HTMLElement).style.visibility = 'visible';
-      }
-      (el as any)?.play?.();
-    } catch {}
-  };
   
   // Update message based on current animation
   useEffect(() => {
-    // Map animation indices to message indices (skip messages for transition animations at index 1 and 3)
-    const messageIndex = currentAnimationIndex === 0 ? 0 
-                       : currentAnimationIndex === 1 ? 0 // Keep first message during transition 1
-                       : currentAnimationIndex === 2 ? 1 
-                       : currentAnimationIndex === 3 ? 2 // Keep third message during transition 2
-                       : currentAnimationIndex === 4 && animation3LoopCount >= 3 ? 3 
-                       : 2;
+    const messageIndex = currentAnimationIndex;
+    const newMessage = draftingMessages[messageIndex] || draftingMessages[draftingMessages.length - 1];
     
-    const newMessage = draftingMessages[messageIndex];
-    
-    // Only animate transition if message actually changed
     if (newMessage !== currentMessage) {
       setShowTypewriter(false);
       setTimeout(() => {
         setCurrentMessage(newMessage);
-        // Ensure the now-active layer is visible in case visibility was hidden
-        showAndPlayLayer(activeLayerRef.current);
         setShowTypewriter(true);
       }, 200);
     }
-  }, [currentAnimationIndex, animation3LoopCount, currentMessage]);
-
-  // For animation 5 (final), count loops (but don't trigger animation on every loop)
-  useEffect(() => {
-    if (currentAnimationIndex === 4) {
-      const interval = setInterval(() => {
-        setAnimation3LoopCount(prev => prev + 1);
-      }, 3000); // Animation duration
-
-      return () => clearInterval(interval);
-    }
-  }, [currentAnimationIndex]);
-
-  // Preload the next animation into the hidden layer without crossfading
-  const preloadHiddenLayer = (targetIndex: number) => {
-    preloadedReadyRef.current = false;
-    if (activeLayerRef.current === 'A') {
-      setLayerBAnimationIndex(targetIndex);
-    } else {
-      setLayerAAnimationIndex(targetIndex);
-    }
-    // Attach one-time 'ready'/'load' listeners to detect when hidden layer is ready
-    setTimeout(() => {
-      const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
-      if (!hiddenEl) return;
-      // Ensure hidden layer is visible (but opacity 0) before upcoming crossfade
-      (hiddenEl as HTMLElement).style.visibility = 'visible';
-      const onReady = () => {
-        preloadedReadyRef.current = true;
-        hiddenEl.removeEventListener('ready', onReady as any);
-        hiddenEl.removeEventListener('load', onReady as any);
-      };
-      hiddenEl.addEventListener('ready', onReady as any, { once: true } as any);
-      hiddenEl.addEventListener('load', onReady as any, { once: true } as any);
-    }, 0);
-  };
-
-  // Instantly start crossfading to whatever is already preloaded on the hidden layer
-  const crossfadeToPreloaded = (targetIndex: number) => {
-    if (transitionInProgress.current) return;
-    transitionInProgress.current = true;
-
-    const prev = activeLayerRef.current;
-    const next: 'A' | 'B' = prev === 'A' ? 'B' : 'A';
-    // Make sure the incoming layer is visible and playing before fade-in
-    showAndPlayLayer(next);
-
-    if (prev === 'A') {
-      setLayerAVisible(false); // Crossfade to Layer B
-      setActiveLayer('B');
-    } else {
-      setLayerAVisible(true); // Crossfade to Layer A
-      setActiveLayer('A');
-    }
-    setCurrentAnimationIndex(targetIndex);
-
-    // Halfway through the crossfade, hide the outgoing layer to prevent ghosting
-    setTimeout(() => stopAndHideLayer(prev), Math.floor(CROSSFADE_MS / 2));
-
-    // After fade completes, fully stop and hide the previous layer to avoid ghosting
-    setTimeout(() => stopAndHideLayer(prev), CROSSFADE_MS + 50);
-
-    // Release the lock shortly after state updates
-    setTimeout(() => {
-      transitionInProgress.current = false;
-    }, 10);
-  };
-
-  // Smooth crossfade transition between animations (with small preload delay)
-  const transitionToAnimation = (targetIndex: number) => {
-    if (transitionInProgress.current) return;
-    transitionInProgress.current = true;
-
-    console.log(`🎬 Transitioning from animation ${currentAnimationIndex} to ${targetIndex}, active layer: ${activeLayerRef.current}`);
-
-    const prev = activeLayerRef.current;
-
-    if (prev === 'A') {
-      setLayerBAnimationIndex(targetIndex);
-      setTimeout(() => {
-        // Prepare incoming layer before crossfade
-        showAndPlayLayer('B');
-        setLayerAVisible(false);
-        setActiveLayer('B');
-        setCurrentAnimationIndex(targetIndex);
-        // Midway through crossfade: hide outgoing layer A to prevent ghosting
-        setTimeout(() => stopAndHideLayer('A'), Math.floor(CROSSFADE_MS / 2));
-        // Cleanup previous after fade
-        setTimeout(() => stopAndHideLayer('A'), CROSSFADE_MS + 50);
-        transitionInProgress.current = false;
-      }, 300);
-    } else {
-      setLayerAAnimationIndex(targetIndex);
-      setTimeout(() => {
-        // Prepare incoming layer before crossfade
-        showAndPlayLayer('A');
-        setLayerAVisible(true);
-        setActiveLayer('A');
-        setCurrentAnimationIndex(targetIndex);
-        // Midway through crossfade: hide outgoing layer B to prevent ghosting
-        setTimeout(() => stopAndHideLayer('B'), Math.floor(CROSSFADE_MS / 2));
-        // Cleanup previous after fade
-        setTimeout(() => stopAndHideLayer('B'), CROSSFADE_MS + 50);
-        transitionInProgress.current = false;
-      }, 300);
-    }
-  };
-
-  // Sequential animation timing: first (4.5s) -> transition 1 (2s) -> second (4s) -> transition 2 (2s) -> third (stays until complete)
-  useEffect(() => {
-    const timers: number[] = [];
-
-    // After 4.5s: go to Transition 1 (index 1)
-    timers.push(window.setTimeout(() => {
-      const prevLayer = activeLayerRef.current;
-      transitionToAnimation(1);
-
-      // Halfway through transition 1 (1s): hide animation 0 to prevent ghosting
-      timers.push(window.setTimeout(() => {
-        stopAndHideLayer(prevLayer);
-      }, 1000));
-
-      // 1.5s into transition 1: preload Animation 2 on the hidden layer
-      timers.push(window.setTimeout(() => {
-        preloadHiddenLayer(2);
-      }, 1500));
-
-      // At 2s into transition 1 (6.5s total): crossfade to the preloaded Animation 2
-      timers.push(window.setTimeout(() => {
-        const doCrossfade = () => {
-          crossfadeToPreloaded(2);
-          // After 4s on Animation 2: go to Transition 2 (index 3)
-          timers.push(window.setTimeout(() => {
-            transitionToAnimation(3);
-
-            // 1.5s into transition 2: preload Animation 3 on the hidden layer
-            timers.push(window.setTimeout(() => {
-              preloadHiddenLayer(4);
-            }, 1500));
-
-            // At 2s into transition 2: crossfade to the preloaded Animation 3
-            timers.push(window.setTimeout(() => {
-              const doCrossfade2 = () => {
-                crossfadeToPreloaded(4);
-              };
-
-              if (preloadedReadyRef.current) {
-                doCrossfade2();
-              } else {
-                const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
-                let done = false;
-                const onReady = () => {
-                  if (done) return;
-                  done = true;
-                  hiddenEl?.removeEventListener('ready', onReady as any);
-                  hiddenEl?.removeEventListener('load', onReady as any);
-                  doCrossfade2();
-                };
-                hiddenEl?.addEventListener('ready', onReady as any, { once: true } as any);
-                hiddenEl?.addEventListener('load', onReady as any, { once: true } as any);
-                // Fallback timeout to avoid waiting forever
-                timers.push(window.setTimeout(() => {
-                  if (done) return;
-                  done = true;
-                  doCrossfade2();
-                }, 1200));
-              }
-            }, 2000));
-          }, 4000));
-        };
-
-        if (preloadedReadyRef.current) {
-          doCrossfade();
-        } else {
-          const hiddenEl = activeLayerRef.current === 'A' ? layerBRef.current : layerARef.current;
-          let done = false;
-          const onReady = () => {
-            if (done) return;
-            done = true;
-            hiddenEl?.removeEventListener('ready', onReady as any);
-            hiddenEl?.removeEventListener('load', onReady as any);
-            doCrossfade();
-          };
-          hiddenEl?.addEventListener('ready', onReady as any, { once: true } as any);
-          hiddenEl?.addEventListener('load', onReady as any, { once: true } as any);
-          // Fallback timeout to avoid waiting forever
-          timers.push(window.setTimeout(() => {
-            if (done) return;
-            done = true;
-            doCrossfade();
-          }, 1200));
-        }
-      }, 2000));
-    }, 4500));
-
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, []);
+  }, [currentAnimationIndex, currentMessage]);
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -517,93 +237,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="w-[66vw] h-[66vw] max-w-sm sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] flex items-center justify-center ml-[13px]">
-              {!animationError ? (
-                <Suspense fallback={
-                  <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
-                    <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
-                  </div>
-                }>
-                  <div className="w-[95%] h-[95%] relative flex items-center justify-center">
-                    {/* Layer A */}
-                    <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
-                      style={{ 
-                        opacity: layerAVisible ? 1 : 0,
-                        willChange: 'opacity',
-                        zIndex: layerAVisible ? 2 : 1,
-                        contain: 'paint'
-                      }}
-                    >
-                      <lottie-player
-                        key={`layerA-${layerAAnimationIndex}`}
-                        ref={(el) => { layerARef.current = el as unknown as HTMLElement; }}
-                        src={animationUrls[layerAAnimationIndex]}
-                        autoplay
-                        loop
-                        speed="1"
-                        background="transparent"
-                        style={{ 
-                          width: '100%', 
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Layer B */}
-                    <div 
-                      className="absolute inset-0 flex items-center justify-center transition-opacity duration-600 ease-in-out"
-                      style={{ 
-                        opacity: layerAVisible ? 0 : 1,
-                        willChange: 'opacity',
-                        zIndex: layerAVisible ? 1 : 2,
-                        contain: 'paint'
-                      }}
-                    >
-                      <lottie-player
-                        key={`layerB-${layerBAnimationIndex}`}
-                        ref={(el) => { layerBRef.current = el as unknown as HTMLElement; }}
-                        src={animationUrls[layerBAnimationIndex]}
-                        autoplay
-                        loop
-                        speed="1"
-                        background="transparent"
-                        style={{ 
-                          width: '100%', 
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Preload all animations (hidden) */}
-                    <div className="absolute opacity-0 pointer-events-none" style={{ width: 0, height: 0 }}>
-                      {animationUrls.map((url, i) => (
-                        <lottie-player
-                          key={`preload-${i}`}
-                          src={url}
-                          autoplay={false}
-                          loop={false}
-                          background="transparent"
-                          style={{ visibility: 'hidden' }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </Suspense>
-              ) : (
-                <DynamicSvg 
-                  assetName="onboarding_icon_2.svg"
-                  alt="Canary research process"
-                  className="w-full h-full"
-                />
-              )}
-            </div>
+            <CrossfadeLottie />
             <div className="text-center space-y-3">
               <h1 className="display-title">
                 Drafting your postcard
