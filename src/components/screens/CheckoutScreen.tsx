@@ -369,7 +369,7 @@ export function CheckoutScreen() {
   // Show embedded checkout on separate screen if client secret is available
   if (showCheckout && clientSecret) {
     return <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 pb-8 max-w-2xl">
+        <div className="container mx-auto px-1 sm:px-4 pb-8 max-w-2xl">
           <EmbeddedCheckout clientSecret={clientSecret} onBack={handleBackFromCheckout} sendOption={getSendOption()} amount={getTotalPrice()} />
         </div>
       </div>;
