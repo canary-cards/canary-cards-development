@@ -84,7 +84,7 @@ export function DraftingScreen() {
     const timers: number[] = [];
     const listeners: Array<{ element: any; event: string; handler: any }> = [];
     const FADE_DURATION = 1500; // 1.5 second fade
-    const WATCHDOG_TIMEOUT = 1200; // 1.2s watchdog
+    const WATCHDOG_TIMEOUT = 3000; // 3s watchdog
     const ANIMATION_0_DURATION = 4500; // 4.5 seconds
     const ANIMATION_1_DURATION = 4000; // 4 seconds
     
@@ -156,11 +156,13 @@ export function DraftingScreen() {
         executeTransition();
       };
       
+      addListener(nextPlayer, 'load', handleReady);
       addListener(nextPlayer, 'ready', handleReady);
       
-      // Watchdog: if ready doesn't fire in 1.2s, proceed anyway
+      // Watchdog: if load/ready doesn't fire in time, proceed anyway
       timers.push(window.setTimeout(() => {
-        console.warn(`⏱️ Watchdog: ready event timeout for animation ${nextIndex}, proceeding anyway`);
+        console.warn(`⏱️ Watchdog: load/ready timeout for animation ${nextIndex}, proceeding anyway`);
+        removeListener(nextPlayer, 'load', handleReady);
         removeListener(nextPlayer, 'ready', handleReady);
         executeTransition();
       }, WATCHDOG_TIMEOUT));
@@ -442,7 +444,6 @@ export function DraftingScreen() {
                   >
                     <lottie-player
                       ref={playerBRef}
-                      src={animationUrls[0]}
                       speed="1"
                       className="w-full h-full max-w-2xl"
                       autoplay={false}
