@@ -50,7 +50,9 @@ export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
   const { toast } = useToast();
   const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A'); // Which player is currently visible
+  const [playerAVisible, setPlayerAVisible] = useState(true);
+  const [playerBVisible, setPlayerBVisible] = useState(false);
   const [startTime] = useState(Date.now());
   const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -58,9 +60,9 @@ export function DraftingScreen() {
   const [hasError, setHasError] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
-  const playerRef = useRef<HTMLElement | null>(null);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const nextAnimationRef = useRef<number | null>(null);
+  const playerARef = useRef<any>(null);
+  const playerBRef = useRef<any>(null);
+  const nextAnimationIndexRef = useRef(1); // Next animation to load
   
   // Update message based on current animation
   useEffect(() => {
@@ -76,84 +78,75 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex, currentMessage]);
 
-  // Animation sequence with fade transitions
+  // Animation sequence with dual-player approach
   useEffect(() => {
     const timers: number[] = [];
     const FADE_DURATION = 1500; // 1.5 second fade
-    
-    // Animation durations in milliseconds
-    const ANIMATION_0_DURATION = 4500; // 4.5 seconds (1.5s × 3 loops)
+    const ANIMATION_0_DURATION = 4500; // 4.5 seconds
     const ANIMATION_1_DURATION = 4000; // 4 seconds
     
-    const switchAnimation = (nextIndex: number) => {
-      // Store next animation to switch to
-      nextAnimationRef.current = nextIndex;
+    const switchToNextAnimation = () => {
+      const nextIndex = nextAnimationIndexRef.current;
+      if (nextIndex > 2) return; // No more animations to switch to
       
-      // Fade out current animation
-      setIsVisible(false);
-    };
-    
-    const handleTransitionEnd = (e: TransitionEvent) => {
-      // Only respond to opacity transitions on the wrapper
-      if (e.propertyName !== 'opacity' || e.target !== wrapperRef.current) return;
+      // Determine which player to use next
+      const currentActive = activePlayer;
+      const nextActive = currentActive === 'A' ? 'B' : 'A';
+      const inactivePlayer = nextActive === 'A' ? playerARef.current : playerBRef.current;
       
-      // If we're fading out (opacity 0) and have a next animation
-      if (!isVisible && nextAnimationRef.current !== null) {
-        const nextIndex = nextAnimationRef.current;
-        nextAnimationRef.current = null;
+      // Preload next animation in inactive player
+      if (inactivePlayer) {
+        inactivePlayer.src = animationUrls[nextIndex];
+        inactivePlayer.loop = nextIndex === 0 || nextIndex === 2;
         
-        // Update player src and loop settings
-        const player = playerRef.current as any;
-        if (player) {
-          player.src = animationUrls[nextIndex];
-          player.loop = nextIndex === 0 || nextIndex === 2;
-          player.play();
-        }
+        // Wait for load, then transition
+        const handleLoad = () => {
+          // Fade out current player
+          if (currentActive === 'A') {
+            setPlayerAVisible(false);
+          } else {
+            setPlayerBVisible(false);
+          }
+          
+          // After fade duration, switch active player and fade in
+          setTimeout(() => {
+            setCurrentAnimationIndex(nextIndex);
+            setActivePlayer(nextActive);
+            
+            if (nextActive === 'A') {
+              setPlayerAVisible(true);
+            } else {
+              setPlayerBVisible(true);
+            }
+            
+            // Play the animation
+            inactivePlayer.play();
+            
+            // Increment next animation index
+            nextAnimationIndexRef.current = nextIndex + 1;
+          }, FADE_DURATION);
+        };
         
-        // Update index
-        setCurrentAnimationIndex(nextIndex);
-        
-        // Small delay then fade in
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setIsVisible(true);
-          });
-        });
+        inactivePlayer.addEventListener('load', handleLoad, { once: true });
       }
     };
     
-    // Attach transition listener to wrapper
-    const wrapper = wrapperRef.current;
-    if (wrapper) {
-      wrapper.addEventListener('transitionend', handleTransitionEnd);
-    }
-
-    // Animation 0: Play for 4.5 seconds then switch to 1
+    // Schedule animation transitions
+    // Animation 0 plays for 4.5 seconds, then switch to 1
     timers.push(window.setTimeout(() => {
-      switchAnimation(1);
+      switchToNextAnimation();
       
-      // Animation 1: Play for 4 seconds then switch to 2
+      // Animation 1 plays for 4 seconds, then switch to 2
       timers.push(window.setTimeout(() => {
-        switchAnimation(2);
-        // Animation 2 loops indefinitely until API completes
-      }, ANIMATION_1_DURATION + FADE_DURATION * 2)); // Account for fade out + fade in
+        switchToNextAnimation();
+        // Animation 2 loops until API completes
+      }, ANIMATION_1_DURATION + FADE_DURATION * 2));
     }, ANIMATION_0_DURATION));
-
+    
     return () => {
       timers.forEach(clearTimeout);
-      if (wrapper) {
-        wrapper.removeEventListener('transitionend', handleTransitionEnd);
-      }
     };
-  }, []); // Only run once on mount
-
-  // Ensure correct looping behavior on the web component
-  useEffect(() => {
-    const el = playerRef.current as any;
-    if (!el) return;
-    // Loop animations 0 and 2; animation 1 plays once
-    el.loop = currentAnimationIndex === 0 || currentAnimationIndex === 2;
-  }, [currentAnimationIndex]);
+  }, [activePlayer]);
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -358,22 +351,44 @@ export function DraftingScreen() {
                   <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                 </div>
               }>
-                <div 
-                  ref={wrapperRef}
-                  className="w-full h-full flex items-center justify-center transition-opacity duration-[1500ms] ease-in-out"
-                  style={{ 
-                    opacity: isVisible ? 1 : 0,
-                    willChange: 'opacity'
-                  }}
-                >
-                  <lottie-player
-                    ref={playerRef}
-                    src={animationUrls[0]}
-                    speed="1"
-                    className="w-full h-full max-w-2xl"
-                    autoplay
-                    loop
-                  />
+                <div className="w-full h-full flex items-center justify-center relative">
+                  {/* Player A */}
+                  <div
+                    className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+                    style={{
+                      opacity: playerAVisible ? 1 : 0,
+                      pointerEvents: playerAVisible ? 'auto' : 'none',
+                      willChange: 'opacity'
+                    }}
+                  >
+                    <lottie-player
+                      ref={playerARef}
+                      src={animationUrls[0]}
+                      speed="1"
+                      className="w-full h-full max-w-2xl"
+                      autoplay
+                      loop
+                    />
+                  </div>
+                  
+                  {/* Player B */}
+                  <div
+                    className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+                    style={{
+                      opacity: playerBVisible ? 1 : 0,
+                      pointerEvents: playerBVisible ? 'auto' : 'none',
+                      willChange: 'opacity'
+                    }}
+                  >
+                    <lottie-player
+                      ref={playerBRef}
+                      src={animationUrls[0]}
+                      speed="1"
+                      className="w-full h-full max-w-2xl"
+                      autoplay={false}
+                      loop={false}
+                    />
+                  </div>
                 </div>
               </Suspense>
             </div>
