@@ -78,75 +78,129 @@ export function DraftingScreen() {
     }
   }, [currentAnimationIndex, currentMessage]);
 
-  // Animation sequence with dual-player approach
+  // Animation sequence with dual-player approach - FIXED
   useEffect(() => {
     const timers: number[] = [];
+    const listeners: Array<{ element: any; event: string; handler: any }> = [];
     const FADE_DURATION = 1500; // 1.5 second fade
+    const WATCHDOG_TIMEOUT = 1200; // 1.2s watchdog
     const ANIMATION_0_DURATION = 4500; // 4.5 seconds
     const ANIMATION_1_DURATION = 4000; // 4 seconds
     
-    const switchToNextAnimation = () => {
-      const nextIndex = nextAnimationIndexRef.current;
-      if (nextIndex > 2) return; // No more animations to switch to
-      
-      // Determine which player to use next
-      const currentActive = activePlayer;
-      const nextActive = currentActive === 'A' ? 'B' : 'A';
-      const inactivePlayer = nextActive === 'A' ? playerARef.current : playerBRef.current;
-      
-      // Preload next animation in inactive player
-      if (inactivePlayer) {
-        inactivePlayer.src = animationUrls[nextIndex];
-        inactivePlayer.loop = nextIndex === 0 || nextIndex === 2;
-        
-        // Wait for load, then transition
-        const handleLoad = () => {
-          // Fade out current player
-          if (currentActive === 'A') {
-            setPlayerAVisible(false);
-          } else {
-            setPlayerBVisible(false);
-          }
-          
-          // After fade duration, switch active player and fade in
-          setTimeout(() => {
-            setCurrentAnimationIndex(nextIndex);
-            setActivePlayer(nextActive);
-            
-            if (nextActive === 'A') {
-              setPlayerAVisible(true);
-            } else {
-              setPlayerBVisible(true);
-            }
-            
-            // Play the animation
-            inactivePlayer.play();
-            
-            // Increment next animation index
-            nextAnimationIndexRef.current = nextIndex + 1;
-          }, FADE_DURATION);
-        };
-        
-        inactivePlayer.addEventListener('load', handleLoad, { once: true });
-      }
+    const addListener = (element: any, event: string, handler: any) => {
+      element.addEventListener(event, handler, { once: true });
+      listeners.push({ element, event, handler });
     };
     
-    // Schedule animation transitions
-    // Animation 0 plays for 4.5 seconds, then switch to 1
-    timers.push(window.setTimeout(() => {
-      switchToNextAnimation();
+    const removeListener = (element: any, event: string, handler: any) => {
+      element.removeEventListener(event, handler);
+    };
+    
+    const switchToNextAnimation = (currentActive: 'A' | 'B', nextIndex: number) => {
+      if (nextIndex > 2) return; // No more animations
       
-      // Animation 1 plays for 4 seconds, then switch to 2
+      const nextActive = currentActive === 'A' ? 'B' : 'A';
+      const currentPlayer = currentActive === 'A' ? playerARef.current : playerBRef.current;
+      const nextPlayer = nextActive === 'A' ? playerARef.current : playerBRef.current;
+      
+      if (!currentPlayer || !nextPlayer) return;
+      
+      console.log(`🎬 Switching from ${currentActive} (anim ${currentAnimationIndex}) to ${nextActive} (anim ${nextIndex})`);
+      
+      let transitionExecuted = false;
+      const executeTransition = () => {
+        if (transitionExecuted) return;
+        transitionExecuted = true;
+        
+        console.log(`✅ Executing transition to animation ${nextIndex}`);
+        
+        // Pause current player
+        try {
+          currentPlayer.pause();
+        } catch (e) {
+          console.warn('Could not pause current player:', e);
+        }
+        
+        // Fade out current player
+        if (currentActive === 'A') {
+          setPlayerAVisible(false);
+        } else {
+          setPlayerBVisible(false);
+        }
+        
+        // After fade, switch active and fade in next
+        timers.push(window.setTimeout(() => {
+          setCurrentAnimationIndex(nextIndex);
+          setActivePlayer(nextActive);
+          
+          if (nextActive === 'A') {
+            setPlayerAVisible(true);
+          } else {
+            setPlayerBVisible(true);
+          }
+          
+          // Play the preloaded animation
+          try {
+            nextPlayer.seek(0);
+            nextPlayer.play();
+          } catch (e) {
+            console.warn('Could not play next player:', e);
+          }
+        }, FADE_DURATION));
+      };
+      
+      // Attach 'ready' listener BEFORE setting src
+      const handleReady = () => {
+        console.log(`🎯 Animation ${nextIndex} ready event fired`);
+        executeTransition();
+      };
+      
+      addListener(nextPlayer, 'ready', handleReady);
+      
+      // Watchdog: if ready doesn't fire in 1.2s, proceed anyway
       timers.push(window.setTimeout(() => {
-        switchToNextAnimation();
+        console.warn(`⏱️ Watchdog: ready event timeout for animation ${nextIndex}, proceeding anyway`);
+        removeListener(nextPlayer, 'ready', handleReady);
+        executeTransition();
+      }, WATCHDOG_TIMEOUT));
+      
+      // Preload next animation (autoplay=false to prevent premature start)
+      nextPlayer.autoplay = false;
+      nextPlayer.loop = nextIndex === 0 || nextIndex === 2;
+      nextPlayer.src = animationUrls[nextIndex];
+    };
+    
+    // Initialize Player A with animation 0
+    if (playerARef.current) {
+      playerARef.current.autoplay = true;
+      playerARef.current.loop = true;
+      playerARef.current.src = animationUrls[0];
+    }
+    
+    // Schedule transitions (run once on mount)
+    // Animation 0 → 1 at 4.5s
+    timers.push(window.setTimeout(() => {
+      switchToNextAnimation('A', 1);
+      
+      // Animation 1 → 2 at 4s after first transition completes
+      timers.push(window.setTimeout(() => {
+        switchToNextAnimation('B', 2);
         // Animation 2 loops until API completes
       }, ANIMATION_1_DURATION + FADE_DURATION * 2));
     }, ANIMATION_0_DURATION));
     
     return () => {
+      console.log('🧹 Cleaning up animation timers and listeners');
       timers.forEach(clearTimeout);
+      listeners.forEach(({ element, event, handler }) => {
+        try {
+          element.removeEventListener(event, handler);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      });
     };
-  }, [activePlayer]);
+  }, []); // Run once on mount only
 
   // Handle the actual drafting process
   useEffect(() => {
