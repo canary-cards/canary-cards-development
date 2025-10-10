@@ -23,7 +23,7 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
   useEffect(() => {
     console.log('🎬 CrossfadeLottie mounted, starting animation sequence');
     const timers: number[] = [];
-    const FADE_DURATION = 1500; // 1.5s CSS fade
+    const FADE_DURATION = 800; // 0.8s fade (shorter for smoother transition)
     const ANIMATION_0_DURATION = 4500; // 4.5s
     const ANIMATION_1_DURATION = 4000; // 4s
 
@@ -90,7 +90,7 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
       <div className="w-full h-full flex items-center justify-center relative">
         {/* Player A */}
         <div
-          className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+          className="absolute inset-0 transition-opacity duration-[800ms] ease-in-out"
           style={{
             opacity: playerAVisible ? 1 : 0,
             pointerEvents: playerAVisible ? 'auto' : 'none',
@@ -107,7 +107,7 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
 
         {/* Player B */}
         <div
-          className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+          className="absolute inset-0 transition-opacity duration-[800ms] ease-in-out"
           style={{
             opacity: playerBVisible ? 1 : 0,
             pointerEvents: playerBVisible ? 'auto' : 'none',
