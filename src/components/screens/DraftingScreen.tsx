@@ -114,6 +114,14 @@ export function DraftingScreen() {
     };
   }, []);
 
+  // Ensure correct looping behavior on the web component
+  useEffect(() => {
+    const el = playerRef.current as any;
+    if (!el) return;
+    // Only loop animation 0; animations 1 and 2 play once
+    el.loop = currentAnimationIndex === 0;
+  }, [currentAnimationIndex]);
+
   // Handle the actual drafting process
   useEffect(() => {
     // Guard: prevent duplicate calls
@@ -319,12 +327,12 @@ export function DraftingScreen() {
               }>
                 <div className="w-full h-full flex items-center justify-center">
                   <lottie-player
+                    key={currentAnimationIndex}
                     ref={playerRef}
                     src={animationUrls[currentAnimationIndex]}
                     speed="1"
                     className={`w-full h-full max-w-2xl transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
                     autoplay
-                    loop={currentAnimationIndex !== 1} // Loop animations 0 and 2, but not 1
                   />
                 </div>
               </Suspense>
