@@ -59,6 +59,8 @@ export function DraftingScreen() {
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
   const playerRef = useRef<HTMLElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const nextAnimationRef = useRef<number | null>(null);
   
   // Update message based on current animation
   useEffect(() => {
@@ -77,48 +79,73 @@ export function DraftingScreen() {
   // Animation sequence with fade transitions
   useEffect(() => {
     const timers: number[] = [];
-    const FADE_DURATION = 1500; // Longer fade for smoother transitions
+    const FADE_DURATION = 1500; // 1.5 second fade
     
     // Animation durations in milliseconds
     const ANIMATION_0_DURATION = 4500; // 4.5 seconds (1.5s × 3 loops)
     const ANIMATION_1_DURATION = 4000; // 4 seconds
-    // Animation 2 loops continuously after its initial duration
-
-    // Animation 0: Play for 4.5 seconds
-    timers.push(window.setTimeout(() => {
-      // Fade out animation 0
-      setIsVisible(false);
+    
+    const switchAnimation = (nextIndex: number) => {
+      // Store next animation to switch to
+      nextAnimationRef.current = nextIndex;
       
-      // Wait for fade out to complete, then switch to animation 1
-      timers.push(window.setTimeout(() => {
-        setCurrentAnimationIndex(1);
-        // Small delay before fading in to ensure clean transition
-        timers.push(window.setTimeout(() => {
-          setIsVisible(true);
-        }, 50));
+      // Fade out current animation
+      setIsVisible(false);
+    };
+    
+    const handleTransitionEnd = (e: TransitionEvent) => {
+      // Only respond to opacity transitions on the wrapper
+      if (e.propertyName !== 'opacity' || e.target !== wrapperRef.current) return;
+      
+      // If we're fading out (opacity 0) and have a next animation
+      if (!isVisible && nextAnimationRef.current !== null) {
+        const nextIndex = nextAnimationRef.current;
+        nextAnimationRef.current = null;
         
-        // Animation 1: Play for 4 seconds
-        timers.push(window.setTimeout(() => {
-          // Fade out animation 1
-          setIsVisible(false);
-          
-          // Wait for fade out to complete, then switch to animation 2
-          timers.push(window.setTimeout(() => {
-            setCurrentAnimationIndex(2);
-            // Small delay before fading in to ensure clean transition
-            timers.push(window.setTimeout(() => {
-              setIsVisible(true);
-            }, 50));
-            // Animation 2 loops indefinitely until API completes
-          }, FADE_DURATION));
-        }, ANIMATION_1_DURATION));
-      }, FADE_DURATION));
+        // Update player src and loop settings
+        const player = playerRef.current as any;
+        if (player) {
+          player.src = animationUrls[nextIndex];
+          player.loop = nextIndex === 0 || nextIndex === 2;
+          player.play();
+        }
+        
+        // Update index
+        setCurrentAnimationIndex(nextIndex);
+        
+        // Small delay then fade in
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setIsVisible(true);
+          });
+        });
+      }
+    };
+    
+    // Attach transition listener to wrapper
+    const wrapper = wrapperRef.current;
+    if (wrapper) {
+      wrapper.addEventListener('transitionend', handleTransitionEnd);
+    }
+
+    // Animation 0: Play for 4.5 seconds then switch to 1
+    timers.push(window.setTimeout(() => {
+      switchAnimation(1);
+      
+      // Animation 1: Play for 4 seconds then switch to 2
+      timers.push(window.setTimeout(() => {
+        switchAnimation(2);
+        // Animation 2 loops indefinitely until API completes
+      }, ANIMATION_1_DURATION + FADE_DURATION * 2)); // Account for fade out + fade in
     }, ANIMATION_0_DURATION));
 
     return () => {
       timers.forEach(clearTimeout);
+      if (wrapper) {
+        wrapper.removeEventListener('transitionend', handleTransitionEnd);
+      }
     };
-  }, []);
+  }, [isVisible]);
 
   // Ensure correct looping behavior on the web component
   useEffect(() => {
@@ -331,14 +358,21 @@ export function DraftingScreen() {
                   <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
                 </div>
               }>
-                <div className="w-full h-full flex items-center justify-center">
+                <div 
+                  ref={wrapperRef}
+                  className="w-full h-full flex items-center justify-center transition-opacity duration-[1500ms] ease-in-out"
+                  style={{ 
+                    opacity: isVisible ? 1 : 0,
+                    willChange: 'opacity'
+                  }}
+                >
                   <lottie-player
-                    key={currentAnimationIndex}
                     ref={playerRef}
-                    src={animationUrls[currentAnimationIndex]}
+                    src={animationUrls[0]}
                     speed="1"
-                    className={`w-full h-full max-w-2xl transition-opacity duration-[1500ms] ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                    className="w-full h-full max-w-2xl"
                     autoplay
+                    loop
                   />
                 </div>
               </Suspense>
