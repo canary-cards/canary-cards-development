@@ -18,8 +18,9 @@ import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
-import posthog from 'posthog-js';
+import { usePostHog } from 'posthog-js/react';
 export function LandingScreen() {
+  const posthog = usePostHog();
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research'>('main');
   const {
