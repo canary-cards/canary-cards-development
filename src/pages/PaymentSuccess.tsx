@@ -365,7 +365,19 @@ export default function PaymentSuccess() {
             </div>
             
             <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
-              <Link to="/">Home</Link>
+              <Link 
+                to="/" 
+                onClick={() => {
+                  if (posthog.__loaded) {
+                    posthog.capture('click_payment_success_home', {
+                      order_id: location.state?.orderId,
+                      has_sharing_link: !!shareableLink
+                    });
+                  }
+                }}
+              >
+                Home
+              </Link>
             </Button>
           </CardContent>
         </Card>
