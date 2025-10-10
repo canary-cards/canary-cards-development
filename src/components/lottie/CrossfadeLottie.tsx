@@ -32,31 +32,41 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
       const nextPlayer = fromPlayer === 'A' ? 'B' : 'A';
       const nextPlayerRef = nextPlayer === 'A' ? playerARef : playerBRef;
 
-      // Set the animation for the next player before fading
+      // FIRST: Preload the animation on the hidden player
       if (nextPlayer === 'A') {
         setPlayerAAnimIndex(nextIndex);
       } else {
         setPlayerBAnimIndex(nextIndex);
       }
 
-      // Small delay to let the animation load, then crossfade both simultaneously
+      // Wait 100ms for animation to load
       timers.push(window.setTimeout(() => {
-        setActivePlayer(nextPlayer);
+        console.log(`🎬 Animation ${nextIndex} loaded, starting crossfade`);
         
-        // Fade out current AND fade in next AT THE SAME TIME
+        // SECOND: Fade out current player
         if (fromPlayer === 'A') {
           setPlayerAVisible(false);
-          setPlayerBVisible(true);
         } else {
           setPlayerBVisible(false);
-          setPlayerAVisible(true);
         }
 
-        // Start playback immediately
-        if (nextPlayerRef.current) {
-          nextPlayerRef.current.play();
-        }
-      }, 100)); // 100ms to load animation
+        // THIRD: As soon as fade-out completes, fade in next player
+        timers.push(window.setTimeout(() => {
+          setActivePlayer(nextPlayer);
+          
+          // Fade in next
+          if (nextPlayer === 'A') {
+            setPlayerAVisible(true);
+          } else {
+            setPlayerBVisible(true);
+          }
+
+          // Start playback
+          if (nextPlayerRef.current) {
+            nextPlayerRef.current.play();
+          }
+        }, FADE_DURATION)); // Wait for fade-out to complete
+      }, 100)); // Wait for preload
     };
 
     // Sequence: anim0 (4.5s) → crossfade → anim1 (4s) → crossfade → anim2 (loop)
