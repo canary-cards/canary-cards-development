@@ -310,30 +310,8 @@ export default function PaymentSuccess() {
           </div>
         </div>
 
-        {/* Card 2 - What Happens Next */}
+        {/* Card 2 - Share section */}
         <Card className="shadow-sm mb-6">
-          <CardContent className="p-5">
-            <h3 className="subtitle mb-4">What happens next</h3>
-            
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
-                <p className="body-text">A copy of your postcard is already in your inbox.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
-                <p className="body-text">We'll write and mail it within 3 business days.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
-                <p className="body-text">You'll get an email once it's in the mail.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3 - Share section */}
-        <Card className="shadow-sm">
           <CardContent className="p-5">
             <h3 className="subtitle mb-2">Friends listen to friends</h3>
             
@@ -357,6 +335,28 @@ export default function PaymentSuccess() {
               <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
                 <Link to="/">Home</Link>
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 3 - What Happens Next */}
+        <Card className="shadow-sm">
+          <CardContent className="p-5">
+            <h3 className="subtitle mb-4">What happens next</h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
+                <p className="body-text">A copy of your postcard is already in your inbox.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
+                <p className="body-text">We'll write and mail it within 3 business days.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0"></div>
+                <p className="body-text">You'll get an email once it's in the mail.</p>
+              </div>
             </div>
           </CardContent>
         </Card>
