@@ -5,9 +5,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAppContext } from '../../context/AppContext';
 import { PostcardHero } from '../PostcardHero';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
-import posthog from 'posthog-js';
+import { usePostHog } from 'posthog-js/react';
 
 export function ReviewCardScreen() {
+  const posthog = usePostHog();
   const { state, dispatch } = useAppContext();
   const [isMessageExpanded, setIsMessageExpanded] = useState(false);
   

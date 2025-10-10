@@ -5,7 +5,7 @@ import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
-import posthog from 'posthog-js';
+import { usePostHog } from 'posthog-js/react';
 
 const SLIDE_DURATION = 6500;
 const TOTAL_SLIDES = 4;
@@ -43,6 +43,7 @@ const slides = [
 ];
 
 export default function Onboarding() {
+  const posthog = usePostHog();
   const navigate = useNavigate();
   const location = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
