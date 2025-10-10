@@ -12,7 +12,8 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
   const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
   const [playerAVisible, setPlayerAVisible] = useState(true);
   const [playerBVisible, setPlayerBVisible] = useState(false);
-  const [currentAnimIndex, setCurrentAnimIndex] = useState(0);
+  const [playerAAnimIndex, setPlayerAAnimIndex] = useState(0);
+  const [playerBAnimIndex, setPlayerBAnimIndex] = useState(0);
   
   const playerARef = useRef<any>(null);
   const playerBRef = useRef<any>(null);
@@ -31,30 +32,39 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
       const nextPlayer = fromPlayer === 'A' ? 'B' : 'A';
       const nextPlayerRef = nextPlayer === 'A' ? playerARef : playerBRef;
 
-      // Fade out current
-      if (fromPlayer === 'A') {
-        setPlayerAVisible(false);
+      // Set the animation for the next player before fading
+      if (nextPlayer === 'A') {
+        setPlayerAAnimIndex(nextIndex);
       } else {
-        setPlayerBVisible(false);
+        setPlayerBAnimIndex(nextIndex);
       }
 
-      // After fade completes, switch
+      // Small delay to let the animation load
       timers.push(window.setTimeout(() => {
-        setCurrentAnimIndex(nextIndex);
-        setActivePlayer(nextPlayer);
-        
-        // Fade in next
-        if (nextPlayer === 'A') {
-          setPlayerAVisible(true);
+        // Fade out current
+        if (fromPlayer === 'A') {
+          setPlayerAVisible(false);
         } else {
-          setPlayerBVisible(true);
+          setPlayerBVisible(false);
         }
 
-        // Start playback
-        if (nextPlayerRef.current) {
-          nextPlayerRef.current.play();
-        }
-      }, FADE_DURATION));
+        // After fade completes, switch active and fade in
+        timers.push(window.setTimeout(() => {
+          setActivePlayer(nextPlayer);
+          
+          // Fade in next
+          if (nextPlayer === 'A') {
+            setPlayerAVisible(true);
+          } else {
+            setPlayerBVisible(true);
+          }
+
+          // Start playback
+          if (nextPlayerRef.current) {
+            nextPlayerRef.current.play();
+          }
+        }, FADE_DURATION));
+      }, 100)); // 100ms to load animation
     };
 
     // Sequence: anim0 (4.5s) → crossfade → anim1 (4s) → crossfade → anim2 (loop)
@@ -86,9 +96,9 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
         >
           <Player
             ref={playerARef}
-            autoplay={activePlayer === 'A' && currentAnimIndex === 0}
-            loop={currentAnimIndex === 0 || currentAnimIndex === 2}
-            src={animations[currentAnimIndex]}
+            autoplay={activePlayer === 'A' && playerAAnimIndex === 0}
+            loop={playerAAnimIndex === 0 || playerAAnimIndex === 2}
+            src={animations[playerAAnimIndex]}
             style={{ width: '100%', height: '100%' }}
           />
         </div>
@@ -104,8 +114,8 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
           <Player
             ref={playerBRef}
             autoplay={false}
-            loop={false}
-            src={animations[0]}
+            loop={playerBAnimIndex === 2}
+            src={animations[playerBAnimIndex]}
             style={{ width: '100%', height: '100%' }}
           />
         </div>
