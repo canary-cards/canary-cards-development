@@ -5,6 +5,7 @@ import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
+import posthog from 'posthog-js';
 
 const SLIDE_DURATION = 6500;
 const TOTAL_SLIDES = 4;
@@ -51,6 +52,11 @@ export default function Onboarding() {
   const [sharedBy, setSharedBy] = useState('');
   
 
+
+  // Track first onboarding screen view
+  useEffect(() => {
+    posthog.capture('onboarding_first_screen_viewed');
+  }, []);
 
   // Check for shared link
   useEffect(() => {

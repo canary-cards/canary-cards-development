@@ -18,6 +18,7 @@ import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
+import posthog from 'posthog-js';
 export function LandingScreen() {
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research'>('main');
@@ -36,6 +37,11 @@ export function LandingScreen() {
   // Refs for auto-scrolling
   const resultsRef = useRef<HTMLDivElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Track landing page view
+  useEffect(() => {
+    posthog.capture('landing_page_viewed');
+  }, []);
 
   // Check for shared link and menu view parameter on mount
   useEffect(() => {
