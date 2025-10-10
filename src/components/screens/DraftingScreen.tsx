@@ -118,8 +118,8 @@ export function DraftingScreen() {
   useEffect(() => {
     const el = playerRef.current as any;
     if (!el) return;
-    // Only loop animation 0; animations 1 and 2 play once
-    el.loop = currentAnimationIndex === 0;
+    // Loop animations 0 and 2; animation 1 plays once
+    el.loop = currentAnimationIndex === 0 || currentAnimationIndex === 2;
   }, [currentAnimationIndex]);
 
   // Handle the actual drafting process
