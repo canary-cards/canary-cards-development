@@ -89,20 +89,26 @@ export function DraftingScreen() {
       // Fade out animation 0
       setIsVisible(false);
       
-      // Wait for fade, then switch to animation 1
+      // Wait for fade out to complete, then switch to animation 1
       timers.push(window.setTimeout(() => {
         setCurrentAnimationIndex(1);
-        setIsVisible(true);
+        // Small delay before fading in to ensure clean transition
+        timers.push(window.setTimeout(() => {
+          setIsVisible(true);
+        }, 50));
         
         // Animation 1: Play for 4 seconds
         timers.push(window.setTimeout(() => {
           // Fade out animation 1
           setIsVisible(false);
           
-          // Wait for fade, then switch to animation 2
+          // Wait for fade out to complete, then switch to animation 2
           timers.push(window.setTimeout(() => {
             setCurrentAnimationIndex(2);
-            setIsVisible(true);
+            // Small delay before fading in to ensure clean transition
+            timers.push(window.setTimeout(() => {
+              setIsVisible(true);
+            }, 50));
             // Animation 2 loops indefinitely until API completes
           }, FADE_DURATION));
         }, ANIMATION_1_DURATION));
