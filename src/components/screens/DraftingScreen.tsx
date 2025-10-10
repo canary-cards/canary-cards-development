@@ -145,7 +145,7 @@ export function DraftingScreen() {
         wrapper.removeEventListener('transitionend', handleTransitionEnd);
       }
     };
-  }, [isVisible]);
+  }, []); // Only run once on mount
 
   // Ensure correct looping behavior on the web component
   useEffect(() => {
