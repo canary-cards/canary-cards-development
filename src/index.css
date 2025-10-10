@@ -617,3 +617,14 @@ All colors MUST be HSL.
     }
   }
 }
+
+/* iOS Safari Stripe iframe optimization */
+@supports (-webkit-touch-callout: none) {
+  #embedded-checkout {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #embedded-checkout iframe {
+    max-width: 100% !important;
+  }
+}

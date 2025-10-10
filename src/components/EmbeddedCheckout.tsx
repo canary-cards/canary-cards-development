@@ -224,7 +224,7 @@ export function EmbeddedCheckout({
     scrollBehavior: 'auto'
   }}>
       <Card className="card-warm min-w-0">
-        <CardContent className="p-4 md:p-6 min-w-0">
+        <CardContent className="p-2 sm:p-4 md:p-6 min-w-0">
           <div className="text-center mb-6">
             <h1 className="display-title mb-2">Complete your payment</h1>
             <p className="text-muted-foreground mb-4">
@@ -233,7 +233,7 @@ export function EmbeddedCheckout({
           </div>
           
           {/* Stripe Embedded Checkout will mount here */}
-          <div id="embedded-checkout" className="w-full max-w-full overflow-x-auto overflow-y-visible min-w-0" data-attr="submit-stripe-checkout" />
+          <div id="embedded-checkout" className="w-full max-w-full min-w-0" data-attr="submit-stripe-checkout" />
           
           <div className="mt-6 pt-4 border-t">
             <Button type="button" variant="secondary" onClick={onBack} data-attr="click-embedded-checkout-back">
