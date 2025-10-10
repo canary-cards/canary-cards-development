@@ -39,31 +39,23 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
         setPlayerBAnimIndex(nextIndex);
       }
 
-      // Small delay to let the animation load
+      // Small delay to let the animation load, then crossfade both simultaneously
       timers.push(window.setTimeout(() => {
-        // Fade out current
+        setActivePlayer(nextPlayer);
+        
+        // Fade out current AND fade in next AT THE SAME TIME
         if (fromPlayer === 'A') {
           setPlayerAVisible(false);
+          setPlayerBVisible(true);
         } else {
           setPlayerBVisible(false);
+          setPlayerAVisible(true);
         }
 
-        // After fade completes, switch active and fade in
-        timers.push(window.setTimeout(() => {
-          setActivePlayer(nextPlayer);
-          
-          // Fade in next
-          if (nextPlayer === 'A') {
-            setPlayerAVisible(true);
-          } else {
-            setPlayerBVisible(true);
-          }
-
-          // Start playback
-          if (nextPlayerRef.current) {
-            nextPlayerRef.current.play();
-          }
-        }, FADE_DURATION));
+        // Start playback immediately
+        if (nextPlayerRef.current) {
+          nextPlayerRef.current.play();
+        }
       }, 100)); // 100ms to load animation
     };
 
