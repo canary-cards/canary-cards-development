@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Player } from '@lottiefiles/react-lottie-player';
+import animation0 from '@/assets/animations/animation-0.json';
+import animation1 from '@/assets/animations/animation-1.json';
+import animation2 from '@/assets/animations/animation-2.json';
 
 interface CrossfadeLottieProps {
   onComplete?: () => void;
@@ -14,12 +17,7 @@ export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
   const playerARef = useRef<any>(null);
   const playerBRef = useRef<any>(null);
 
-  // Import animations
-  const animations = [
-    require('@/assets/animations/animation-0.json'),
-    require('@/assets/animations/animation-1.json'),
-    require('@/assets/animations/animation-2.json'),
-  ];
+  const animations = [animation0, animation1, animation2];
 
   useEffect(() => {
     console.log('🎬 CrossfadeLottie mounted, starting animation sequence');
