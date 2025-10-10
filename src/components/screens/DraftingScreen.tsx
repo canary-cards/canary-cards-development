@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
 import { CrossfadeLottie } from '../lottie/CrossfadeLottie';
+import posthog from 'posthog-js';
 
 const draftingMessages = [
   "Synthesizing your concerns",
@@ -26,6 +27,19 @@ export function DraftingScreen() {
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
   
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_drafting_screen', {
+        has_concerns: !!state.postcardData.concerns,
+        has_personal_impact: !!state.postcardData.personalImpact,
+        representative: state.postcardData.representative?.name,
+        zip_code: state.postcardData.zipCode,
+        step: 'drafting'
+      });
+    }
+  }, []);
+
   // Update message based on current animation
   useEffect(() => {
     const messageIndex = currentAnimationIndex;

@@ -12,6 +12,7 @@ import { DynamicSvg } from '@/components/DynamicSvg';
 import { MetaTags } from '@/components/MetaTags';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReferralUrl, copyShareContent, shareContent, SHARE_TITLE, SHARE_DESCRIPTION } from '@/lib/shareUtils';
+import posthog from 'posthog-js';
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -21,6 +22,16 @@ export default function PaymentSuccess() {
   const {
     toast
   } = useToast();
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (posthog.__loaded) {
+      posthog.capture('view_payment_success', {
+        order_id: location.state?.orderId,
+        has_location_state: !!location.state
+      });
+    }
+  }, []);
 
   // Get representative data from localStorage
   const getRepresentativeData = () => {
@@ -354,7 +365,19 @@ export default function PaymentSuccess() {
             </div>
             
             <Button variant="secondary" size="lg" className="w-full" asChild data-attr="click-payment-success-home">
-              <Link to="/">Home</Link>
+              <Link 
+                to="/" 
+                onClick={() => {
+                  if (posthog.__loaded) {
+                    posthog.capture('click_payment_success_home', {
+                      order_id: location.state?.orderId,
+                      has_sharing_link: !!shareableLink
+                    });
+                  }
+                }}
+              >
+                Home
+              </Link>
             </Button>
           </CardContent>
         </Card>
