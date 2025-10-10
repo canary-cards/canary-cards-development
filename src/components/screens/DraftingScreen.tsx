@@ -77,7 +77,7 @@ export function DraftingScreen() {
   // Animation sequence with fade transitions
   useEffect(() => {
     const timers: number[] = [];
-    const FADE_DURATION = 750;
+    const FADE_DURATION = 1500; // Longer fade for smoother transitions
     
     // Animation durations in milliseconds
     const ANIMATION_0_DURATION = 4500; // 4.5 seconds (1.5s × 3 loops)
@@ -337,7 +337,7 @@ export function DraftingScreen() {
                     ref={playerRef}
                     src={animationUrls[currentAnimationIndex]}
                     speed="1"
-                    className={`w-full h-full max-w-2xl transition-opacity duration-[750ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-full max-w-2xl transition-opacity duration-[1500ms] ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
                     autoplay
                   />
                 </div>
