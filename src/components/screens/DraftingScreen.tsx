@@ -12,7 +12,7 @@ const draftingMessages = [
   "Synthesizing your concerns",
   "Researching trusted local sources",
   "Polishing your message",
-  "Completing draft — amplifying your voice"
+  "Adding final touches"
 ];
 
 export function DraftingScreen() {
@@ -46,13 +46,36 @@ export function DraftingScreen() {
     const newMessage = draftingMessages[messageIndex] || draftingMessages[draftingMessages.length - 1];
     
     if (newMessage !== currentMessage) {
+      // Start fade out
       setShowTypewriter(false);
+      
+      // Change text at midpoint of fade (400ms into 800ms transition)
       setTimeout(() => {
         setCurrentMessage(newMessage);
+        // Start fade in
         setShowTypewriter(true);
-      }, 200);
+      }, 400);
     }
-  }, [currentAnimationIndex, currentMessage]);
+  }, [currentAnimationIndex]);
+
+  // Change message to "Adding final touches" 6 seconds after third animation starts
+  useEffect(() => {
+    if (currentAnimationIndex === 2) {
+      const timer = setTimeout(() => {
+        // Start fade out
+        setShowTypewriter(false);
+        
+        // Change text at midpoint of fade
+        setTimeout(() => {
+          setCurrentMessage("Adding final touches");
+          // Start fade in
+          setShowTypewriter(true);
+        }, 400);
+      }, 6000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentAnimationIndex]);
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -251,7 +274,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <CrossfadeLottie />
+            <CrossfadeLottie onAnimationChange={(index) => setCurrentAnimationIndex(index)} />
             <div className="text-center space-y-3">
               <h1 className="display-title">
                 Drafting your postcard
@@ -259,7 +282,7 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
+                <p className={`text-base font-semibold text-primary transition-opacity duration-[800ms] ${
                   showTypewriter ? 'opacity-100' : 'opacity-0'
                 }`}>
                   {currentMessage}
