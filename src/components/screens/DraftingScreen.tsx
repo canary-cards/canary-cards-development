@@ -46,9 +46,15 @@ export function DraftingScreen() {
     const newMessage = draftingMessages[messageIndex] || draftingMessages[draftingMessages.length - 1];
     
     if (newMessage !== currentMessage) {
+      // Start fade out
       setShowTypewriter(false);
-      setCurrentMessage(newMessage);
-      setShowTypewriter(true);
+      
+      // Change text at midpoint of fade (400ms into 800ms transition)
+      setTimeout(() => {
+        setCurrentMessage(newMessage);
+        // Start fade in
+        setShowTypewriter(true);
+      }, 400);
     }
   }, [currentAnimationIndex, currentMessage]);
 
