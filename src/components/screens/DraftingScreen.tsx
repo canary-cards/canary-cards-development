@@ -47,10 +47,8 @@ export function DraftingScreen() {
     
     if (newMessage !== currentMessage) {
       setShowTypewriter(false);
-      setTimeout(() => {
-        setCurrentMessage(newMessage);
-        setShowTypewriter(true);
-      }, 200);
+      setCurrentMessage(newMessage);
+      setShowTypewriter(true);
     }
   }, [currentAnimationIndex, currentMessage]);
 
@@ -251,7 +249,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <CrossfadeLottie />
+            <CrossfadeLottie onAnimationChange={(index) => setCurrentAnimationIndex(index)} />
             <div className="text-center space-y-3">
               <h1 className="display-title">
                 Drafting your postcard
@@ -259,7 +257,7 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
+                <p className={`text-base font-semibold text-primary transition-opacity duration-[800ms] ${
                   showTypewriter ? 'opacity-100' : 'opacity-0'
                 }`}>
                   {currentMessage}
