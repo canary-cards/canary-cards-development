@@ -56,7 +56,7 @@ export function DraftingScreen() {
         setShowTypewriter(true);
       }, 400);
     }
-  }, [currentAnimationIndex, currentMessage]);
+  }, [currentAnimationIndex]);
 
   // Change message to "Adding final touches" 6 seconds after third animation starts
   useEffect(() => {
