@@ -12,7 +12,7 @@ const draftingMessages = [
   "Synthesizing your concerns",
   "Researching trusted local sources",
   "Polishing your message",
-  "Completing draft — amplifying your voice"
+  "Adding final touches"
 ];
 
 export function DraftingScreen() {
@@ -57,6 +57,25 @@ export function DraftingScreen() {
       }, 400);
     }
   }, [currentAnimationIndex, currentMessage]);
+
+  // Change message to "Adding final touches" 6 seconds after third animation starts
+  useEffect(() => {
+    if (currentAnimationIndex === 2) {
+      const timer = setTimeout(() => {
+        // Start fade out
+        setShowTypewriter(false);
+        
+        // Change text at midpoint of fade
+        setTimeout(() => {
+          setCurrentMessage("Adding final touches");
+          // Start fade in
+          setShowTypewriter(true);
+        }, 400);
+      }, 6000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentAnimationIndex]);
 
   // Handle the actual drafting process
   useEffect(() => {
