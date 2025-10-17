@@ -10,7 +10,7 @@ interface ProgressStripsProps {
 
 export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, progress, onStepClick }: ProgressStripsProps) {
   return (
-    <div className="flex w-full gap-3 items-center">
+    <div className="flex w-full gap-2 items-center">
       {Array.from({ length: totalSlides }, (_, index) => {
         const isPast = index < currentSlide;
         const isCurrent = index === currentSlide;
@@ -27,9 +27,11 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
             aria-label={`${isPast ? 'Go to step' : 'Step'} ${index + 1}${isCurrent ? ' (current)' : ''}${isFuture ? ' (locked)' : ''}`}
             aria-current={isCurrent ? 'step' : undefined}
           >
-            <div className={`h-full w-full rounded-full transition-colors ${isFuture ? 'bg-muted' : 'bg-muted/30'}`}>
+            <div className={`h-full w-full rounded-full transition-colors ${isFuture ? 'bg-muted' : 'bg-transparent'}`}>
               <div
-                className={`h-full rounded-full transition-all duration-300 ${isPast || isCurrent ? 'bg-accent' : 'bg-transparent'}`}
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isPast ? 'bg-primary' : isCurrent ? 'bg-accent' : 'bg-transparent'
+                }`}
                 style={{ 
                   width: isPast ? '100%' : isCurrent ? `${progress}%` : '0%',
                 }}
