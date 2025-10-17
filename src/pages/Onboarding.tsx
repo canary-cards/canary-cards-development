@@ -385,16 +385,17 @@ export default function Onboarding() {
         onClick={handleClick}
       >
         <div 
-          className="h-full w-full relative flex items-center"
+          className="h-full w-full relative flex items-center justify-center px-4"
           style={{
-            paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '16px' : '0',
-            transition: 'padding-right 200ms ease-out',
+            paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '20px' : '16px',
+            paddingLeft: currentSlide > 0 ? '20px' : '16px',
+            transition: 'padding 200ms ease-out',
           }}
         >
           <div 
-            className="w-full h-full"
+            className="w-full max-w-lg h-full"
             style={{
-              transform: `translateX(${currentSlide > 0 ? '-8px' : '0'})`,
+              transform: `translateX(${currentSlide > 0 ? '-4px' : '0'})`,
               transition: 'transform 200ms ease-out',
             }}
           >
@@ -411,7 +412,25 @@ export default function Onboarding() {
             />
           </div>
           
-          {/* Edge-peek: show hint of next slide */}
+          {/* Left edge-peek: show hint of previous slide */}
+          {currentSlide > 0 && (
+            <div 
+              className="absolute top-0 left-0 h-full pointer-events-none flex items-center pl-2"
+              style={{
+                width: '20px',
+              }}
+              aria-hidden="true"
+            >
+              <div 
+                className="h-[calc(100%-3rem)] w-full bg-white dark:bg-white rounded-l-lg shadow-md"
+                style={{
+                  opacity: 0.6,
+                }}
+              />
+            </div>
+          )}
+          
+          {/* Right edge-peek: show hint of next slide */}
           {currentSlide < TOTAL_SLIDES - 1 && (
             <div 
               className="absolute top-0 right-0 h-full pointer-events-none flex items-center pr-2"
@@ -421,7 +440,7 @@ export default function Onboarding() {
               aria-hidden="true"
             >
               <div 
-                className="h-[calc(100%-4rem)] w-full bg-white dark:bg-white rounded-r-lg shadow-md"
+                className="h-[calc(100%-3rem)] w-full bg-white dark:bg-white rounded-r-lg shadow-md"
                 style={{
                   opacity: 0.6,
                 }}

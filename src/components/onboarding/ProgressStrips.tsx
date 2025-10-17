@@ -21,8 +21,8 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
           return (
             <button
               key={index}
-              className={`flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden ${
-                isPast ? 'cursor-pointer' : 'cursor-default'
+              className={`flex-1 h-1 bg-muted/20 rounded-sm overflow-hidden transition-all ${
+                isPast ? 'cursor-pointer hover:bg-muted/30' : 'cursor-default'
               }`}
               onClick={() => isPast && onStepClick?.(index)}
               disabled={!isPast}
@@ -35,7 +35,7 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
                     ? 'bg-primary' 
                     : isCurrent 
                       ? 'bg-primary'
-                      : 'bg-muted/30'
+                      : 'bg-transparent'
                 }`}
                 style={{
                   width: isPast
