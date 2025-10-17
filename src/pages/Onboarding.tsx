@@ -341,7 +341,7 @@ export default function Onboarding() {
 
       {/* Header with Back Chevron, Progress, and Skip Link */}
       <div 
-        className="flex-shrink-0 flex items-center justify-center gap-4 px-6 py-3 z-40"
+        className="flex-shrink-0 flex items-center justify-between gap-4 px-6 py-3 z-40"
         style={{ 
           paddingTop: 'max(env(safe-area-inset-top, 1rem), 1rem)'
         }}
@@ -349,7 +349,7 @@ export default function Onboarding() {
         {/* Back Chevron - left side */}
         <button
           onClick={() => goToSlide(currentSlide - 1, 'progress')}
-          className="w-8 h-8 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          className="w-16 h-8 flex items-center justify-start text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
           aria-label={currentSlide === 0 ? "Exit onboarding" : "Previous slide"}
           data-attr="click-onboarding-back"
         >
@@ -370,7 +370,7 @@ export default function Onboarding() {
         {/* Skip intro text link - right side */}
         <button
           onClick={handleSkip}
-          className="text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 whitespace-nowrap"
+          className="w-16 h-8 flex items-center justify-end text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
           aria-label="Skip intro"
           data-attr="click-onboarding-skip"
         >
