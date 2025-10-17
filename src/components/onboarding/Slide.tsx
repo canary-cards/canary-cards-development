@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { DynamicSvg } from '../DynamicSvg';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface SlideProps {
   title: string;
@@ -12,10 +13,13 @@ interface SlideProps {
   assetName?: string;
   imageAlt?: string;
   currentSlide: number;
+  totalSlides: number;
   allAssets: Array<{ assetName: string; alt: string; }>;
+  isLastSlide: boolean;
+  onGetStarted: () => void;
 }
 
-export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
+export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, totalSlides, allAssets, isLastSlide, onGetStarted }: SlideProps) {
   const isMobile = useIsMobile();
   const [isSourceOpen, setIsSourceOpen] = useState(false);
   const textAreaRef = React.useRef<HTMLDivElement>(null);
@@ -130,6 +134,24 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             <h3 className="subtitle text-base leading-relaxed">
               {subtitle}
             </h3>
+            
+            {/* Get started button - only on last slide */}
+            {isLastSlide && (
+              <div className="pt-6">
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGetStarted();
+                  }}
+                  variant="default"
+                  size="lg"
+                  className="w-full max-w-xs mx-auto"
+                  data-attr="click-onboarding-get-started"
+                >
+                  Get started
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

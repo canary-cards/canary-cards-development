@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
+import { Coachmark } from '../components/onboarding/Coachmark';
 import { usePostHog } from 'posthog-js/react';
+import { Button } from '../components/ui/button';
 
-const SLIDE_DURATION = 6500;
+const SLIDE_DURATION = 10000; // 10 seconds
 const TOTAL_SLIDES = 4;
+const RESUME_DELAY = 2000; // 2 seconds after interaction
 
 const slides = [
   {
@@ -48,16 +51,44 @@ export default function Onboarding() {
   const location = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [autoplayStopped, setAutoplayStopped] = useState(false);
+  const [autoplayDisabledForSession, setAutoplayDisabledForSession] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showSharedBanner, setShowSharedBanner] = useState(false);
   const [sharedBy, setSharedBy] = useState('');
-  
+  const [showCoachmark, setShowCoachmark] = useState(false);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastInteractionRef = useRef<number>(0);
 
-
-  // Track first onboarding screen view
+  // Check if coachmark has been shown before
   useEffect(() => {
-    posthog.capture('onboarding_first_screen_viewed');
+    const coachmarkSeen = localStorage.getItem('onboarding_coachmark_seen');
+    if (!coachmarkSeen && currentSlide === 0) {
+      setShowCoachmark(true);
+    }
+  }, [currentSlide]);
+
+  const handleCoachmarkDismiss = useCallback(() => {
+    setShowCoachmark(false);
+    localStorage.setItem('onboarding_coachmark_seen', 'true');
   }, []);
+
+  // Track slide views
+  useEffect(() => {
+    posthog.capture('onboarding_carousel_slide_viewed', { index: currentSlide });
+    
+    // Announce to screen readers
+    const announcement = `Step ${currentSlide + 1} of ${TOTAL_SLIDES} — ${slides[currentSlide].title}`;
+    const ariaLive = document.createElement('div');
+    ariaLive.setAttribute('role', 'status');
+    ariaLive.setAttribute('aria-live', 'polite');
+    ariaLive.className = 'sr-only';
+    ariaLive.textContent = announcement;
+    document.body.appendChild(ariaLive);
+    
+    return () => {
+      document.body.removeChild(ariaLive);
+    };
+  }, [currentSlide, posthog]);
 
   // Check for shared link
   useEffect(() => {
@@ -80,15 +111,26 @@ export default function Onboarding() {
 
   // Exit to home with preserved query params
   const exitToHome = useCallback(() => {
+    localStorage.setItem('onboarding_dismissed', 'true');
     navigate('/' + location.search, { 
       state: { skipOnboarding: true },
       replace: true 
     });
   }, [navigate, location.search]);
 
-  // Autoplay logic
+  const handleSkip = useCallback(() => {
+    posthog.capture('onboarding_carousel_skip');
+    exitToHome();
+  }, [posthog, exitToHome]);
+
+  const handleComplete = useCallback(() => {
+    posthog.capture('onboarding_carousel_completed');
+    exitToHome();
+  }, [posthog, exitToHome]);
+
+  // Autoplay logic - don't auto-advance on final slide
   useEffect(() => {
-    if (autoplayStopped) return;
+    if (autoplayStopped || autoplayDisabledForSession || currentSlide === TOTAL_SLIDES - 1) return;
 
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -97,11 +139,8 @@ export default function Onboarding() {
         if (newProgress >= 100) {
           if (currentSlide < TOTAL_SLIDES - 1) {
             setCurrentSlide(prev => prev + 1);
+            posthog.capture('onboarding_carousel_advance', { method: 'auto' });
             return 0;
-          } else {
-            // Completed all slides
-            exitToHome();
-            return 100;
           }
         }
         
@@ -110,7 +149,7 @@ export default function Onboarding() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentSlide, autoplayStopped, exitToHome]);
+  }, [currentSlide, autoplayStopped, autoplayDisabledForSession, posthog]);
 
   // Pause autoplay when tab is hidden
   useEffect(() => {
@@ -124,42 +163,86 @@ export default function Onboarding() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
+  // Handle any user interaction - pauses autoplay temporarily or disables for session
+  const handleUserInteraction = useCallback(() => {
+    const now = Date.now();
+    lastInteractionRef.current = now;
+    
+    // If this is the first interaction, disable autoplay for the entire session
+    if (!autoplayDisabledForSession) {
+      setAutoplayDisabledForSession(true);
+    }
+    
+    // Pause autoplay temporarily
+    setAutoplayStopped(true);
+    
+    // Clear any existing resume timer
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+    }
+    
+    // Don't resume if already disabled for session
+    if (!autoplayDisabledForSession) {
+      // Resume after 2 seconds if no new interactions
+      resumeTimerRef.current = setTimeout(() => {
+        if (Date.now() - lastInteractionRef.current >= RESUME_DELAY) {
+          setAutoplayStopped(false);
+          setProgress(0);
+        }
+      }, RESUME_DELAY);
+    }
+    
+    // Dismiss coachmark on first interaction
+    if (showCoachmark) {
+      handleCoachmarkDismiss();
+    }
+  }, [autoplayDisabledForSession, showCoachmark, handleCoachmarkDismiss]);
+
   // Navigation functions
-  const goToSlide = useCallback((slideIndex: number) => {
+  const goToSlide = useCallback((slideIndex: number, method: string) => {
+    handleUserInteraction();
+    
     if (slideIndex >= 0 && slideIndex < TOTAL_SLIDES) {
       setCurrentSlide(slideIndex);
-      setProgress(100);
-      setAutoplayStopped(true);
+      setProgress(0);
+      posthog.capture('onboarding_carousel_advance', { method });
+    } else if (slideIndex < 0 && currentSlide === 0) {
+      // Back from first slide exits onboarding
+      handleSkip();
     } else if (slideIndex >= TOTAL_SLIDES) {
-      exitToHome();
+      handleComplete();
     }
-  }, [exitToHome]);
+  }, [currentSlide, handleUserInteraction, handleSkip, handleComplete, posthog]);
 
   const nextSlide = useCallback(() => {
-    goToSlide(currentSlide + 1);
+    goToSlide(currentSlide + 1, 'tap');
   }, [currentSlide, goToSlide]);
 
   const prevSlide = useCallback(() => {
-    goToSlide(currentSlide - 1);
+    goToSlide(currentSlide - 1, 'tap');
   }, [currentSlide, goToSlide]);
 
-  // Touch and click handlers - Instagram Stories pattern
+  // Touch and click handlers - 40/60 tap zones
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Direct navigation like Instagram Stories
+    // Ignore clicks on buttons
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
     
-    // Stop autoplay on any interaction
-    setAutoplayStopped(true);
-    setProgress(100);
+    handleUserInteraction();
     
-    if (clickX < width / 2) {
+    // Left 40% = back, right 60% = next
+    if (clickX < width * 0.4) {
       prevSlide();
     } else {
       nextSlide();
     }
-  }, [prevSlide, nextSlide]);
+  }, [prevSlide, nextSlide, handleUserInteraction]);
 
   // Swipe handling
   useEffect(() => {
@@ -169,6 +252,7 @@ export default function Onboarding() {
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      handleUserInteraction();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -178,19 +262,18 @@ export default function Onboarding() {
       const deltaY = endY - startY;
 
       // Only trigger if horizontal swipe is more significant than vertical
-      // Increased threshold to 75px for better scroll vs swipe distinction
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 75) {
         if (deltaX > 0) {
-          prevSlide();
+          goToSlide(currentSlide - 1, 'swipe');
         } else {
-          nextSlide();
+          goToSlide(currentSlide + 1, 'swipe');
         }
       }
     };
 
     const container = document.getElementById('onboarding-container');
     if (container) {
-      container.addEventListener('touchstart', handleTouchStart);
+      container.addEventListener('touchstart', handleTouchStart, { passive: true });
       container.addEventListener('touchend', handleTouchEnd);
     }
 
@@ -200,21 +283,26 @@ export default function Onboarding() {
         container.removeEventListener('touchend', handleTouchEnd);
       }
     };
-  }, [prevSlide, nextSlide]);
+  }, [currentSlide, goToSlide, handleUserInteraction]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        prevSlide();
-      } else if (e.key === 'ArrowRight') {
-        nextSlide();
+      if (e.key === 'ArrowLeft' || e.key === 'Left') {
+        e.preventDefault();
+        goToSlide(currentSlide - 1, 'keyboard');
+      } else if (e.key === 'ArrowRight' || e.key === 'Right' || e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        goToSlide(currentSlide + 1, 'keyboard');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleSkip();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prevSlide, nextSlide]);
+  }, [currentSlide, goToSlide, handleSkip]);
 
   // Lock vertical scrolling while onboarding is mounted
   useEffect(() => {
@@ -246,52 +334,94 @@ export default function Onboarding() {
         </div>
       )}
 
-      {/* Header with X Button and Progress Strips */}
+      {/* Header with Back Chevron, Progress, and Skip Link */}
       <div 
-        className="flex-shrink-0 flex items-center justify-between px-4 py-4 z-40"
+        className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-4 z-40"
         style={{ 
           paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
       >
-        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
-        <div className="flex-1 ml-2 mr-3">
+        {/* Back Chevron - left side */}
+        <button
+          onClick={() => goToSlide(currentSlide - 1, 'progress')}
+          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          aria-label={currentSlide === 0 ? "Exit onboarding" : "Previous slide"}
+          data-attr="click-onboarding-back"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+
+        {/* Progress Strips - center, taking most space */}
+        <div className="flex-1">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
-            autoplayActive={!autoplayStopped}
+            autoplayActive={!autoplayStopped && !autoplayDisabledForSession}
             progress={progress}
+            onStepClick={(stepIndex) => goToSlide(stepIndex, 'progress')}
           />
         </div>
 
-        {/* X Button - aligned to the right */}
+        {/* Skip intro text link - right side */}
         <button
-          onClick={exitToHome}
-          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
-          aria-label="Skip onboarding"
+          onClick={handleSkip}
+          className="text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 whitespace-nowrap"
+          aria-label="Skip intro"
           data-attr="click-onboarding-skip"
         >
-          <X className="w-6 h-6" />
+          Skip intro
         </button>
       </div>
 
-      {/* Main Content - Full height container */}
+      {/* Main Content - Carousel with edge-peek */}
       <div 
         id="onboarding-container"
-        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
+        className="relative flex-1 w-full touch-pan-x select-none overflow-visible"
         onClick={handleClick}
+        style={{
+          paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '8px' : '0',
+        }}
       >
-
-        <div className="h-full max-w-lg mx-auto w-full">
+        <div 
+          className="h-full max-w-lg mx-auto w-full relative"
+          style={{
+            transform: `translateX(${currentSlide > 0 ? '-4px' : '0'})`,
+            transition: 'transform 200ms ease-out',
+          }}
+        >
           <Slide 
             {...slides[currentSlide]} 
             currentSlide={currentSlide}
+            totalSlides={TOTAL_SLIDES}
             allAssets={slides.map(slide => ({ 
               assetName: slide.assetName || '', 
               alt: slide.imageAlt || slide.iconPlaceholder 
             }))}
+            isLastSlide={currentSlide === TOTAL_SLIDES - 1}
+            onGetStarted={handleComplete}
           />
+          
+          {/* Edge-peek: show hint of next slide */}
+          {currentSlide < TOTAL_SLIDES - 1 && (
+            <div 
+              className="absolute top-0 right-0 h-full w-8 pointer-events-none"
+              style={{
+                transform: 'translateX(100%)',
+                filter: 'blur(1px)',
+                opacity: 0.3,
+              }}
+              aria-hidden="true"
+            >
+              <div className="h-full w-full bg-gradient-to-r from-transparent to-muted" />
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Coachmark - first slide only, first time */}
+      {showCoachmark && currentSlide === 0 && (
+        <Coachmark onDismiss={handleCoachmarkDismiss} />
+      )}
     </div>
   );
 }
