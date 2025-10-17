@@ -393,17 +393,15 @@ export default function Onboarding() {
         <div 
           className="h-full flex items-center transition-transform duration-300 ease-out"
           style={{
-            transform: `translateX(calc(-${currentSlide * 100}% + ${currentSlide * (currentSlide > 0 ? 20 : 0)}px))`,
-            width: `${TOTAL_SLIDES * 100}%`,
+            transform: `translateX(-${currentSlide * 100}vw)`,
           }}
         >
           {slides.map((slide, index) => (
             <div
               key={index}
-              className="h-full flex items-center justify-center px-4"
+              className="h-full flex-shrink-0 flex items-center justify-center px-4"
               style={{
-                width: `calc(${100 / TOTAL_SLIDES}% - ${index > 0 ? 10 : 0}px)`,
-                marginLeft: index > 0 ? '20px' : '0',
+                width: '100vw',
               }}
             >
               <div className="w-full max-w-lg h-full">
