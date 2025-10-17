@@ -19,7 +19,7 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
         return (
           <button
             key={index}
-            className={`flex-1 min-h-0 h-1 p-0 m-0 bg-transparent rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-opacity ${
+            className={`flex-1 min-h-0 h-2 p-0 m-0 bg-transparent rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               isPast ? 'cursor-pointer' : 'cursor-default'
             }`}
             onClick={() => isPast && onStepClick?.(index)}
@@ -27,10 +27,12 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
             aria-label={`${isPast ? 'Go to step' : 'Step'} ${index + 1}${isCurrent ? ' (current)' : ''}${isFuture ? ' (locked)' : ''}`}
             aria-current={isCurrent ? 'step' : undefined}
           >
-            <div className={`h-full w-full rounded-full ${isFuture ? 'bg-muted/40' : 'bg-primary/30'}`}>
+            <div className={`h-full w-full rounded-full transition-colors ${isFuture ? 'bg-muted' : 'bg-muted/30'}`}>
               <div
-                className={`h-full rounded-full ${isPast ? 'bg-primary' : isCurrent ? 'bg-primary' : 'bg-transparent'}`}
-                style={{ width: isPast ? '100%' : isCurrent ? `${progress}%` : '0%' }}
+                className={`h-full rounded-full transition-all duration-300 ${isPast || isCurrent ? 'bg-accent' : 'bg-transparent'}`}
+                style={{ 
+                  width: isPast ? '100%' : isCurrent ? `${progress}%` : '0%',
+                }}
               />
             </div>
           </button>
