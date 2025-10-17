@@ -341,15 +341,15 @@ export default function Onboarding() {
 
       {/* Header with Back Chevron, Progress, and Skip Link */}
       <div 
-        className="flex-shrink-0 flex items-center justify-center gap-3 px-4 py-4 z-40"
+        className="flex-shrink-0 flex items-center justify-center gap-4 px-6 py-3 z-40"
         style={{ 
-          paddingTop: 'env(safe-area-inset-top, 1rem)'
+          paddingTop: 'max(env(safe-area-inset-top, 1rem), 1rem)'
         }}
       >
         {/* Back Chevron - left side */}
         <button
           onClick={() => goToSlide(currentSlide - 1, 'progress')}
-          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          className="w-8 h-8 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
           aria-label={currentSlide === 0 ? "Exit onboarding" : "Previous slide"}
           data-attr="click-onboarding-back"
         >
@@ -357,7 +357,7 @@ export default function Onboarding() {
         </button>
 
         {/* Progress Strips - center, taking most space */}
-        <div className="flex-1 max-w-md mx-auto">
+        <div className="flex-1 max-w-md">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
