@@ -370,7 +370,7 @@ export default function Onboarding() {
         {/* Skip intro text link - right side */}
         <button
           onClick={handleSkip}
-          className="w-16 h-8 flex items-center justify-end text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          className="w-16 h-8 flex items-center justify-end text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 whitespace-nowrap"
           aria-label="Skip intro"
           data-attr="click-onboarding-skip"
         >
