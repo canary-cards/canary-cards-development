@@ -384,75 +384,43 @@ export default function Onboarding() {
         </button>
       </div>
 
-      {/* Main Content - Carousel with edge-peek */}
+      {/* Main Content - Horizontal Carousel */}
       <div 
         id="onboarding-container"
         className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
       >
         <div 
-          className="h-full w-full relative flex items-center justify-center px-4"
+          className="h-full flex items-center transition-transform duration-300 ease-out"
           style={{
-            paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '20px' : '16px',
-            paddingLeft: currentSlide > 0 ? '20px' : '16px',
-            transition: 'padding 200ms ease-out',
+            transform: `translateX(calc(-${currentSlide * 100}% + ${currentSlide * (currentSlide > 0 ? 20 : 0)}px))`,
+            width: `${TOTAL_SLIDES * 100}%`,
           }}
         >
-          <div 
-            className="w-full max-w-lg h-full"
-            style={{
-              transform: `translateX(${currentSlide > 0 ? '-4px' : '0'})`,
-              transition: 'transform 200ms ease-out',
-            }}
-          >
-            <Slide 
-              {...slides[currentSlide]} 
-              currentSlide={currentSlide}
-              totalSlides={TOTAL_SLIDES}
-              allAssets={slides.map(slide => ({ 
-                assetName: slide.assetName || '', 
-                alt: slide.imageAlt || slide.iconPlaceholder 
-              }))}
-              isLastSlide={currentSlide === TOTAL_SLIDES - 1}
-              onGetStarted={handleComplete}
-            />
-          </div>
-          
-          {/* Left edge-peek: show hint of previous slide */}
-          {currentSlide > 0 && (
-            <div 
-              className="absolute top-0 left-0 h-full pointer-events-none pl-2 py-6"
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className="h-full flex items-center justify-center px-4"
               style={{
-                width: '20px',
+                width: `calc(${100 / TOTAL_SLIDES}% - ${index > 0 ? 10 : 0}px)`,
+                marginLeft: index > 0 ? '20px' : '0',
               }}
-              aria-hidden="true"
             >
-              <div 
-                className="h-full w-full bg-white dark:bg-white rounded-l-lg shadow-md"
-                style={{
-                  opacity: 0.6,
-                }}
-              />
+              <div className="w-full max-w-lg h-full">
+                <Slide 
+                  {...slide}
+                  currentSlide={currentSlide}
+                  totalSlides={TOTAL_SLIDES}
+                  allAssets={slides.map(s => ({ 
+                    assetName: s.assetName || '', 
+                    alt: s.imageAlt || s.iconPlaceholder 
+                  }))}
+                  isLastSlide={index === TOTAL_SLIDES - 1}
+                  onGetStarted={handleComplete}
+                />
+              </div>
             </div>
-          )}
-          
-          {/* Right edge-peek: show hint of next slide */}
-          {currentSlide < TOTAL_SLIDES - 1 && (
-            <div 
-              className="absolute top-0 right-0 h-full pointer-events-none pr-2 py-6"
-              style={{
-                width: '20px',
-              }}
-              aria-hidden="true"
-            >
-              <div 
-                className="h-full w-full bg-white dark:bg-white rounded-r-lg shadow-md"
-                style={{
-                  opacity: 0.6,
-                }}
-              />
-            </div>
-          )}
+          ))}
         </div>
       </div>
       
