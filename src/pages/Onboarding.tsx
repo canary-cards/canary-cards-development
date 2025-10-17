@@ -391,11 +391,9 @@ export default function Onboarding() {
         onClick={handleClick}
       >
         <div 
-          className="h-full flex items-center gap-4 transition-transform duration-300 ease-out"
+          className="h-full flex items-center gap-2 transition-transform duration-300 ease-out pl-4"
           style={{
-            transform: `translateX(calc(-${currentSlide * 100}vw - ${currentSlide * 16}px))`,
-            paddingLeft: '16px',
-            paddingRight: '60px',
+            transform: `translateX(-${currentSlide * (window.innerWidth - 32 + 8)}px)`,
           }}
         >
           {slides.map((slide, index) => (
@@ -403,7 +401,7 @@ export default function Onboarding() {
               key={index}
               className="h-full flex-shrink-0 flex items-center justify-center"
               style={{
-                width: 'calc(100vw - 76px)',
+                width: 'calc(100vw - 32px)',
               }}
             >
               <div className="w-full max-w-lg h-full">
