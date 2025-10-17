@@ -224,20 +224,26 @@ export default function Onboarding() {
 
   // Touch and click handlers - 40/60 tap zones
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Ignore clicks on buttons or if on last slide
+    // Ignore clicks on buttons
     const target = e.target as HTMLElement;
-    if (target.tagName === 'BUTTON' || target.closest('button') || currentSlide === TOTAL_SLIDES - 1) {
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
       return;
     }
     
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
+    const isLeftClick = clickX < width * 0.4;
+    
+    // On last slide, only allow left clicks (to go back)
+    if (currentSlide === TOTAL_SLIDES - 1 && !isLeftClick) {
+      return;
+    }
     
     handleUserInteraction();
     
     // Left 40% = back, right 60% = next
-    if (clickX < width * 0.4) {
+    if (isLeftClick) {
       prevSlide();
     } else {
       nextSlide();
