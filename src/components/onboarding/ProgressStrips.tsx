@@ -10,14 +10,9 @@ interface ProgressStripsProps {
 
 export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, progress, onStepClick }: ProgressStripsProps) {
   return (
-    <div className="space-y-1">
-      {/* Step indicator text */}
-      <div className="eyebrow-lowercase text-xs text-center">
-        Step {currentSlide + 1} of {totalSlides}
-      </div>
-      
+    <div className="w-full">
       {/* Progress strips */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 w-full">
         {Array.from({ length: totalSlides }, (_, index) => {
           const isPast = index < currentSlide;
           const isCurrent = index === currentSlide;
@@ -26,7 +21,7 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
           return (
             <button
               key={index}
-              className={`flex-1 h-2 bg-muted rounded-full overflow-hidden ${
+              className={`flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden ${
                 isPast ? 'cursor-pointer' : 'cursor-default'
               }`}
               onClick={() => isPast && onStepClick?.(index)}
@@ -39,8 +34,8 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
                   isPast
                     ? 'bg-primary' 
                     : isCurrent 
-                      ? 'bg-accent'
-                      : 'bg-muted'
+                      ? 'bg-primary'
+                      : 'bg-muted/30'
                 }`}
                 style={{
                   width: isPast

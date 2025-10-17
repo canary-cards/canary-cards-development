@@ -224,9 +224,9 @@ export default function Onboarding() {
 
   // Touch and click handlers - 40/60 tap zones
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Ignore clicks on buttons
+    // Ignore clicks on buttons or if on last slide
     const target = e.target as HTMLElement;
-    if (target.tagName === 'BUTTON' || target.closest('button')) {
+    if (target.tagName === 'BUTTON' || target.closest('button') || currentSlide === TOTAL_SLIDES - 1) {
       return;
     }
     
@@ -242,7 +242,7 @@ export default function Onboarding() {
     } else {
       nextSlide();
     }
-  }, [prevSlide, nextSlide, handleUserInteraction]);
+  }, [prevSlide, nextSlide, handleUserInteraction, currentSlide]);
 
   // Swipe handling
   useEffect(() => {
@@ -256,6 +256,11 @@ export default function Onboarding() {
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
+      // Don't allow swipe on last slide
+      if (currentSlide === TOTAL_SLIDES - 1) {
+        return;
+      }
+      
       const endX = e.changedTouches[0].clientX;
       const endY = e.changedTouches[0].clientY;
       const deltaX = endX - startX;
@@ -336,7 +341,7 @@ export default function Onboarding() {
 
       {/* Header with Back Chevron, Progress, and Skip Link */}
       <div 
-        className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-4 z-40"
+        className="flex-shrink-0 flex items-center justify-center gap-3 px-4 py-4 z-40"
         style={{ 
           paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
@@ -352,7 +357,7 @@ export default function Onboarding() {
         </button>
 
         {/* Progress Strips - center, taking most space */}
-        <div className="flex-1">
+        <div className="flex-1 max-w-md mx-auto">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
@@ -376,43 +381,51 @@ export default function Onboarding() {
       {/* Main Content - Carousel with edge-peek */}
       <div 
         id="onboarding-container"
-        className="relative flex-1 w-full touch-pan-x select-none overflow-visible"
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
-        style={{
-          paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '8px' : '0',
-        }}
       >
         <div 
-          className="h-full max-w-lg mx-auto w-full relative"
+          className="h-full w-full relative flex items-center"
           style={{
-            transform: `translateX(${currentSlide > 0 ? '-4px' : '0'})`,
-            transition: 'transform 200ms ease-out',
+            paddingRight: currentSlide < TOTAL_SLIDES - 1 ? '16px' : '0',
+            transition: 'padding-right 200ms ease-out',
           }}
         >
-          <Slide 
-            {...slides[currentSlide]} 
-            currentSlide={currentSlide}
-            totalSlides={TOTAL_SLIDES}
-            allAssets={slides.map(slide => ({ 
-              assetName: slide.assetName || '', 
-              alt: slide.imageAlt || slide.iconPlaceholder 
-            }))}
-            isLastSlide={currentSlide === TOTAL_SLIDES - 1}
-            onGetStarted={handleComplete}
-          />
+          <div 
+            className="w-full h-full"
+            style={{
+              transform: `translateX(${currentSlide > 0 ? '-8px' : '0'})`,
+              transition: 'transform 200ms ease-out',
+            }}
+          >
+            <Slide 
+              {...slides[currentSlide]} 
+              currentSlide={currentSlide}
+              totalSlides={TOTAL_SLIDES}
+              allAssets={slides.map(slide => ({ 
+                assetName: slide.assetName || '', 
+                alt: slide.imageAlt || slide.iconPlaceholder 
+              }))}
+              isLastSlide={currentSlide === TOTAL_SLIDES - 1}
+              onGetStarted={handleComplete}
+            />
+          </div>
           
           {/* Edge-peek: show hint of next slide */}
           {currentSlide < TOTAL_SLIDES - 1 && (
             <div 
-              className="absolute top-0 right-0 h-full w-8 pointer-events-none"
+              className="absolute top-0 right-0 h-full pointer-events-none flex items-center pr-2"
               style={{
-                transform: 'translateX(100%)',
-                filter: 'blur(1px)',
-                opacity: 0.3,
+                width: '20px',
               }}
               aria-hidden="true"
             >
-              <div className="h-full w-full bg-gradient-to-r from-transparent to-muted" />
+              <div 
+                className="h-[calc(100%-4rem)] w-full bg-white dark:bg-white rounded-r-lg shadow-md"
+                style={{
+                  opacity: 0.6,
+                }}
+              />
             </div>
           )}
         </div>
