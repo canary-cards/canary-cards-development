@@ -421,7 +421,7 @@ export default function Onboarding() {
           {/* Left edge-peek: show hint of previous slide */}
           {currentSlide > 0 && (
             <div 
-              className="absolute left-0 h-full pointer-events-none pl-2 py-6"
+              className="absolute left-0 h-full pointer-events-none flex items-center pl-2"
               style={{
                 width: '20px',
                 top: 0,
@@ -429,7 +429,7 @@ export default function Onboarding() {
               aria-hidden="true"
             >
               <div 
-                className="h-full w-full bg-white dark:bg-white rounded-l-lg shadow-md"
+                className="h-[calc(100%-3rem)] w-full bg-white dark:bg-white rounded-l-lg shadow-md"
                 style={{
                   opacity: 0.6,
                 }}
@@ -440,7 +440,7 @@ export default function Onboarding() {
           {/* Right edge-peek: show hint of next slide */}
           {currentSlide < TOTAL_SLIDES - 1 && (
             <div 
-              className="absolute right-0 h-full pointer-events-none pr-2 py-6"
+              className="absolute right-0 h-full pointer-events-none flex items-center pr-2"
               style={{
                 width: '20px',
                 top: 0,
@@ -448,7 +448,7 @@ export default function Onboarding() {
               aria-hidden="true"
             >
               <div 
-                className="h-full w-full bg-white dark:bg-white rounded-r-lg shadow-md"
+                className="h-[calc(100%-3rem)] w-full bg-white dark:bg-white rounded-r-lg shadow-md"
                 style={{
                   opacity: 0.6,
                 }}
