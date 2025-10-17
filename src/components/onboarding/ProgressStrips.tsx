@@ -27,13 +27,15 @@ export function ProgressStrips({ currentSlide, totalSlides, autoplayActive, prog
             aria-label={`${isPast ? 'Go to step' : 'Step'} ${index + 1}${isCurrent ? ' (current)' : ''}${isFuture ? ' (locked)' : ''}`}
             aria-current={isCurrent ? 'step' : undefined}
           >
-            <div className={`h-full w-full rounded-full transition-colors ${isFuture ? 'bg-muted' : 'bg-transparent'}`}>
+            <div className={`h-full w-full rounded-full transition-colors ${
+              isFuture ? 'bg-muted' : isCurrent ? 'bg-muted' : 'bg-transparent'
+            }`}>
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   isPast ? 'bg-primary' : isCurrent ? 'bg-accent' : 'bg-transparent'
                 }`}
                 style={{ 
-                  width: isPast ? '100%' : isCurrent ? `${progress}%` : '0%',
+                  width: isPast ? '100%' : isCurrent ? (autoplayActive ? `${progress}%` : '100%') : '0%',
                 }}
               />
             </div>
