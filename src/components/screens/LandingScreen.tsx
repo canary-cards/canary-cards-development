@@ -155,19 +155,11 @@ export function LandingScreen() {
         <div className="text-center">
           {/* Hero Text */}
           <div className="w-full p-6 pb-0">
-            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative on capitol hill</h1>
-            <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
+            <h1 className="display-title leading-tight mb-6">Send a real postcard to your representative on capitol hill</h1>
           </div>
         </div>
 
-        {/* Icon between title and form */}
-        <div className="flex justify-center mb-2">
-          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 flex items-center justify-center">
-            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain" />
-          </div>
-        </div>
-
-        {/* Primary CTA - Zip Code Form (Above the fold) */}
+        {/* Primary CTA - Zip Code Form (Hero position) */}
         <Card className="mb-4 border-primary/20 shadow-sm">
           <CardContent className="p-4 md:p-6">
             <form onSubmit={handleZipSubmit} className="space-y-4">
@@ -210,6 +202,18 @@ export function LandingScreen() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Supporting illustration */}
+        <div className="flex justify-center mb-3 mt-4">
+          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
+            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
+          </div>
+        </div>
+
+        {/* Context subtitle */}
+        <div className="text-center px-6 mt-3 mb-4">
+          <h2 className="subtitle text-base leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
+        </div>
 
         {/* Research Card */}
         <Card className="mb-4 border-primary/20 shadow-sm">
