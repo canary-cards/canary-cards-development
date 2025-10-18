@@ -151,18 +151,15 @@ export function LandingScreen() {
       {/* Shared Link Banner */}
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
       <div className="mx-auto px-4 max-w-2xl pb-1">
-        {/* Mobile-First Hero Section */}
-        <div className="text-center">
-          {/* Hero Text */}
-          <div className="w-full p-6 pb-0">
-            <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative on capitol hill</h1>
-            <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
-          </div>
-        </div>
-
-        {/* Primary CTA - Zip Code Form (Hero position) */}
+        {/* Primary CTA Card - Title, Subtitle, and Zip Code Form */}
         <Card className="mb-4 border-primary/20 shadow-sm">
-          <CardContent className="p-4 md:p-6">
+          <CardContent className="p-6 md:p-8">
+            {/* Hero Text */}
+            <div className="text-center mb-6">
+              <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative on capitol hill</h1>
+              <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
+            </div>
+
             <form onSubmit={handleZipSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="zipCode" className="text-sm md:text-base font-medium text-center block">
