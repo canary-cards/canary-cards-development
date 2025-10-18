@@ -393,10 +393,10 @@ export default function Onboarding() {
         <div 
           className="h-full flex transition-transform duration-300 ease-out"
           style={{
-            transform: `translateX(calc(-${currentSlide} * 100vw))`,
+            transform: `translateX(calc(-${currentSlide} * min(100vw, 32rem)))`,
             gap: '0',
-            paddingLeft: '8px',
-            paddingRight: '8px',
+            paddingLeft: '0',
+            paddingRight: '0',
           }}
         >
           {slides.map((slide, index) => (
@@ -404,7 +404,7 @@ export default function Onboarding() {
               key={index}
               className="h-full flex-shrink-0 flex items-center justify-center"
               style={{
-                width: '100vw',
+                width: 'min(100vw, 32rem)',
               }}
             >
               <div className="w-full max-w-lg h-full">
