@@ -36,7 +36,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
   const isFirstSlide = currentSlide === 0;
   
   return (
-    <div className="relative h-full flex items-center justify-center px-4 py-6">
+    <div className="relative h-full flex items-center justify-center px-0 py-6">
       <Card className="relative w-full max-w-lg h-[calc(100%-3rem)] bg-white dark:bg-white shadow-lg overflow-hidden text-foreground dark:text-gray-900">
         {/* Icon area - fixed position, always same spot */}
         <div 
