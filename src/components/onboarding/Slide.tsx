@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { DynamicSvg } from '../DynamicSvg';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface SlideProps {
   title: string;
@@ -13,9 +14,13 @@ interface SlideProps {
   imageAlt?: string;
   currentSlide: number;
   allAssets: Array<{ assetName: string; alt: string; }>;
+  cta?: {
+    text: string;
+    onClick: () => void;
+  };
 }
 
-export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
+export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets, cta }: SlideProps) {
   const isMobile = useIsMobile();
   const [isSourceOpen, setIsSourceOpen] = useState(false);
   const textAreaRef = React.useRef<HTMLDivElement>(null);
@@ -115,15 +120,15 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
           </div>
         </div>
       ) : (
-        /* Other slides: Static positioning with no scroll */
+        /* Other slides: Static positioning with optional CTA at bottom */
         <div 
-          className="absolute inset-x-0 px-4 sm:px-6 text-center"
+          className="absolute inset-x-0 px-4 sm:px-6 text-center flex flex-col"
           style={{
             top: isMobile ? '48%' : '47%',
             bottom: 'max(env(safe-area-inset-bottom, 1rem), 2.5rem)',
           }}
         >
-          <div className="space-y-4">
+          <div className="space-y-4 flex-shrink-0">
             <h2 className="display-title leading-tight">
               {title}
             </h2>
@@ -131,6 +136,27 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
               {subtitle}
             </h3>
           </div>
+          
+          {/* CTA Button for final slide */}
+          {cta && (
+            <div 
+              className="mt-auto pt-8"
+              style={{
+                paddingBottom: 'max(env(safe-area-inset-bottom, 1rem), 1rem)'
+              }}
+            >
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cta.onClick();
+                }}
+                className="w-full sm:w-auto sm:min-w-[200px]"
+                size="lg"
+              >
+                {cta.text}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

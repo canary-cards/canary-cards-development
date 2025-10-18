@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
+import { OnboardingHint } from '../components/onboarding/OnboardingHint';
 import { usePostHog } from 'posthog-js/react';
+import { Button } from '../components/ui/button';
 
-const SLIDE_DURATION = 6500;
+const SLIDE_DURATION = 10000; // 10 seconds
+const RESUME_DELAY = 2000; // 2 seconds after last interaction
 const TOTAL_SLIDES = 4;
 
 const slides = [
@@ -51,6 +54,9 @@ export default function Onboarding() {
   const [progress, setProgress] = useState(0);
   const [showSharedBanner, setShowSharedBanner] = useState(false);
   const [sharedBy, setSharedBy] = useState('');
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const lastInteractionRef = useRef<number>(Date.now());
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
   
 
 
@@ -86,8 +92,33 @@ export default function Onboarding() {
     });
   }, [navigate, location.search]);
 
-  // Autoplay logic
+  // Smart pause and resume logic
+  const pauseAutoplay = useCallback(() => {
+    lastInteractionRef.current = Date.now();
+    setAutoplayStopped(true);
+    
+    // Clear existing resume timer
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+    }
+    
+    // Only resume if not on final slide
+    if (currentSlide < TOTAL_SLIDES - 1) {
+      resumeTimerRef.current = setTimeout(() => {
+        setAutoplayStopped(false);
+        setProgress(0);
+      }, RESUME_DELAY);
+    }
+  }, [currentSlide]);
+
+  // Autoplay logic with no auto-advance on final slide
   useEffect(() => {
+    // Never auto-advance final slide
+    if (currentSlide >= TOTAL_SLIDES - 1) {
+      setAutoplayStopped(true);
+      return;
+    }
+
     if (autoplayStopped) return;
 
     const interval = setInterval(() => {
@@ -97,11 +128,8 @@ export default function Onboarding() {
         if (newProgress >= 100) {
           if (currentSlide < TOTAL_SLIDES - 1) {
             setCurrentSlide(prev => prev + 1);
+            posthog?.capture('onboarding_auto_advanced', { from_slide: currentSlide });
             return 0;
-          } else {
-            // Completed all slides
-            exitToHome();
-            return 100;
           }
         }
         
@@ -110,7 +138,7 @@ export default function Onboarding() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentSlide, autoplayStopped, exitToHome]);
+  }, [currentSlide, autoplayStopped, exitToHome, posthog]);
 
   // Pause autoplay when tab is hidden
   useEffect(() => {
@@ -125,41 +153,46 @@ export default function Onboarding() {
   }, []);
 
   // Navigation functions
-  const goToSlide = useCallback((slideIndex: number) => {
+  const goToSlide = useCallback((slideIndex: number, source?: string) => {
+    setHasInteracted(true);
     if (slideIndex >= 0 && slideIndex < TOTAL_SLIDES) {
       setCurrentSlide(slideIndex);
       setProgress(100);
-      setAutoplayStopped(true);
+      pauseAutoplay();
+      posthog?.capture('onboarding_navigation', { 
+        to_slide: slideIndex, 
+        from_slide: currentSlide,
+        source: source || 'unknown'
+      });
     } else if (slideIndex >= TOTAL_SLIDES) {
       exitToHome();
     }
-  }, [exitToHome]);
+  }, [exitToHome, pauseAutoplay, currentSlide, posthog]);
 
-  const nextSlide = useCallback(() => {
-    goToSlide(currentSlide + 1);
+  const nextSlide = useCallback((source?: string) => {
+    goToSlide(currentSlide + 1, source);
   }, [currentSlide, goToSlide]);
 
-  const prevSlide = useCallback(() => {
-    goToSlide(currentSlide - 1);
+  const prevSlide = useCallback((source?: string) => {
+    goToSlide(currentSlide - 1, source);
   }, [currentSlide, goToSlide]);
 
-  // Touch and click handlers - Instagram Stories pattern
+  // Asymmetric tap zones: 40% left (back) / 60% right (forward)
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Direct navigation like Instagram Stories
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
     
-    // Stop autoplay on any interaction
-    setAutoplayStopped(true);
-    setProgress(100);
+    pauseAutoplay();
+    setHasInteracted(true);
     
-    if (clickX < width / 2) {
-      prevSlide();
+    // 40% left for back, 60% right for forward
+    if (clickX < width * 0.4) {
+      prevSlide('tap_left');
     } else {
-      nextSlide();
+      nextSlide('tap_right');
     }
-  }, [prevSlide, nextSlide]);
+  }, [prevSlide, nextSlide, pauseAutoplay]);
 
   // Swipe handling
   useEffect(() => {
@@ -180,10 +213,12 @@ export default function Onboarding() {
       // Only trigger if horizontal swipe is more significant than vertical
       // Increased threshold to 75px for better scroll vs swipe distinction
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 75) {
+        pauseAutoplay();
+        setHasInteracted(true);
         if (deltaX > 0) {
-          prevSlide();
+          prevSlide('swipe_right');
         } else {
-          nextSlide();
+          nextSlide('swipe_left');
         }
       }
     };
@@ -206,15 +241,19 @@ export default function Onboarding() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
-        prevSlide();
+        pauseAutoplay();
+        setHasInteracted(true);
+        prevSlide('keyboard');
       } else if (e.key === 'ArrowRight') {
-        nextSlide();
+        pauseAutoplay();
+        setHasInteracted(true);
+        nextSlide('keyboard');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prevSlide, nextSlide]);
+  }, [prevSlide, nextSlide, pauseAutoplay]);
 
   // Lock vertical scrolling while onboarding is mounted
   useEffect(() => {
@@ -246,31 +285,46 @@ export default function Onboarding() {
         </div>
       )}
 
-      {/* Header with X Button and Progress Strips */}
+      {/* Header with Back Chevron, Progress Strips, and Skip */}
       <div 
-        className="flex-shrink-0 flex items-center justify-between px-4 py-4 z-40"
+        className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-4 z-40"
         style={{ 
           paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
       >
-        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
-        <div className="flex-1 ml-2 mr-3">
+        {/* Back Chevron - Only show on slides 2-4 after first interaction */}
+        {hasInteracted && currentSlide > 0 && (
+          <button
+            onClick={() => prevSlide('back_button')}
+            className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            aria-label="Navigate to previous slide"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+        {(!hasInteracted || currentSlide === 0) && (
+          <div className="w-8 h-8 flex-shrink-0" />
+        )}
+
+        {/* Progress Strips */}
+        <div className="flex-1">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
             autoplayActive={!autoplayStopped}
             progress={progress}
+            onSlideClick={goToSlide}
           />
         </div>
 
-        {/* X Button - aligned to the right */}
+        {/* Skip intro button */}
         <button
           onClick={exitToHome}
-          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 whitespace-nowrap"
           aria-label="Skip onboarding"
           data-attr="click-onboarding-skip"
         >
-          <X className="w-6 h-6" />
+          Skip intro
         </button>
       </div>
 
@@ -289,9 +343,16 @@ export default function Onboarding() {
               assetName: slide.assetName || '', 
               alt: slide.imageAlt || slide.iconPlaceholder 
             }))}
+            cta={currentSlide === TOTAL_SLIDES - 1 ? {
+              text: "Get started",
+              onClick: exitToHome
+            } : undefined}
           />
         </div>
       </div>
+
+      {/* First-use coachmark hint */}
+      <OnboardingHint />
     </div>
   );
 }
