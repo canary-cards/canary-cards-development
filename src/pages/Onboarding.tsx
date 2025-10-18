@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharedBanner } from '../components/SharedBanner';
 import { ProgressStrips } from '../components/onboarding/ProgressStrips';
 import { formatSharingLinkForDisplay } from '../lib/shareUtils';
 import { Slide } from '../components/onboarding/Slide';
-import { Coachmark } from '../components/onboarding/Coachmark';
 import { usePostHog } from 'posthog-js/react';
-import { Button } from '../components/ui/button';
 
-const SLIDE_DURATION = 10000; // 10 seconds
+const SLIDE_DURATION = 6500;
 const TOTAL_SLIDES = 4;
-const RESUME_DELAY = 2000; // 2 seconds after interaction
 
 const slides = [
   {
@@ -51,44 +48,16 @@ export default function Onboarding() {
   const location = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [autoplayStopped, setAutoplayStopped] = useState(false);
-  const [autoplayDisabledForSession, setAutoplayDisabledForSession] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showSharedBanner, setShowSharedBanner] = useState(false);
   const [sharedBy, setSharedBy] = useState('');
-  const [showCoachmark, setShowCoachmark] = useState(false);
-  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastInteractionRef = useRef<number>(0);
+  
 
-  // Check if coachmark has been shown before
+
+  // Track first onboarding screen view
   useEffect(() => {
-    const coachmarkSeen = localStorage.getItem('onboarding_coachmark_seen');
-    if (!coachmarkSeen && currentSlide === 0) {
-      setShowCoachmark(true);
-    }
-  }, [currentSlide]);
-
-  const handleCoachmarkDismiss = useCallback(() => {
-    setShowCoachmark(false);
-    localStorage.setItem('onboarding_coachmark_seen', 'true');
+    posthog.capture('onboarding_first_screen_viewed');
   }, []);
-
-  // Track slide views
-  useEffect(() => {
-    posthog.capture('onboarding_carousel_slide_viewed', { index: currentSlide });
-    
-    // Announce to screen readers
-    const announcement = `Step ${currentSlide + 1} of ${TOTAL_SLIDES} — ${slides[currentSlide].title}`;
-    const ariaLive = document.createElement('div');
-    ariaLive.setAttribute('role', 'status');
-    ariaLive.setAttribute('aria-live', 'polite');
-    ariaLive.className = 'sr-only';
-    ariaLive.textContent = announcement;
-    document.body.appendChild(ariaLive);
-    
-    return () => {
-      document.body.removeChild(ariaLive);
-    };
-  }, [currentSlide, posthog]);
 
   // Check for shared link
   useEffect(() => {
@@ -111,26 +80,15 @@ export default function Onboarding() {
 
   // Exit to home with preserved query params
   const exitToHome = useCallback(() => {
-    localStorage.setItem('onboarding_dismissed', 'true');
     navigate('/' + location.search, { 
       state: { skipOnboarding: true },
       replace: true 
     });
   }, [navigate, location.search]);
 
-  const handleSkip = useCallback(() => {
-    posthog.capture('onboarding_carousel_skip');
-    exitToHome();
-  }, [posthog, exitToHome]);
-
-  const handleComplete = useCallback(() => {
-    posthog.capture('onboarding_carousel_completed');
-    exitToHome();
-  }, [posthog, exitToHome]);
-
-  // Autoplay logic - don't auto-advance on final slide
+  // Autoplay logic
   useEffect(() => {
-    if (autoplayStopped || autoplayDisabledForSession || currentSlide === TOTAL_SLIDES - 1) return;
+    if (autoplayStopped) return;
 
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -139,8 +97,11 @@ export default function Onboarding() {
         if (newProgress >= 100) {
           if (currentSlide < TOTAL_SLIDES - 1) {
             setCurrentSlide(prev => prev + 1);
-            posthog.capture('onboarding_carousel_advance', { method: 'auto' });
             return 0;
+          } else {
+            // Completed all slides
+            exitToHome();
+            return 100;
           }
         }
         
@@ -149,7 +110,7 @@ export default function Onboarding() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentSlide, autoplayStopped, autoplayDisabledForSession, posthog]);
+  }, [currentSlide, autoplayStopped, exitToHome]);
 
   // Pause autoplay when tab is hidden
   useEffect(() => {
@@ -163,92 +124,42 @@ export default function Onboarding() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Handle any user interaction - pauses autoplay temporarily or disables for session
-  const handleUserInteraction = useCallback(() => {
-    const now = Date.now();
-    lastInteractionRef.current = now;
-    
-    // If this is the first interaction, disable autoplay for the entire session
-    if (!autoplayDisabledForSession) {
-      setAutoplayDisabledForSession(true);
-    }
-    
-    // Pause autoplay temporarily
-    setAutoplayStopped(true);
-    
-    // Clear any existing resume timer
-    if (resumeTimerRef.current) {
-      clearTimeout(resumeTimerRef.current);
-    }
-    
-    // Don't resume if already disabled for session
-    if (!autoplayDisabledForSession) {
-      // Resume after 2 seconds if no new interactions
-      resumeTimerRef.current = setTimeout(() => {
-        if (Date.now() - lastInteractionRef.current >= RESUME_DELAY) {
-          setAutoplayStopped(false);
-          setProgress(0);
-        }
-      }, RESUME_DELAY);
-    }
-    
-    // Dismiss coachmark on first interaction
-    if (showCoachmark) {
-      handleCoachmarkDismiss();
-    }
-  }, [autoplayDisabledForSession, showCoachmark, handleCoachmarkDismiss]);
-
   // Navigation functions
-  const goToSlide = useCallback((slideIndex: number, method: string) => {
-    handleUserInteraction();
-    
+  const goToSlide = useCallback((slideIndex: number) => {
     if (slideIndex >= 0 && slideIndex < TOTAL_SLIDES) {
       setCurrentSlide(slideIndex);
-      setProgress(0);
-      posthog.capture('onboarding_carousel_advance', { method });
-    } else if (slideIndex < 0 && currentSlide === 0) {
-      // Back from first slide exits onboarding
-      handleSkip();
+      setProgress(100);
+      setAutoplayStopped(true);
     } else if (slideIndex >= TOTAL_SLIDES) {
-      handleComplete();
+      exitToHome();
     }
-  }, [currentSlide, handleUserInteraction, handleSkip, handleComplete, posthog]);
+  }, [exitToHome]);
 
   const nextSlide = useCallback(() => {
-    goToSlide(currentSlide + 1, 'tap');
+    goToSlide(currentSlide + 1);
   }, [currentSlide, goToSlide]);
 
   const prevSlide = useCallback(() => {
-    goToSlide(currentSlide - 1, 'tap');
+    goToSlide(currentSlide - 1);
   }, [currentSlide, goToSlide]);
 
-  // Touch and click handlers - 40/60 tap zones
+  // Touch and click handlers - Instagram Stories pattern
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Ignore clicks on buttons
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'BUTTON' || target.closest('button')) {
-      return;
-    }
-    
+    // Direct navigation like Instagram Stories
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
-    const isLeftClick = clickX < width * 0.4;
     
-    // On last slide, only allow left clicks (to go back)
-    if (currentSlide === TOTAL_SLIDES - 1 && !isLeftClick) {
-      return;
-    }
+    // Stop autoplay on any interaction
+    setAutoplayStopped(true);
+    setProgress(100);
     
-    handleUserInteraction();
-    
-    // Left 40% = back, right 60% = next
-    if (isLeftClick) {
+    if (clickX < width / 2) {
       prevSlide();
     } else {
       nextSlide();
     }
-  }, [prevSlide, nextSlide, handleUserInteraction, currentSlide]);
+  }, [prevSlide, nextSlide]);
 
   // Swipe handling
   useEffect(() => {
@@ -258,33 +169,28 @@ export default function Onboarding() {
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
-      handleUserInteraction();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      // Don't allow swipe on last slide
-      if (currentSlide === TOTAL_SLIDES - 1) {
-        return;
-      }
-      
       const endX = e.changedTouches[0].clientX;
       const endY = e.changedTouches[0].clientY;
       const deltaX = endX - startX;
       const deltaY = endY - startY;
 
       // Only trigger if horizontal swipe is more significant than vertical
+      // Increased threshold to 75px for better scroll vs swipe distinction
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 75) {
         if (deltaX > 0) {
-          goToSlide(currentSlide - 1, 'swipe');
+          prevSlide();
         } else {
-          goToSlide(currentSlide + 1, 'swipe');
+          nextSlide();
         }
       }
     };
 
     const container = document.getElementById('onboarding-container');
     if (container) {
-      container.addEventListener('touchstart', handleTouchStart, { passive: true });
+      container.addEventListener('touchstart', handleTouchStart);
       container.addEventListener('touchend', handleTouchEnd);
     }
 
@@ -294,26 +200,21 @@ export default function Onboarding() {
         container.removeEventListener('touchend', handleTouchEnd);
       }
     };
-  }, [currentSlide, goToSlide, handleUserInteraction]);
+  }, [prevSlide, nextSlide]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft' || e.key === 'Left') {
-        e.preventDefault();
-        goToSlide(currentSlide - 1, 'keyboard');
-      } else if (e.key === 'ArrowRight' || e.key === 'Right' || e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        goToSlide(currentSlide + 1, 'keyboard');
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleSkip();
+      if (e.key === 'ArrowLeft') {
+        prevSlide();
+      } else if (e.key === 'ArrowRight') {
+        nextSlide();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlide, goToSlide, handleSkip]);
+  }, [prevSlide, nextSlide]);
 
   // Lock vertical scrolling while onboarding is mounted
   useEffect(() => {
@@ -345,90 +246,52 @@ export default function Onboarding() {
         </div>
       )}
 
-      {/* Header with Back Chevron, Progress, and Skip Link */}
+      {/* Header with X Button and Progress Strips */}
       <div 
-        className="flex-shrink-0 flex items-center gap-3 px-6 py-3 z-40"
+        className="flex-shrink-0 flex items-center justify-between px-4 py-4 z-40"
         style={{ 
-          paddingTop: 'max(env(safe-area-inset-top, 1rem), 1rem)'
+          paddingTop: 'env(safe-area-inset-top, 1rem)'
         }}
       >
-        {/* Back Chevron - anchored left */}
-        <button
-          onClick={() => goToSlide(currentSlide - 1, 'progress')}
-          className="flex-shrink-0 text-foreground hover:text-foreground/80 transition-colors"
-          aria-label={currentSlide === 0 ? "Exit onboarding" : "Previous slide"}
-          data-attr="click-onboarding-back"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-
-        {/* Progress Strips - fills remaining space */}
-        <div className="flex-1 min-w-0">
+        {/* Progress Strips - taking most of the width with left spacing to match X visual position */}
+        <div className="flex-1 ml-2 mr-3">
           <ProgressStrips
             currentSlide={currentSlide}
             totalSlides={TOTAL_SLIDES}
-            autoplayActive={!autoplayStopped && !autoplayDisabledForSession}
+            autoplayActive={!autoplayStopped}
             progress={progress}
-            onStepClick={(stepIndex) => goToSlide(stepIndex, 'progress')}
           />
         </div>
 
-        {/* Skip intro - anchored right */}
+        {/* X Button - aligned to the right */}
         <button
-          onClick={handleSkip}
-          className="flex-shrink-0 text-sm eyebrow-lowercase text-foreground hover:text-foreground/80 transition-colors whitespace-nowrap"
-          aria-label="Skip intro"
+          onClick={exitToHome}
+          className="w-10 h-10 flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors flex-shrink-0"
+          aria-label="Skip onboarding"
           data-attr="click-onboarding-skip"
         >
-          Skip intro
+          <X className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Main Content - Horizontal Carousel */}
+      {/* Main Content - Full height container */}
       <div 
         id="onboarding-container"
-        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden flex items-center justify-center"
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
         onClick={handleClick}
       >
-        <div 
-          className="h-full flex transition-transform duration-300 ease-out"
-          style={{
-            transform: `translateX(calc(-${currentSlide} * 24rem))`,
-            gap: '0',
-            paddingLeft: '0',
-            paddingRight: '0',
-          }}
-        >
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              className="h-full flex-shrink-0 flex items-center justify-center"
-              style={{
-                width: '24rem',
-              }}
-            >
-              <div className="w-full max-w-lg h-full">
-                <Slide 
-                  {...slide}
-                  currentSlide={currentSlide}
-                  totalSlides={TOTAL_SLIDES}
-                  allAssets={slides.map(s => ({ 
-                    assetName: s.assetName || '', 
-                    alt: s.imageAlt || s.iconPlaceholder 
-                  }))}
-                  isLastSlide={index === TOTAL_SLIDES - 1}
-                  onGetStarted={handleComplete}
-                />
-              </div>
-            </div>
-          ))}
+
+        <div className="h-full max-w-lg mx-auto w-full">
+          <Slide 
+            {...slides[currentSlide]} 
+            currentSlide={currentSlide}
+            allAssets={slides.map(slide => ({ 
+              assetName: slide.assetName || '', 
+              alt: slide.imageAlt || slide.iconPlaceholder 
+            }))}
+          />
         </div>
       </div>
-      
-      {/* Coachmark - first slide only, first time */}
-      {showCoachmark && currentSlide === 0 && (
-        <Coachmark onDismiss={handleCoachmarkDismiss} />
-      )}
     </div>
   );
 }

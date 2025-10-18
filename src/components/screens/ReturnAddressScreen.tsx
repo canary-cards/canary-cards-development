@@ -9,7 +9,6 @@ import { useAppContext } from '../../context/AppContext';
 import { MapPin, ArrowLeft, ArrowRight, Home, Plus, Minus } from 'lucide-react';
 import { searchAddressAutocomplete, getPlaceDetails, GooglePlacesAddressPrediction } from '../../services/googlePlaces';
 import { capitalizeName } from '../../lib/utils';
-import posthog from 'posthog-js';
 
 // Interface removed - now using GooglePlacesAddressPrediction from service
 
@@ -48,17 +47,6 @@ export function ReturnAddressScreen() {
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const zipCode = appState.postcardData.zipCode || '';
-
-  // Track page view when component mounts
-  useEffect(() => {
-    if (posthog.__loaded) {
-      posthog.capture('view_return_address_screen', {
-        has_existing_data: !!(existingUserInfo?.fullName && existingUserInfo?.streetAddress),
-        zip_code: zipCode,
-        step: 'return_address'
-      });
-    }
-  }, []);
 
   // Save data to context as user types (debounced)
   useEffect(() => {

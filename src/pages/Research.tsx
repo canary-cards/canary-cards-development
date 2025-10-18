@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { HamburgerMenu } from '../components/HamburgerMenu';
-import posthog from 'posthog-js';
 
 const Research = () => {
   const [menuOpen, setMenuOpen] = useState(true);
-
-  // Track page view when component mounts
-  useEffect(() => {
-    if (posthog.__loaded) {
-      posthog.capture('view_research_page');
-    }
-  }, []);
 
   // Ensure menu opens on mount
   useEffect(() => {

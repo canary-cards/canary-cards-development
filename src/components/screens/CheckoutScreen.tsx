@@ -18,7 +18,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getTotalPriceDollars } from '@/lib/pricing';
 import { validateEmailWithSuggestion, normalizeEmail } from '@/lib/emailUtils';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
-import posthog from 'posthog-js';
 type RecipientSelection = 'rep-only' | 'all-three' | 'custom';
 export function CheckoutScreen() {
   const {
@@ -48,19 +47,6 @@ export function CheckoutScreen() {
   const [validationError, setValidationError] = useState('');
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
-
-  // Track page view when component mounts
-  useEffect(() => {
-    if (posthog.__loaded) {
-      posthog.capture('view_checkout_screen', {
-        send_option: state.postcardData.sendOption,
-        has_email: !!state.postcardData.email,
-        representative: state.postcardData.representative?.name,
-        zip_code: state.postcardData.zipCode,
-        step: 'checkout'
-      });
-    }
-  }, []);
 
   // Fetch senators when component mounts
   useEffect(() => {

@@ -6,13 +6,12 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
 import { CrossfadeLottie } from '../lottie/CrossfadeLottie';
-import posthog from 'posthog-js';
 
 const draftingMessages = [
   "Synthesizing your concerns",
   "Researching trusted local sources",
   "Polishing your message",
-  "Adding final touches"
+  "Completing draft — amplifying your voice"
 ];
 
 export function DraftingScreen() {
@@ -27,55 +26,19 @@ export function DraftingScreen() {
   const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
   const hasDraftedRef = useRef(false);
   
-  // Track page view when component mounts
-  useEffect(() => {
-    if (posthog.__loaded) {
-      posthog.capture('view_drafting_screen', {
-        has_concerns: !!state.postcardData.concerns,
-        has_personal_impact: !!state.postcardData.personalImpact,
-        representative: state.postcardData.representative?.name,
-        zip_code: state.postcardData.zipCode,
-        step: 'drafting'
-      });
-    }
-  }, []);
-
   // Update message based on current animation
   useEffect(() => {
     const messageIndex = currentAnimationIndex;
     const newMessage = draftingMessages[messageIndex] || draftingMessages[draftingMessages.length - 1];
     
     if (newMessage !== currentMessage) {
-      // Start fade out
       setShowTypewriter(false);
-      
-      // Change text at midpoint of fade (400ms into 800ms transition)
       setTimeout(() => {
         setCurrentMessage(newMessage);
-        // Start fade in
         setShowTypewriter(true);
-      }, 400);
+      }, 200);
     }
-  }, [currentAnimationIndex]);
-
-  // Change message to "Adding final touches" 6 seconds after third animation starts
-  useEffect(() => {
-    if (currentAnimationIndex === 2) {
-      const timer = setTimeout(() => {
-        // Start fade out
-        setShowTypewriter(false);
-        
-        // Change text at midpoint of fade
-        setTimeout(() => {
-          setCurrentMessage("Adding final touches");
-          // Start fade in
-          setShowTypewriter(true);
-        }, 400);
-      }, 6000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [currentAnimationIndex]);
+  }, [currentAnimationIndex, currentMessage]);
 
   // Handle the actual drafting process
   useEffect(() => {
@@ -274,7 +237,7 @@ export function DraftingScreen() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-6">
-            <CrossfadeLottie onAnimationChange={(index) => setCurrentAnimationIndex(index)} />
+            <CrossfadeLottie />
             <div className="text-center space-y-3">
               <h1 className="display-title">
                 Drafting your postcard
@@ -282,7 +245,7 @@ export function DraftingScreen() {
               
               {/* Typewriter message with smooth transition */}
               <div className="h-6 flex items-center justify-center">
-                <p className={`text-base font-semibold text-primary transition-opacity duration-[800ms] ${
+                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
                   showTypewriter ? 'opacity-100' : 'opacity-0'
                 }`}>
                   {currentMessage}

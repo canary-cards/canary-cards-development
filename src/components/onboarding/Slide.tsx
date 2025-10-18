@@ -3,8 +3,6 @@ import { ChevronDown } from 'lucide-react';
 import { DynamicSvg } from '../DynamicSvg';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 interface SlideProps {
   title: string;
@@ -14,13 +12,10 @@ interface SlideProps {
   assetName?: string;
   imageAlt?: string;
   currentSlide: number;
-  totalSlides: number;
   allAssets: Array<{ assetName: string; alt: string; }>;
-  isLastSlide: boolean;
-  onGetStarted: () => void;
 }
 
-export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, totalSlides, allAssets, isLastSlide, onGetStarted }: SlideProps) {
+export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, imageAlt, currentSlide, allAssets }: SlideProps) {
   const isMobile = useIsMobile();
   const [isSourceOpen, setIsSourceOpen] = useState(false);
   const textAreaRef = React.useRef<HTMLDivElement>(null);
@@ -36,16 +31,15 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
   const isFirstSlide = currentSlide === 0;
   
   return (
-    <div className="relative h-full flex items-center justify-center px-0 py-6">
-      <Card className="relative w-full max-w-lg h-[calc(100%-3rem)] bg-white dark:bg-white shadow-lg overflow-hidden text-foreground dark:text-gray-900">
-        {/* Icon area - fixed position, always same spot */}
-        <div 
-          className="absolute inset-x-0 flex items-center justify-center px-6"
-          style={{
-            top: '5%',
-            height: '40%', // Fixed 40% height for icon area, ends at 45%
-          }}
-        >
+    <div className="relative h-full">
+      {/* Icon area - fixed position, always same spot */}
+      <div 
+        className="absolute inset-x-0 flex items-center justify-center px-6"
+        style={{
+          top: '5%',
+          height: '40%', // Fixed 40% height for icon area, ends at 45%
+        }}
+      >
         <div 
           className="flex items-center justify-center relative"
           style={{
@@ -77,10 +71,10 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
               {iconPlaceholder}
             </span>
           )}
-          </div>
         </div>
+      </div>
 
-        {/* Text area - different rendering for first slide vs others */}
+      {/* Text area - different rendering for first slide vs others */}
       {isFirstSlide ? (
         /* First slide: Scrollable container for expandable source */
         <div 
@@ -136,28 +130,9 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             <h3 className="subtitle text-base leading-relaxed">
               {subtitle}
             </h3>
-            
-            {/* Get started button - only on last slide */}
-            {isLastSlide && (
-              <div className="pt-6">
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGetStarted();
-                  }}
-                  variant="default"
-                  size="lg"
-                  className="w-full max-w-xs mx-auto"
-                  data-attr="click-onboarding-get-started"
-                >
-                  Get started
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       )}
-      </Card>
     </div>
   );
 }

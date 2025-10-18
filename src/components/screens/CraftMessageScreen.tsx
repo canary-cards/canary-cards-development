@@ -396,7 +396,7 @@ export function CraftMessageScreen() {
             </TooltipProvider>
 
             <div className="space-y-4 pt-4">
-              <Button variant="spotlight" onClick={handleDraftMessage} disabled={!concerns.trim() || isDrafting} className="w-full h-10" data-attr="click-craft-ai-draft">
+              <Button variant="spotlight" onClick={handleDraftMessage} disabled={!concerns.trim() && !personalImpact.trim() || isDrafting} className="w-full h-10" data-attr="click-craft-ai-draft">
                 {isDrafting ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     AI is thinking...

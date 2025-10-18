@@ -6,10 +6,9 @@ import animation2 from '@/assets/animations/animation-2.json';
 
 interface CrossfadeLottieProps {
   onComplete?: () => void;
-  onAnimationChange?: (index: number) => void;
 }
 
-export function CrossfadeLottie({ onComplete, onAnimationChange }: CrossfadeLottieProps) {
+export function CrossfadeLottie({ onComplete }: CrossfadeLottieProps) {
   const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
   const [playerAVisible, setPlayerAVisible] = useState(true);
   const [playerBVisible, setPlayerBVisible] = useState(false);
@@ -33,10 +32,7 @@ export function CrossfadeLottie({ onComplete, onAnimationChange }: CrossfadeLott
       const nextPlayer = fromPlayer === 'A' ? 'B' : 'A';
       const nextPlayerRef = nextPlayer === 'A' ? playerARef : playerBRef;
 
-      // FIRST: Notify parent about animation change (for subtext sync)
-      onAnimationChange?.(nextIndex);
-
-      // SECOND: Preload the animation on the hidden player
+      // FIRST: Preload the animation on the hidden player
       if (nextPlayer === 'A') {
         setPlayerAAnimIndex(nextIndex);
       } else {
