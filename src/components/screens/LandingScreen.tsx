@@ -150,7 +150,7 @@ export function LandingScreen() {
       <div className="min-h-screen bg-background relative">
       {/* Shared Link Banner */}
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
-      <div className="mx-auto px-4 max-w-2xl pb-1">
+      <div className="mx-auto px-4 max-w-2xl py-4 pb-1">
         {/* Primary CTA Card - Title, Subtitle, and Zip Code Form */}
         <Card className="mb-4 border-primary/20 shadow-sm">
           <CardContent className="p-6 md:p-8">
