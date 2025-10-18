@@ -387,13 +387,13 @@ export default function Onboarding() {
       {/* Main Content - Horizontal Carousel */}
       <div 
         id="onboarding-container"
-        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden"
+        className="relative flex-1 w-full touch-pan-x select-none overflow-hidden flex items-center justify-center"
         onClick={handleClick}
       >
         <div 
           className="h-full flex transition-transform duration-300 ease-out"
           style={{
-            transform: `translateX(calc(-${currentSlide} * min(100vw, 26rem)))`,
+            transform: `translateX(calc(-${currentSlide} * 24rem))`,
             gap: '0',
             paddingLeft: '0',
             paddingRight: '0',
@@ -404,7 +404,7 @@ export default function Onboarding() {
               key={index}
               className="h-full flex-shrink-0 flex items-center justify-center"
               style={{
-                width: 'min(100vw, 26rem)',
+                width: '24rem',
               }}
             >
               <div className="w-full max-w-lg h-full">
