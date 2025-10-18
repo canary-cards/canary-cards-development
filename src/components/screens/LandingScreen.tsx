@@ -44,6 +44,17 @@ export function LandingScreen() {
     posthog.capture('landing_page_viewed');
   }, []);
 
+  // Auto-focus ZIP input with mobile-friendly delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const zipInput = document.getElementById('zipCode');
+      if (zipInput) {
+        zipInput.focus();
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Check for shared link and menu view parameter on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -166,11 +177,11 @@ export function LandingScreen() {
                 </Label>
                 <div className="relative">
                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="12345" value={zipCode} onChange={e => {
+                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="Enter ZIP code (e.g., 97403)" value={zipCode} onChange={e => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
                     setZipCode(value);
                     setSearchError('');
-                  }} className="pl-10 pr-10 h-12 text-center text-lg md:text-base focus:ring-accent focus:border-accent border-2" style={{
+                  }} className="pl-10 pr-10 h-14 text-center text-lg focus:ring-accent focus:border-accent border-2" style={{
                     textAlign: 'center',
                     paddingLeft: '2.5rem',
                     paddingRight: '2.5rem'
@@ -180,9 +191,14 @@ export function LandingScreen() {
                     {searchError}
                     {searchError.includes('valid')}
                   </p>}
+                {!searchError && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    ZIP only—no account required
+                  </p>
+                )}
               </div>
               
-              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode} data-attr="submit-zip-code">
+              <Button type="submit" className={`w-full h-14 text-base font-semibold ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : zipCode.length === 5 && validateZipCode(zipCode) ? 'animate-pulse-subtle' : ''}`} disabled={isSearching || !zipCode} data-attr="submit-zip-code">
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     Finding Your Rep...
