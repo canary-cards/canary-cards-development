@@ -162,9 +162,6 @@ export function LandingScreen() {
 
             <form onSubmit={handleZipSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="zipCode" className="text-sm md:text-base font-medium text-center block">
-                  Enter your zip code to get started
-                </Label>
                 <div className="relative">
                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                    <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="Enter ZIP code (e.g., 97403)" value={zipCode} onChange={e => {
