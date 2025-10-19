@@ -111,6 +111,13 @@ export default function Onboarding() {
     }
   }, [currentSlide]);
 
+  const resumeAutoplay = useCallback(() => {
+    if (currentSlide < TOTAL_SLIDES - 1) {
+      setAutoplayStopped(false);
+      setProgress(0);
+    }
+  }, [currentSlide]);
+
   // Autoplay logic with no auto-advance on final slide
   useEffect(() => {
     // Never auto-advance final slide
@@ -352,7 +359,11 @@ export default function Onboarding() {
       </div>
 
       {/* First-use coachmark hint */}
-      <OnboardingHint currentSlide={currentSlide} />
+      <OnboardingHint 
+        currentSlide={currentSlide} 
+        pauseAutoplay={pauseAutoplay}
+        resumeAutoplay={resumeAutoplay}
+      />
     </div>
   );
 }

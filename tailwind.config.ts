@@ -111,12 +111,21 @@ export default {
 						opacity: '0.95',
 						transform: 'scale(1.02)'
 					}
+				},
+				'nudge-horizontal': {
+					'0%, 100%': {
+						transform: 'translateX(0)'
+					},
+					'50%': {
+						transform: 'translateX(10px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-subtle': 'pulse-subtle 1.5s ease-in-out 3'
+				'pulse-subtle': 'pulse-subtle 1.5s ease-in-out 3',
+				'nudge-horizontal': 'nudge-horizontal 0.8s ease-in-out 3'
 			},
 			scale: {
 				'130': '1.3'
