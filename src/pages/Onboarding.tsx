@@ -352,7 +352,7 @@ export default function Onboarding() {
       </div>
 
       {/* First-use coachmark hint */}
-      <OnboardingHint />
+      <OnboardingHint currentSlide={currentSlide} />
     </div>
   );
 }

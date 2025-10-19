@@ -1,30 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { safeStorage } from '@/lib/safeStorage';
 
-export function OnboardingHint() {
+export function OnboardingHint({ currentSlide = 0 }: { currentSlide?: number }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Check if hint has been seen before
-    const hintSeen = safeStorage.getItem('onboarding_hint_seen');
-    
-    if (!hintSeen) {
-      setVisible(true);
-      
-      // Auto-hide after 6 seconds
-      const timer = setTimeout(() => {
-        setVisible(false);
-        safeStorage.setItem('onboarding_hint_seen', 'true');
-      }, 6000);
-
-      return () => clearTimeout(timer);
+    // Only show on the first slide and once per session
+    if (currentSlide !== 0) {
+      setVisible(false);
+      return;
     }
-  }, []);
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    try {
+      const hintSeenSession = typeof window !== 'undefined' && window.sessionStorage?.getItem('onboarding_hint_seen_session');
+      if (!hintSeenSession) {
+        setVisible(true);
+        // Auto-hide after 6 seconds
+        timer = setTimeout(() => {
+          setVisible(false);
+          try { window.sessionStorage?.setItem('onboarding_hint_seen_session', 'true'); } catch {}
+        }, 6000);
+      }
+    } catch {}
+
+    return () => { if (timer) clearTimeout(timer); };
+  }, [currentSlide]);
 
   const handleDismiss = () => {
     setVisible(false);
-    safeStorage.setItem('onboarding_hint_seen', 'true');
+    try { window.sessionStorage?.setItem('onboarding_hint_seen_session', 'true'); } catch {}
   };
 
   if (!visible) return null;
