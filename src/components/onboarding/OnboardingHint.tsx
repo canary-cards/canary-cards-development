@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Hand, ChevronsRight } from 'lucide-react';
 
 export function OnboardingHint({ currentSlide = 0 }: { currentSlide?: number }) {
   const [visible, setVisible] = useState(false);
@@ -76,10 +76,10 @@ export function OnboardingHint({ currentSlide = 0 }: { currentSlide?: number }) 
         aria-label="Dismiss navigation hint"
       >
         <span>Tap or swipe to continue</span>
-        <ChevronRight 
-          className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'}`}
-          aria-hidden="true"
-        />
+        <div className="flex items-center gap-1" aria-hidden="true">
+          <Hand className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'}`} />
+          <ChevronsRight className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'}`} />
+        </div>
       </div>
     </>
   );
