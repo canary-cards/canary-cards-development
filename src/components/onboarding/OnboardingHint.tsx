@@ -31,7 +31,7 @@ export function OnboardingHint() {
 
   return (
     <div 
-      className="fixed bottom-0 right-0 flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground pointer-events-none animate-fade-in"
+      className="fixed bottom-0 right-0 flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground cursor-pointer animate-fade-in"
       style={{
         paddingBottom: 'max(env(safe-area-inset-bottom, 1rem), 1rem)',
         paddingRight: 'max(env(safe-area-inset-right, 1rem), 1rem)',
@@ -39,7 +39,7 @@ export function OnboardingHint() {
       onClick={handleDismiss}
     >
       <span>Tap or swipe to continue</span>
-      <ChevronRight className="w-4 h-4 pulse-subtle" />
+      <ChevronRight className="w-4 h-4 animate-pulse" />
     </div>
   );
 }
