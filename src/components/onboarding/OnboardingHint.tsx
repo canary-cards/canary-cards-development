@@ -3,6 +3,19 @@ import { ChevronRight } from 'lucide-react';
 
 export function OnboardingHint({ currentSlide = 0 }: { currentSlide?: number }) {
   const [visible, setVisible] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // Check for reduced motion preference
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReducedMotion(mediaQuery.matches);
+      
+      const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, []);
 
   useEffect(() => {
     // Only show on the first slide and once per session
@@ -35,16 +48,39 @@ export function OnboardingHint({ currentSlide = 0 }: { currentSlide?: number }) 
   if (!visible) return null;
 
   return (
-    <div 
-      className="fixed bottom-0 right-0 flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground cursor-pointer animate-fade-in"
-      style={{
-        paddingBottom: 'max(env(safe-area-inset-bottom, 1rem), 1rem)',
-        paddingRight: 'max(env(safe-area-inset-right, 1rem), 1rem)',
-      }}
-      onClick={handleDismiss}
-    >
-      <span>Tap or swipe to continue</span>
-      <ChevronRight className="w-4 h-4 animate-pulse" />
-    </div>
+    <>
+      {/* Visually hidden aria-live announcement for screen readers */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        className="sr-only"
+      >
+        Tap or swipe to continue through the onboarding slides
+      </div>
+      
+      <div 
+        className="fixed bottom-0 right-0 flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground cursor-pointer animate-fade-in bg-background/95 backdrop-blur-sm rounded-xl shadow-sm"
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom, 1rem), 1rem)',
+          paddingRight: 'max(env(safe-area-inset-right, 1rem), 1rem)',
+        }}
+        onClick={handleDismiss}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleDismiss();
+          }
+        }}
+        aria-label="Dismiss navigation hint"
+      >
+        <span>Tap or swipe to continue</span>
+        <ChevronRight 
+          className={`w-4 h-4 ${prefersReducedMotion ? '' : 'animate-pulse'}`}
+          aria-hidden="true"
+        />
+      </div>
+    </>
   );
 }
