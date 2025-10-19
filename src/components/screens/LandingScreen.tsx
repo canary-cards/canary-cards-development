@@ -163,7 +163,7 @@ export function LandingScreen() {
           <CardContent className="p-6 md:p-8">
             {/* Hero Text */}
             <div className="text-center mb-6">
-              <h1 className="display-title leading-tight mb-4">Send a real postcard to your representative on capitol hill</h1>
+              <h1 className="display-title leading-tight mb-4">Send a real postcard to congress</h1>
               <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
             </div>
 
