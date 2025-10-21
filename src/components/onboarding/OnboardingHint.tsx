@@ -139,7 +139,7 @@ export function OnboardingHint({
       
       {/* Full-screen mask overlay */}
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm pointer-events-none"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 pointer-events-none"
         onClick={handleDismiss}
         role="button"
         tabIndex={0}
@@ -159,7 +159,8 @@ export function OnboardingHint({
             aria-hidden="true"
             className={`w-20 h-20 ${prefersReducedMotion ? '' : 'animate-nudge-horizontal'}`}
             style={{
-              filter: 'brightness(0) saturate(100%) invert(31%) sepia(20%) saturate(1036%) hue-rotate(174deg) brightness(92%) contrast(91%)'
+              filter: 'brightness(0) saturate(100%) invert(31%) sepia(20%) saturate(1036%) hue-rotate(174deg) brightness(92%) contrast(91%)',
+              imageRendering: 'crisp-edges'
             }}
           />
           <span className="font-sans text-lg text-primary/90">Tap or swipe to continue</span>
