@@ -137,37 +137,32 @@ export function OnboardingHint({
         Tap or swipe to continue
       </div>
       
-      {/* Non-blocking overlay container */}
+      {/* Full-screen mask overlay */}
       <div 
-        className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
-        style={{
-          top: '55%',
-          transform: 'translateY(-50%)'
+        className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm pointer-events-none"
+        onClick={handleDismiss}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleDismiss();
+          }
         }}
+        aria-label="Dismiss navigation hint"
+        style={{ pointerEvents: 'auto' }}
       >
-        <div 
-          className="pointer-events-auto max-w-fit mx-auto flex items-center gap-3 px-4 py-3 text-base text-primary/90 cursor-pointer bg-[hsl(35,85%,96%)]/80 backdrop-blur-sm rounded-lg shadow-md transition-opacity"
-          onClick={handleDismiss}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleDismiss();
-            }
-          }}
-          aria-label="Dismiss navigation hint"
-        >
-          <span className="font-sans">Tap or swipe to continue</span>
+        <div className="flex flex-col items-center gap-4">
           <img 
             src={tapIcon}
             alt=""
             aria-hidden="true"
-            className={`w-12 h-12 ${prefersReducedMotion ? '' : 'animate-nudge-horizontal'}`}
+            className={`w-20 h-20 ${prefersReducedMotion ? '' : 'animate-nudge-horizontal'}`}
             style={{
               filter: 'brightness(0) saturate(100%) invert(31%) sepia(20%) saturate(1036%) hue-rotate(174deg) brightness(92%) contrast(91%)'
             }}
           />
+          <span className="font-sans text-lg text-primary/90">Tap or swipe to continue</span>
         </div>
       </div>
     </>
