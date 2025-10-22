@@ -32,11 +32,19 @@ export function OnboardingHint({
     }
   }, []);
 
-  // Pause autoplay while hint is visible
+  // Pause autoplay while hint is visible - keep calling to reset the resume timer
   useEffect(() => {
-    if (visible && pauseAutoplay) {
+    if (!visible || !pauseAutoplay) return;
+    
+    // Initial pause
+    pauseAutoplay();
+    
+    // Keep pausing every second to reset the auto-resume timer
+    const pauseInterval = setInterval(() => {
       pauseAutoplay();
-    }
+    }, 1000);
+    
+    return () => clearInterval(pauseInterval);
   }, [visible, pauseAutoplay]);
 
   useEffect(() => {
