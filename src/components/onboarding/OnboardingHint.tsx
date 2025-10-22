@@ -65,37 +65,16 @@ export function OnboardingHint({
         autoHideTimerRef.current = setTimeout(() => {
           setVisible(false);
           
-          // If not manually dismissed and user still idle, re-show briefly at 8s
-          if (!dismissedManually) {
-            reShowTimerRef.current = setTimeout(() => {
-              setVisible(true);
-              
-              // Hide again after 2s
-              setTimeout(() => {
-                setVisible(false);
-                try { 
-                  window.sessionStorage?.setItem('onboarding_hint_seen', 'true'); 
-                } catch {}
-                
-                // Resume autoplay 2s after final hide
-                if (resumeAutoplay) {
-                  resumeTimerRef.current = setTimeout(() => {
-                    resumeAutoplay();
-                  }, 2000);
-                }
-              }, 2000);
-            }, 2000); // 8s total from initial show (700ms + 6s + 2s delay)
-          } else {
-            // If manually dismissed, mark as seen and resume autoplay
-            try { 
-              window.sessionStorage?.setItem('onboarding_hint_seen', 'true'); 
-            } catch {}
-            
-            if (resumeAutoplay) {
-              resumeTimerRef.current = setTimeout(() => {
-                resumeAutoplay();
-              }, 2000);
-            }
+          // Mark as seen
+          try { 
+            window.sessionStorage?.setItem('onboarding_hint_seen', 'true'); 
+          } catch {}
+          
+          // Resume autoplay 2s after hide
+          if (resumeAutoplay) {
+            resumeTimerRef.current = setTimeout(() => {
+              resumeAutoplay();
+            }, 2000);
           }
         }, 6000);
       }, 700);
