@@ -227,6 +227,12 @@ export function LandingScreen() {
           </CardContent>
         </Card>
 
+        {/* Supporting illustration - moved to bottom */}
+        <div className="flex justify-center mt-8 mb-4">
+          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
+            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
+          </div>
+        </div>
 
         {/* Representatives Results - Action First */}
         {isSearching && <div className="mb-6">
@@ -254,13 +260,6 @@ export function LandingScreen() {
             </div>
           </>
         )}
-
-        {/* Supporting illustration - moved to bottom */}
-        <div className="flex justify-center mt-8 mb-4">
-          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
-            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
-          </div>
-        </div>
 
         {/* Spacer for sticky button */}
         {selectedRep && <div className="h-20" />}
