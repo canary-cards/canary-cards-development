@@ -151,13 +151,6 @@ export function LandingScreen() {
       {/* Shared Link Banner */}
       {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
       <div className="mx-auto px-4 max-w-2xl py-4 pb-1">
-        {/* Supporting illustration */}
-        <div className="flex justify-center mb-4">
-          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
-            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
-          </div>
-        </div>
-
         {/* Primary CTA Card - Title, Subtitle, and Zip Code Form */}
         <Card className="mb-4 border-primary/20 shadow-sm">
           <CardContent className="p-6 md:p-8">
@@ -261,6 +254,13 @@ export function LandingScreen() {
             </div>
           </>
         )}
+
+        {/* Supporting illustration - moved to bottom */}
+        <div className="flex justify-center mt-8 mb-4">
+          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
+            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
+          </div>
+        </div>
 
         {/* Spacer for sticky button */}
         {selectedRep && <div className="h-20" />}
