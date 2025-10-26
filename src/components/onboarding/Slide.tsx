@@ -52,25 +52,44 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
             height: 'clamp(200px, min(40vw, 35vh), 280px)',
           }}
         >
-          {/* Render all SVGs at once for smooth transitions */}
-          {allAssets.map((asset, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-in-out motion-reduce:transition-none motion-reduce:transform-none pointer-events-none select-none ${
-                index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-              }`}
-              style={{ 
-                willChange: 'opacity, transform',
-                transform: index === currentSlide && currentSlide === 1 ? 'scale(0.85)' : undefined
-              }}
-            >
-              <DynamicSvg 
-                assetName={asset.assetName}
-                alt={asset.alt}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ))}
+          {/* Render all assets (SVGs or GIFs) at once for smooth transitions */}
+          {allAssets.map((asset, index) => {
+            const isGif = asset.assetName.endsWith('.gif');
+            
+            return (
+              <div
+                key={index}
+                className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-in-out motion-reduce:transition-none motion-reduce:transform-none pointer-events-none select-none ${
+                  index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}
+                style={{ 
+                  willChange: 'opacity, transform',
+                  transform: index === currentSlide && currentSlide === 1 ? 'scale(0.85)' : undefined
+                }}
+              >
+                {isGif ? (
+                  /* GIF in rounded rectangle container like postcard */
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="relative w-full max-w-[90%] aspect-[1.6/1] bg-white shadow-xl rounded-lg overflow-hidden">
+                      <img 
+                        src={`/${asset.assetName}`}
+                        alt={asset.alt}
+                        className="w-full h-full object-cover"
+                        loading="eager"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* SVG rendering */
+                  <DynamicSvg 
+                    assetName={asset.assetName}
+                    alt={asset.alt}
+                    className="w-full h-full object-contain"
+                  />
+                )}
+              </div>
+            );
+          })}
           {!assetName && (
             <span className="text-xs font-medium text-muted-foreground text-center px-2">
               {iconPlaceholder}
