@@ -70,7 +70,7 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
                 {isGif ? (
                   /* GIF in rounded rectangle container like postcard */
                   <div className="w-full h-full flex items-center justify-center">
-                    <div className="relative w-full max-w-[90%] aspect-[1.6/1] bg-white shadow-xl rounded-lg overflow-hidden border-2 border-primary">
+                    <div className="relative w-full max-w-[90%] aspect-[1.6/1] bg-white shadow-xl rounded-lg overflow-hidden border-4 border-primary">
                       <img 
                         src={`/${asset.assetName}`}
                         alt={asset.alt}
