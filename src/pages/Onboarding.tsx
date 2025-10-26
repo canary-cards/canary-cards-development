@@ -34,7 +34,8 @@ const slides = [
     subtitle: "Written by a robot holding a blue ballpoint, indistinguishable from human handwriting",
     iconPlaceholder: "ICON / REAL INK HANDWRITING",
     assetName: "robot-writing.gif",
-    imageAlt: "Robot writing with real pen on postcard"
+    imageAlt: "Robot writing with real pen on postcard",
+    scale: 1.4
   },
   {
     title: "No stamps, no hassle",
@@ -348,7 +349,14 @@ export default function Onboarding() {
             currentSlide={currentSlide}
             allAssets={slides.map(slide => ({ 
               assetName: slide.assetName || '', 
-              alt: slide.imageAlt || slide.iconPlaceholder 
+              alt: slide.imageAlt || slide.iconPlaceholder,
+              scale: slide.assetName === 'robot-writing.gif'
+                ? (() => {
+                    const p = new URLSearchParams(location.search).get('gifScale');
+                    const n = p ? parseFloat(p) : NaN;
+                    return Number.isFinite(n) ? n : slide.scale;
+                  })()
+                : slide.scale
             }))}
             cta={currentSlide === TOTAL_SLIDES - 1 ? {
               text: "Get started",

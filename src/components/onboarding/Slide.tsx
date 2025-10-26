@@ -13,7 +13,7 @@ interface SlideProps {
   assetName?: string;
   imageAlt?: string;
   currentSlide: number;
-  allAssets: Array<{ assetName: string; alt: string; }>;
+  allAssets: Array<{ assetName: string; alt: string; scale?: number; }>;
   cta?: {
     text: string;
     onClick: () => void;
@@ -67,10 +67,13 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
                   transform: index === currentSlide && currentSlide === 1 ? 'scale(0.85)' : undefined
                 }}
               >
-                {isGif ? (
-                  /* GIF in rounded rectangle container like postcard */
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="relative aspect-[1.6/1] bg-white shadow-xl rounded-lg overflow-hidden border-[3px] border-primary" style={{ width: '140%', maxWidth: '140%' }}>
+                <div 
+                  className="w-full h-full flex items-center justify-center"
+                  style={{ transform: `scale(${asset.scale ?? 1})`, transformOrigin: 'center' }}
+                >
+                  {isGif ? (
+                    /* GIF in rounded rectangle container like postcard */
+                    <div className="relative w-full aspect-[1.6/1] bg-white shadow-xl rounded-lg overflow-hidden border-[3px] border-primary">
                       <img 
                         src={`/${asset.assetName}`}
                         alt={asset.alt}
@@ -78,15 +81,15 @@ export function Slide({ title, subtitle, finePrint, iconPlaceholder, assetName, 
                         loading="eager"
                       />
                     </div>
-                  </div>
-                ) : (
-                  /* SVG rendering */
-                  <DynamicSvg 
-                    assetName={asset.assetName}
-                    alt={asset.alt}
-                    className="w-full h-full object-contain"
-                  />
-                )}
+                  ) : (
+                    /* SVG rendering */
+                    <DynamicSvg 
+                      assetName={asset.assetName}
+                      alt={asset.alt}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
