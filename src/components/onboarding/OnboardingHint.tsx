@@ -19,6 +19,7 @@ export function OnboardingHint({
   const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reShowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -111,6 +112,34 @@ export function OnboardingHint({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+
+    const touchEnd = {
+      x: e.changedTouches[0].clientX,
+      y: e.changedTouches[0].clientY
+    };
+
+    const deltaX = Math.abs(touchEnd.x - touchStartRef.current.x);
+    const deltaY = Math.abs(touchEnd.y - touchStartRef.current.y);
+
+    // Swipe threshold: 50px minimum movement
+    const SWIPE_THRESHOLD = 50;
+
+    if (deltaX > SWIPE_THRESHOLD || deltaY > SWIPE_THRESHOLD) {
+      handleDismiss();
+    }
+
+    touchStartRef.current = null;
+  };
+
   if (!visible) return null;
 
   return (
@@ -128,6 +157,8 @@ export function OnboardingHint({
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm pointer-events-none"
         onClick={handleDismiss}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
