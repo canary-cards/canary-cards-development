@@ -50,10 +50,11 @@ export function LandingPage() {
             <span className="font-normal">to Your Reps</span>
           </h1>
           
-          <p className="text-lg body-text text-muted-foreground mb-8 leading-relaxed max-w-md">
-            Send authentic, handwritten postcards to your elected representatives. 
-            Real ink, real impact, delivered directly to their offices.
-          </p>
+          <div className="mb-8">
+            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+              <span className="text-emerald-600 dark:text-emerald-400 text-3xl">✍️</span>
+            </div>
+          </div>
           
           <Button 
             size="lg" 
@@ -96,15 +97,7 @@ export function LandingPage() {
 
       {/* Bottom Features */}
       <section className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-emerald-600 dark:text-emerald-400 text-xl">✍️</span>
-            </div>
-            <h3 className="subtitle text-base mb-2">Authentic Handwriting</h3>
-            <p className="text-sm body-text text-muted-foreground">Real ink on real paper, written by advanced robotics</p>
-          </div>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="text-center">
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-blue-600 dark:text-blue-400 text-xl">🏛️</span>
