@@ -11,6 +11,7 @@ import { MetaTagsProvider } from './components/MetaTags'
 if (isProduction()) {
   posthog.init(getPostHogKey(), {
     api_host: getPostHogHost(),
+    person_profiles: 'always',
     autocapture: {
       // Capture standard DOM events
       dom_event_allowlist: ['click', 'change', 'submit'],
