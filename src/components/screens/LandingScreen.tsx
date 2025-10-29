@@ -157,7 +157,11 @@ export function LandingScreen() {
             {/* Hero Text */}
             <div className="text-center mb-6">
               <h1 className="display-title leading-tight mb-4">Send a real postcard to congress</h1>
-              <h2 className="subtitle text-base mb-0 leading-relaxed">Handwritten postcards are the gold standard in the age of AI</h2>
+              <div className="flex justify-center mt-4">
+                <div className="w-full max-w-32 h-24 sm:h-28 flex items-center justify-center">
+                  <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
+                </div>
+              </div>
             </div>
 
             <form onSubmit={handleZipSubmit} className="space-y-4">
@@ -227,12 +231,6 @@ export function LandingScreen() {
           </CardContent>
         </Card>
 
-        {/* Supporting illustration - moved to bottom */}
-        <div className="flex justify-center mt-6 mb-6">
-          <div className="w-full max-w-40 h-32 sm:h-36 md:h-40 flex items-center justify-center">
-            <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
-          </div>
-        </div>
 
         {/* Representatives Results - Action First */}
         {isSearching && <div className="mb-6">
