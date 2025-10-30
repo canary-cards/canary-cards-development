@@ -179,7 +179,7 @@ export function LandingScreen() {
                     {searchError.includes('valid')}
                   </p>}
                 {!searchError && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground pl-3">
                     Enter your ZIP code to find your Rep
                   </p>
                 )}
