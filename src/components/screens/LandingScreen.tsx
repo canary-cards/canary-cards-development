@@ -168,7 +168,7 @@ export function LandingScreen() {
               <div className="space-y-2">
                 <div className="relative">
                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="12345" value={zipCode} onChange={e => {
+                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="e.g., 12345" value={zipCode} onChange={e => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
                     setZipCode(value);
                     setSearchError('');
