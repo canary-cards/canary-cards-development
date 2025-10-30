@@ -172,14 +172,14 @@ export function LandingScreen() {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
                     setZipCode(value);
                     setSearchError('');
-                  }} className="pl-10 pr-4 h-14 text-lg focus:ring-accent focus:border-accent border-2" maxLength={5} data-attr="input-zip-code" />
+                  }} className="pl-10 pr-10 h-14 text-center text-lg focus:ring-accent focus:border-accent border-2" maxLength={5} data-attr="input-zip-code" />
                 </div>
                 {searchError && <p className="text-sm text-destructive">
                     {searchError}
                     {searchError.includes('valid')}
                   </p>}
                 {!searchError && (
-                  <p className="text-xs text-muted-foreground pl-3">
+                  <p className="text-xs text-muted-foreground text-center">
                     Enter your ZIP code to find your Rep
                   </p>
                 )}
