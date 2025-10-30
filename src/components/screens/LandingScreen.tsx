@@ -166,13 +166,13 @@ export function LandingScreen() {
 
             <form onSubmit={handleZipSubmit} className="space-y-4">
               <div className="space-y-2">
-                <div className="flex items-center justify-center gap-2">
-                   <MapPin className="w-4 h-4 text-muted-foreground" />
+                <div className="relative">
+                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                    <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="e.g., 12345" value={zipCode} onChange={e => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
                     setZipCode(value);
                     setSearchError('');
-                  }} className="flex-1 max-w-xs h-14 text-center text-lg focus:ring-accent focus:border-accent border-2" maxLength={5} data-attr="input-zip-code" />
+                  }} className="pl-10 pr-10 h-14 text-center text-lg focus:ring-accent focus:border-accent border-2" maxLength={5} data-attr="input-zip-code" />
                 </div>
                 {searchError && <p className="text-sm text-destructive">
                     {searchError}
