@@ -184,7 +184,7 @@ export function LandingScreen() {
                   </p>}
                 {!searchError && (
                   <p className="text-xs text-muted-foreground text-center">
-                    ZIP only—no account required
+                    Enter your ZIP code to find your Rep
                   </p>
                 )}
               </div>
