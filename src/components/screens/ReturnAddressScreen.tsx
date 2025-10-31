@@ -120,13 +120,55 @@ export function ReturnAddressScreen() {
     }, 150);
   };
   const handleSuggestionClick = async (suggestion: GooglePlacesAddressPrediction) => {
-    // Remove country from description if present (ends with ", USA")
-    let formattedAddress = suggestion.description;
-    if (formattedAddress.endsWith(', USA')) {
-      formattedAddress = formattedAddress.replace(', USA', '');
+    setIsSearching(true);
+    try {
+      // Fetch detailed address information
+      const details = await getPlaceDetails(suggestion.place_id);
+      
+      if (details) {
+        // Use the structured data from Place Details API
+        const { streetAddress, city, state, zipCode: detailZip, formattedAddress } = details;
+        
+        // Set the display address (without USA)
+        let displayAddress = formattedAddress;
+        if (displayAddress.endsWith(', USA')) {
+          displayAddress = displayAddress.replace(', USA', '');
+        }
+        setStreetAddress(displayAddress);
+        
+        // Immediately update context with structured data
+        const userInfo = {
+          fullName: fullName.trim() || existingUserInfo?.fullName || '',
+          streetAddress: streetAddress,
+          city: city,
+          state: state,
+          zipCode: detailZip || zipCode
+        };
+        
+        dispatch({
+          type: 'UPDATE_POSTCARD_DATA',
+          payload: { userInfo }
+        });
+      } else {
+        // Fallback: use the description as-is if details fetch fails
+        let formattedAddress = suggestion.description;
+        if (formattedAddress.endsWith(', USA')) {
+          formattedAddress = formattedAddress.replace(', USA', '');
+        }
+        setStreetAddress(formattedAddress);
+      }
+    } catch (error) {
+      console.error('Failed to fetch place details:', error);
+      // Fallback: use the description as-is
+      let formattedAddress = suggestion.description;
+      if (formattedAddress.endsWith(', USA')) {
+        formattedAddress = formattedAddress.replace(', USA', '');
+      }
+      setStreetAddress(formattedAddress);
+    } finally {
+      setShowSuggestions(false);
+      setIsSearching(false);
     }
-    setStreetAddress(formattedAddress);
-    setShowSuggestions(false);
   };
 
   // Auto-expand textarea based on content
@@ -172,12 +214,24 @@ export function ReturnAddressScreen() {
       return;
     }
 
-    // Parse city, state, zip from the full address
-    const {
-      city,
-      state,
-      zipCode: parsedZip
-    } = parseAddressComponents(streetAddress);
+    // Get city, state from context first (set by handleSuggestionClick)
+    let city = existingUserInfo?.city || '';
+    let state = existingUserInfo?.state || '';
+    let parsedZip = existingUserInfo?.zipCode || zipCode;
+
+    // If not in context, try parsing from the address string
+    if (!city || !state) {
+      const parsed = parseAddressComponents(streetAddress);
+      city = parsed.city || city;
+      state = parsed.state || state;
+      parsedZip = parsed.zipCode || parsedZip;
+    }
+
+    // Validate required fields
+    if (!city || !state) {
+      alert('Please select a complete address from the suggestions to ensure proper delivery.');
+      return;
+    }
 
     // Extract just the street portion (remove city, state, zip from the address)
     let cleanStreetAddress = streetAddress.trim();
@@ -193,9 +247,9 @@ export function ReturnAddressScreen() {
     const userInfo = {
       fullName: fullName.trim(),
       streetAddress: finalStreetAddress,
-      city: city || '',
-      state: state || '',
-      zipCode: parsedZip || zipCode // Use parsed zip or fall back to original
+      city: city,
+      state: state,
+      zipCode: parsedZip
     };
     dispatch({
       type: 'UPDATE_POSTCARD_DATA',
