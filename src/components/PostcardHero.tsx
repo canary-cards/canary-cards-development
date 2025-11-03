@@ -2,36 +2,46 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Repeat } from 'lucide-react';
-
 interface PostcardHeroProps {
   className?: string;
 }
-
 const ZOOM_SCALE = 2.5;
 const PAN_THRESHOLD = 6;
-
-export function PostcardHero({ className = '' }: PostcardHeroProps) {
+export function PostcardHero({
+  className = ''
+}: PostcardHeroProps) {
   const [isShowingBack, setIsShowingBack] = useState(true);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
-  const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  
+  const [translate, setTranslate] = useState({
+    x: 0,
+    y: 0
+  });
+
   // Refs to avoid stale closures and for panning
   const lastTapTimeRef = useRef(0);
   const singleTapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPanningRef = useRef(false);
-  const startPointerRef = useRef({ x: 0, y: 0 });
-  const startTranslateRef = useRef({ x: 0, y: 0 });
+  const startPointerRef = useRef({
+    x: 0,
+    y: 0
+  });
+  const startTranslateRef = useRef({
+    x: 0,
+    y: 0
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const frontImageRef = useRef<HTMLDivElement>(null);
   const backImageRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number>(0);
-
-  const images = [
-    { src: '/lovable-uploads/923b18b9-bce0-4521-a280-f38eaec3e09c.png', alt: 'Postcard back with handwritten message' },
-    { src: '/postcard_front.png', alt: 'Postcard front with Yosemite scenery' }
-  ];
+  const images = [{
+    src: '/lovable-uploads/923b18b9-bce0-4521-a280-f38eaec3e09c.jpg',
+    alt: 'Postcard back with handwritten message'
+  }, {
+    src: '/postcard_front.jpg',
+    alt: 'Postcard front with Yosemite scenery'
+  }];
 
   // Preload images aggressively for instant loading
   useEffect(() => {
@@ -43,25 +53,24 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
         img.src = image.src;
       });
     });
-    
+
     // Wait for all images to load
     Promise.all(preloadPromises).catch(console.error);
   }, []);
 
-
   // Flip animation handler
   const performFlip = () => {
     if (isFlipping || isZoomed) return; // Prevent flipping while zoomed
-    
+
     setIsBouncing(true);
     setIsFlipping(true);
     setIsShowingBack(prev => !prev);
-    
+
     // Reset flip state after animation completes
     setTimeout(() => {
       setIsFlipping(false);
     }, 500);
-    
+
     // Reset bounce state quickly
     setTimeout(() => {
       setIsBouncing(false);
@@ -72,7 +81,6 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
   const updateTransformImmediate = (x: number, y: number) => {
     const frontEl = frontImageRef.current;
     const backEl = backImageRef.current;
-    
     if (frontEl) {
       frontEl.style.willChange = 'transform';
       frontEl.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${isZoomed ? ZOOM_SCALE : 1})`;
@@ -84,11 +92,9 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
       backEl.style.webkitBackfaceVisibility = 'hidden';
     }
   };
-
   const clearImperativeStyles = () => {
     const frontEl = frontImageRef.current;
     const backEl = backImageRef.current;
-    
     [frontEl, backEl].forEach(el => {
       if (el) {
         el.style.transform = '';
@@ -98,11 +104,9 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
       }
     });
   };
-
   const enableTransitions = () => {
     const frontEl = frontImageRef.current;
     const backEl = backImageRef.current;
-    
     if (isZoomed) {
       // Re-enable transitions only if still zoomed
       if (frontEl) frontEl.style.transition = 'transform 0.3s ease-out';
@@ -113,11 +117,9 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
       if (backEl) backEl.style.transition = '';
     }
   };
-
   const disableTransitions = () => {
     const frontEl = frontImageRef.current;
     const backEl = backImageRef.current;
-    
     if (frontEl) {
       frontEl.style.transition = 'none';
     }
@@ -128,15 +130,15 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
 
   // Helper function to clamp translation within bounds
   const clampTranslate = (x: number, y: number) => {
-    if (!containerRef.current) return { x: 0, y: 0 };
-    
+    if (!containerRef.current) return {
+      x: 0,
+      y: 0
+    };
     const rect = containerRef.current.getBoundingClientRect();
     const imageWidth = rect.width * ZOOM_SCALE;
     const imageHeight = rect.height * ZOOM_SCALE;
-    
     const maxX = (imageWidth - rect.width) / 2;
     const maxY = (imageHeight - rect.height) / 2;
-    
     return {
       x: Math.max(-maxX, Math.min(maxX, x)),
       y: Math.max(-maxY, Math.min(maxY, y))
@@ -146,10 +148,8 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
   // Handle pointer down
   const handlePointerDown = (event: React.PointerEvent) => {
     if (isFlipping) return;
-
     const currentTime = Date.now();
     const timeDiff = currentTime - lastTapTimeRef.current;
-
     if (timeDiff < 350) {
       // Double tap detected - zoom and cancel any pending single tap
       event.preventDefault();
@@ -166,7 +166,10 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
             rafIdRef.current = 0;
           }
           isPanningRef.current = false;
-          setTranslate({ x: 0, y: 0 });
+          setTranslate({
+            x: 0,
+            y: 0
+          });
           clearImperativeStyles(); // Clear all imperative DOM styles
         }
         return newZoomed;
@@ -175,20 +178,24 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
     } else {
       // Potential single tap or start of pan
       lastTapTimeRef.current = currentTime;
-      
       if (isZoomed) {
         // Start panning setup
         event.preventDefault();
         (event.target as Element).setPointerCapture(event.pointerId);
         isPanningRef.current = false;
-        startPointerRef.current = { x: event.clientX, y: event.clientY };
-        startTranslateRef.current = { ...translate };
+        startPointerRef.current = {
+          x: event.clientX,
+          y: event.clientY
+        };
+        startTranslateRef.current = {
+          ...translate
+        };
       } else {
         // Clear any existing timeout
         if (singleTapTimeoutRef.current) {
           clearTimeout(singleTapTimeoutRef.current);
         }
-        
+
         // Set up delayed flip action
         singleTapTimeoutRef.current = setTimeout(() => {
           // Only flip if this tap wasn't followed by another tap (double tap)
@@ -204,12 +211,10 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
   // Handle pointer move (for panning)
   const handlePointerMove = (event: React.PointerEvent) => {
     if (!isZoomed || isFlipping) return;
-
     event.preventDefault();
     const deltaX = event.clientX - startPointerRef.current.x;
     const deltaY = event.clientY - startPointerRef.current.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
     if (distance > PAN_THRESHOLD) {
       if (!isPanningRef.current) {
         isPanningRef.current = true;
@@ -229,14 +234,11 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
 
       // Use RAF for smooth panning
       rafIdRef.current = requestAnimationFrame(() => {
-        const newTranslate = clampTranslate(
-          startTranslateRef.current.x + deltaX,
-          startTranslateRef.current.y + deltaY
-        );
-        
+        const newTranslate = clampTranslate(startTranslateRef.current.x + deltaX, startTranslateRef.current.y + deltaY);
+
         // Update DOM immediately
         updateTransformImmediate(newTranslate.x, newTranslate.y);
-        
+
         // Update state for other systems
         setTranslate(newTranslate);
       });
@@ -249,13 +251,13 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
       // Re-enable transitions after panning
       enableTransitions();
       isPanningRef.current = false;
-      
+
       // Cancel any pending RAF
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = 0;
       }
-      
+
       // Release pointer capture
       try {
         (event.target as Element).releasePointerCapture(event.pointerId);
@@ -264,19 +266,13 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
       }
     }
   };
-
-  return (
-    <div className={`relative ${className}`}>
+  return <div className={`relative ${className}`}>
       {/* Hero Card containing everything */}
       <Card className="p-6">
         {/* Hero text */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-primary mb-2 font-display">
-            Here's how your postcard will look.
-          </h1>
-          <p className="subtitle text-base">
-            This is an example — your message will be written with a ballpoint pen on a real postcard we mail for you
-          </p>
+          <h1 className="display-title mb-2">Here's how your postcard will look</h1>
+          <p className="subtitle text-base">Written with real ballpoint pen on premium cardstock</p>
         </div>
 
         {/* Caption */}
@@ -287,111 +283,59 @@ export function PostcardHero({ className = '' }: PostcardHeroProps) {
         </div>
 
         {/* Postcard Images */}
-        <div className="relative overflow-hidden bg-white shadow-xl rounded-lg mb-4" style={{ perspective: '1000px' }}>
+        <div className="relative overflow-hidden bg-white shadow-xl rounded-lg mb-4" style={{
+        perspective: '1000px'
+      }}>
           {/* Bounce wrapper */}
-          <div 
-            className={`relative aspect-[1.6/1] ${
-              isBouncing ? 'animate-[bounce_0.2s_ease-out]' : ''
-            }`}
-          >
-            {/* 3D Rotator */}
-            <div 
-              ref={containerRef}
-              className={`w-full h-full transition-transform duration-500 transform-gpu ${
-                isZoomed ? (isPanningRef.current ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-pointer'
-              }`}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              style={{ 
-                transformStyle: 'preserve-3d',
-                transform: `rotateY(${isShowingBack ? 180 : 0}deg)`,
-                touchAction: isZoomed ? 'none' : 'manipulation'
-              }}
-            >
+          <div className={`relative aspect-[1.6/1] ${isBouncing ? 'animate-[bounce_0.2s_ease-out]' : ''}`}>
+          {/* 3D Rotator */}
+            <div ref={containerRef} className={`w-full h-full transition-transform duration-500 transform-gpu ${isZoomed ? isPanningRef.current ? 'cursor-grabbing' : 'cursor-grab' : 'cursor-pointer'}`} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} style={{
+            transformStyle: 'preserve-3d',
+            transform: `rotateY(${isShowingBack ? 180 : 0}deg)`,
+            touchAction: isZoomed ? 'none' : 'manipulation'
+          }} data-attr="double-tap-review-card-zoom">
               {/* Front Face */}
-              <div
-                className="absolute inset-0 w-full h-full"
-                style={{ backfaceVisibility: 'hidden' }}
-              >
-                <div
-                  ref={frontImageRef}
-                  className="w-full h-full transition-transform duration-300"
-                  style={{
-                    transform: isZoomed || (translate.x !== 0 || translate.y !== 0) 
-                      ? `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${isZoomed ? ZOOM_SCALE : 1})`
-                      : 'none',
-                    transformOrigin: 'center center',
-                    WebkitBackfaceVisibility: 'hidden'
-                  }}
-                >
-                  <img
-                    src={images[1].src}
-                    alt={images[1].alt}
-                    className="w-full h-full object-cover"
-                    loading="eager"
-                    fetchPriority="high"
-                  />
+              <div className="absolute inset-0 w-full h-full" style={{
+              backfaceVisibility: 'hidden'
+            }}>
+                <div ref={frontImageRef} className="w-full h-full transition-transform duration-300" style={{
+                transform: isZoomed || translate.x !== 0 || translate.y !== 0 ? `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${isZoomed ? ZOOM_SCALE : 1})` : 'none',
+                transformOrigin: 'center center',
+                WebkitBackfaceVisibility: 'hidden'
+              }}>
+                  <img src={images[1].src} alt={images[1].alt} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
                 </div>
               </div>
 
               {/* Back Face */}
-              <div
-                className="absolute inset-0 w-full h-full"
-                style={{ 
-                  backfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)'
-                }}
-              >
-                <div
-                  ref={backImageRef}
-                  className="w-full h-full transition-transform duration-300"
-                  style={{
-                    transform: isZoomed || (translate.x !== 0 || translate.y !== 0) 
-                      ? `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${isZoomed ? ZOOM_SCALE : 1})`
-                      : 'none',
-                    transformOrigin: 'center center',
-                    WebkitBackfaceVisibility: 'hidden'
-                  }}
-                >
-                  <img
-                    src={images[0].src}
-                    alt={images[0].alt}
-                    className="w-full h-full object-cover"
-                    loading="eager"
-                    fetchPriority="high"
-                  />
+              <div className="absolute inset-0 w-full h-full" style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)'
+            }}>
+                <div ref={backImageRef} className="w-full h-full transition-transform duration-300" style={{
+                transform: isZoomed || translate.x !== 0 || translate.y !== 0 ? `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${isZoomed ? ZOOM_SCALE : 1})` : 'none',
+                transformOrigin: 'center center',
+                WebkitBackfaceVisibility: 'hidden'
+              }}>
+                  <img src={images[0].src} alt={images[0].alt} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Circular Flip Button - only show when not zoomed */}
-          {!isZoomed && (
-            <Button 
-              variant="primary"
-              size="icon"
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                performFlip();
-              }}
-               className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${
-                 isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'
-              }`}
-              aria-label="Flip postcard"
-              disabled={isFlipping}
-            >
+          {!isZoomed && <Button variant="primary" size="icon" onPointerDown={e => {
+          e.stopPropagation();
+          performFlip();
+        }} className={`absolute bottom-4 right-4 !w-10 !h-10 !min-h-0 rounded-full shadow-lg hover-safe:shadow-xl transition-all p-0 min-w-0 ${isFlipping ? 'scale-110 rotate-180' : 'hover-safe:scale-105'}`} aria-label="Flip postcard" disabled={isFlipping} data-attr="click-review-card-flip-button">
               <Repeat className="h-4 w-4 text-accent" />
-            </Button>
-          )}
+            </Button>}
         </div>
 
         {/* Instructions for mobile */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>Double tap to zoom in.</p>
+          <p>Double tap to zoom in</p>
         </div>
       </Card>
-    </div>
-  );
+    </div>;
 }

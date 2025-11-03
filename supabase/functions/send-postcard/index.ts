@@ -1,10 +1,48 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const UserInfoSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  streetAddress: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(1).max(100).optional(),
+  state: z.string().trim().max(50).optional(),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional()
+});
+
+const RepresentativeSchema = z.object({
+  name: z.string().min(1).max(200),
+  district: z.string().max(100).optional(),
+  state: z.string().max(50).optional(),
+  id: z.string().optional(),
+  address: z.string().max(500).optional(),
+  contact: z.object({
+    address: z.string().max(500).optional()
+  }).optional()
+});
+
+const PostcardDataSchema = z.object({
+  userInfo: UserInfoSchema,
+  representative: RepresentativeSchema,
+  senators: z.array(RepresentativeSchema).optional(),
+  finalMessage: z.string().trim().min(10).max(1000),
+  sendOption: z.enum(['single', 'double', 'triple']),
+  email: z.string().trim().email().max(255)
+});
+
+const RequestSchema = z.object({
+  postcardData: PostcardDataSchema,
+  orderId: z.string().uuid(),
+  simulateFailure: z.number().int().min(0).max(1).optional(),
+  simulatedFailed: z.number().int().min(0).max(10).optional(),
+  frontendUrl: z.string().url().optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,12 +63,44 @@ serve(async (req) => {
       );
     }
 
-    const { postcardData, orderId, simulateFailure, simulatedFailed } = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
     
-    // Check if we're on a lovable.app domain to enable simulation
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { postcardData, orderId, simulateFailure, simulatedFailed, frontendUrl } = validation.data;
+    
+    // Check environment and origin to enable simulation - only in non-production
+    const environment = Deno.env.get('ENVIRONMENT') || 'development';
     const origin = req.headers.get('origin') || '';
     const isLovableDomain = origin.includes('.lovable.app') || origin.includes('lovable.app');
-    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed > 0;
+    
+    // Block simulation in production
+    if (environment === 'production' && (simulateFailure || simulatedFailed)) {
+      console.error('Simulation parameters not allowed in production');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const shouldSimulateFailure = isLovableDomain && simulateFailure === 1 && simulatedFailed && simulatedFailed > 0;
     
     console.log('Simulation check:', {
       origin,
@@ -513,7 +583,8 @@ serve(async (req) => {
               totalSent: successCount,
               totalFailed: errorCount,
               total: results.length
-            }
+            },
+            frontendUrl
           }
         });
         

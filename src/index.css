@@ -141,6 +141,16 @@ All colors MUST be HSL.
     padding: 0;
   }
 
+  /* Prevent iOS rubber-band scroll beyond content */
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  /* Prevent Safari mobile text inflation that causes horizontal overflow */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif;
@@ -605,5 +615,16 @@ All colors MUST be HSL.
     .hover-safe\:bg-\[hsl\(var\(--accent-hover\)\)\]:hover {
       background-color: hsl(var(--accent-hover));
     }
+  }
+}
+
+/* iOS Safari Stripe iframe optimization */
+@supports (-webkit-touch-callout: none) {
+  #embedded-checkout {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #embedded-checkout iframe {
+    max-width: 100% !important;
   }
 }

@@ -1,10 +1,39 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schemas
+const UserInfoSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  streetAddress: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(1).max(100).optional(),
+  state: z.string().trim().max(50).optional(),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional()
+});
+
+const PostcardDataSchema = z.object({
+  userInfo: UserInfoSchema.optional(),
+  finalMessage: z.string().trim().min(10).max(1000).optional(),
+  sendOption: z.enum(['single', 'double', 'triple']).optional(),
+  email: z.string().trim().email().max(255).optional(),
+  draftId: z.string().uuid().optional(),
+  representative: z.any().optional(),
+  senators: z.any().optional()
+});
+
+const RequestSchema = z.object({
+  sendOption: z.enum(['single', 'double', 'triple']),
+  email: z.string().trim().email().max(255),
+  fullName: z.string().trim().min(1).max(100),
+  postcardData: PostcardDataSchema.optional(),
+  simulateFailure: z.boolean().optional(),
+  simulatedFailed: z.number().int().min(0).max(10).optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,16 +42,45 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
-    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = await req.json();
+    // Force redeploy: 2025-10-05 - Ensuring allow_promotion_codes is active in production
+    console.log("🔄 create-payment function invoked - promo codes enabled");
+    
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const { sendOption, email, fullName, postcardData, simulateFailure, simulatedFailed } = validation.data;
+    
+    // Block simulation parameters in production
+    const environment = Deno.env.get('ENVIRONMENT') || 'development';
+    if (environment === 'production' && (simulateFailure || simulatedFailed)) {
+      console.error('Simulation parameters not allowed in production');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
     
     console.log("=== CREATE PAYMENT DEBUG ===");
     console.log("Request data:", { sendOption, email, fullName });
     console.log("Postcard data received:", postcardData ? "Yes" : "No");
-    
-    if (!sendOption || !email) {
-      throw new Error("Missing required fields: sendOption and email");
-    }
 
     // Prepare postcard data for metadata storage
     let postcardMetadata = {};
@@ -40,6 +98,23 @@ serve(async (req) => {
             }
           : {};
 
+        // Create compact versions of representative and senators data
+        // Only include essential fields to stay under Stripe's 500 char limit
+        const compactRepresentative = postcardData.representative ? {
+          id: postcardData.representative.id,
+          name: postcardData.representative.name,
+          type: postcardData.representative.type,
+          district: postcardData.representative.district,
+          address: postcardData.representative.address
+        } : null;
+
+        const compactSenators = postcardData.senators ? postcardData.senators.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          address: s.address
+        })) : [];
+
         postcardMetadata = {
           // Keep address basics for post-payment processing
           postcard_userInfo: JSON.stringify(essentialUserInfo),
@@ -48,9 +123,9 @@ serve(async (req) => {
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
           postcard_draftId: postcardData.draftId || "",
-          // Include representative and senators data - essential for sending
-          postcard_representative: postcardData.representative ? JSON.stringify(postcardData.representative) : "",
-          postcard_senators: postcardData.senators ? JSON.stringify(postcardData.senators) : "[]",
+          // Include representative and senators data - compact version for Stripe limits
+          postcard_representative: compactRepresentative ? JSON.stringify(compactRepresentative) : "",
+          postcard_senators: compactSenators.length > 0 ? JSON.stringify(compactSenators) : "[]",
         };
         console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {
@@ -75,9 +150,9 @@ serve(async (req) => {
 
     // Set pricing based on send option
     const pricing = {
-      single: { amount: 500, name: "Single Postcard" },
+      single: { amount: 500, name: "Single postcard" },
       double: { amount: 1000, name: "Double Postcard Package" },
-      triple: { amount: 1200, name: "Triple Postcard Package" } // $12 with bundle savings
+      triple: { amount: 1200, name: "Triple postcard package" } // $12 with bundle savings
     };
 
     const selectedPricing = pricing[sendOption as keyof typeof pricing];
@@ -138,7 +213,7 @@ serve(async (req) => {
     
     // Add simulation flags to return URL if provided
     if (simulateFailure) {
-      returnUrl += `&simulate_failure=1`;
+      returnUrl += `&simulate_failure=true`;
       if (simulatedFailed) {
         returnUrl += `&simulate_failed=${simulatedFailed}`;
       }
@@ -152,13 +227,14 @@ serve(async (req) => {
       customer_creation: 'always',
       customer_email: email,
       billing_address_collection: 'auto',
+      allow_promotion_codes: true,
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: { 
               name: selectedPricing.name,
-              description: `Civic postcard delivery to your representative`
+              description: `Written and mailed on your behalf`
             },
             unit_amount: selectedPricing.amount,
           },
@@ -179,8 +255,8 @@ serve(async (req) => {
           ...(postcardData.senators || []).slice(0, sendOption === 'triple' ? 2 : sendOption === 'double' ? 1 : 0).map((s: any) => s.name)
         ].filter(Boolean)) : "[]",
         // Add simulation parameters for testing
-        simulateFailure: simulateFailure ? simulateFailure.toString() : "0",
-        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0", 
+        simulateFailure: simulateFailure ? "true" : "false",
+        simulatedFailed: simulatedFailed ? simulatedFailed.toString() : "0",
         ...postcardMetadata // Include all postcard data in session metadata
       }
     });

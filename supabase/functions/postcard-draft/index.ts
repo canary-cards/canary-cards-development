@@ -1,10 +1,28 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schemas
+const CreateDraftSchema = z.object({
+  action: z.literal('create'),
+  zipCode: z.string().trim().regex(/^\d{5}(-\d{4})?$/).optional(),
+  concerns: z.string().trim().max(5000).optional(),
+  personalImpact: z.string().trim().max(5000).optional(),
+  refCode: z.string().trim().max(100).optional()
+});
+
+const ApproveDraftSchema = z.object({
+  action: z.literal('approve'),
+  draftId: z.string().uuid(),
+  humanApprovedMessage: z.string().trim().min(10).max(1000)
+});
+
+const RequestSchema = z.union([CreateDraftSchema, ApproveDraftSchema]);
 
 serve(async (req): Promise<Response> => {
   // Handle CORS preflight requests
@@ -13,15 +31,31 @@ serve(async (req): Promise<Response> => {
   }
 
   try {
-    const body = await req.json();
-    const { action, draftId, humanApprovedMessage, zipCode, recipientSnapshot, recipientType, concerns, personalImpact } = body;
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = RequestSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: validation.error.issues.map(i => ({ field: i.path.join('.'), message: i.message }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const body = validation.data;
+    const { action } = body;
     
     console.log("=== POSTCARD DRAFT DEBUG ===");
     console.log("Action:", action);
-    console.log("Draft ID:", draftId);
-    console.log("Human approved message:", humanApprovedMessage ? "provided" : "missing");
     
-    if (!action || (action !== 'create' && action !== 'approve')) {
+    if (action !== 'create' && action !== 'approve') {
       throw new Error("Action must be 'create' or 'approve'");
     }
 
@@ -34,13 +68,13 @@ serve(async (req): Promise<Response> => {
 
     if (action === 'create') {
       // Create a new draft for "Write it myself" flow
-      // Only zip_code, concerns, and personalImpact are available at this stage
-      // All fields are now optional in the database
+      const { zipCode, concerns, personalImpact, refCode } = body;
       
       console.log("Creating new postcard draft");
       console.log("Zip code:", zipCode || "not provided");
       console.log("Concerns:", concerns ? "provided" : "missing");
       console.log("Personal impact:", personalImpact ? "provided" : "missing");
+      console.log("Ref code (sharing link):", refCode || "not provided");
 
       const { data: newDraft, error: createError } = await supabase
         .from('postcard_drafts')
@@ -48,6 +82,7 @@ serve(async (req): Promise<Response> => {
           zip_code: zipCode || null,
           concerns: concerns || null,
           personal_impact: personalImpact || null,
+          invite_code: refCode || null,
           // recipient_snapshot and recipient_type will be null initially
           // They can be updated later when recipient data is available
         })
@@ -72,9 +107,7 @@ serve(async (req): Promise<Response> => {
 
     } else if (action === 'approve') {
       // Update existing draft with human approved message
-      if (!draftId || !humanApprovedMessage) {
-        throw new Error("Draft ID and human approved message are required for approval");
-      }
+      const { draftId, humanApprovedMessage } = body;
 
       console.log("Approving existing postcard draft");
 

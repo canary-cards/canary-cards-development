@@ -14,10 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId } = await req.json();
+    const { sessionId, frontendUrl } = await req.json();
     
     console.log("=== VERIFY PAYMENT DEBUG ===");
     console.log("Session ID to verify:", sessionId);
+    console.log("Frontend URL:", frontendUrl);
     
     if (!sessionId) {
       throw new Error("Session ID is required");
@@ -109,13 +110,68 @@ serve(async (req) => {
       // Create complete address text for raw_address_text field
       const completeAddress = `${userInfo.streetAddress || ''}, ${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`.trim();
 
+      // Generate unique sharing link from full name
+      const generateSharingLink = async (fullName: string): Promise<string> => {
+        if (!fullName || fullName.trim() === '') {
+          return '';
+        }
+
+        const nameParts = fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0).toUpperCase() : '';
+        
+        if (!firstName || !lastInitial) {
+          return '';
+        }
+
+        const baseLink = `${firstName}-${lastInitial}`;
+        
+        // Check if base link exists
+        const { data: existingLinks } = await supabase
+          .from('customers')
+          .select('sharing_link')
+          .like('sharing_link', `${baseLink}%`)
+          .order('sharing_link', { ascending: true });
+
+        if (!existingLinks || existingLinks.length === 0) {
+          return baseLink;
+        }
+
+        // Check if exact match exists
+        const exactMatch = existingLinks.find(link => link.sharing_link === baseLink);
+        if (!exactMatch) {
+          return baseLink;
+        }
+
+        // Find next available number
+        let counter = 2;
+        while (true) {
+          const testLink = `${baseLink}-${counter}`;
+          const exists = existingLinks.some(link => link.sharing_link === testLink);
+          if (!exists) {
+            return testLink;
+          }
+          counter++;
+        }
+      };
+
+      const fullName = metadata.user_full_name || userInfo.fullName || '';
+      const sharingLink = await generateSharingLink(fullName);
+      
+      console.log('Generated sharing link:', {
+        fullName,
+        sharingLink: sharingLink || '(empty)',
+        email: session.customer_email || metadata.user_email
+      });
+
       // Upsert customer using normalized email
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .upsert({
           email: session.customer_email || metadata.user_email,
-          full_name: metadata.user_full_name || userInfo.fullName || '',
+          full_name: fullName,
           raw_address_text: completeAddress,
+          sharing_link: sharingLink || null,
           ...parsedAddress
         }, {
           onConflict: 'email_normalized',
@@ -154,7 +210,8 @@ serve(async (req) => {
             amount_paid: session.amount_total,
             payment_status: 'paid',
             paid_at: new Date().toISOString(),
-            metadata_snapshot: metadata
+            metadata_snapshot: metadata,
+            frontend_url: frontendUrl || null
           })
           .select()
           .single();
@@ -201,15 +258,24 @@ serve(async (req) => {
       if (isNewOrder) {
         try {
           // Extract simulation parameters from metadata
-          const simulateFailure = metadata.simulateFailure ? parseInt(metadata.simulateFailure) : 0;
+          // Convert string boolean "true"/"false" to number 1/0
+          const simulateFailure = metadata.simulateFailure === 'true' ? 1 : 0;
           const simulatedFailed = metadata.simulatedFailed ? parseInt(metadata.simulatedFailed) : 0;
+          
+          console.log('Parsing simulation parameters:', {
+            raw_simulateFailure: metadata.simulateFailure,
+            raw_simulatedFailed: metadata.simulatedFailed,
+            parsed_simulateFailure: simulateFailure,
+            parsed_simulatedFailed: simulatedFailed
+          });
           
           const sendResponse = await supabase.functions.invoke('send-postcard', {
             body: { 
               postcardData,
               orderId: order.id,
               simulateFailure,
-              simulatedFailed
+              simulatedFailed,
+              frontendUrl
             }
           });
           
@@ -268,7 +334,8 @@ serve(async (req) => {
         orderId: order.id,
         postcardData: postcardData,
         postcardResults: postcardResults,
-        actualMailingDate: actualMailingDate
+        actualMailingDate: actualMailingDate,
+        sharingLink: sharingLink
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

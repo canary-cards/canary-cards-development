@@ -1,8 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getSourceIcon, getSourceDisplayName } from '@/lib/sourceIcons';
+import { supabase } from '@/integrations/supabase/client';
+import { decodeHtmlEntities } from '@/lib/decodeHtmlEntities';
 import type { Source } from '@/types';
+
+interface EnhancedSource extends Source {
+  enhancedTitle?: string;
+  enhancedDescription?: string;
+  siteName?: string;
+  isLoading?: boolean;
+}
 
 interface SourceIconProps {
   url: string;
@@ -121,13 +130,85 @@ const truncateTitle = (title: string, maxWords: number = 8): string => {
 
 export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [enhancedSources, setEnhancedSources] = useState<EnhancedSource[]>([]);
   
-  // Simulate loading state (in real app this would depend on data fetching)
+  // Create stable URL-based dependency to prevent unnecessary re-fetches
+  const sourceUrls = useMemo(() => 
+    sources?.map(s => s.url).join('|') || '', 
+    [sources]
+  );
+  
+  // Fetch link previews from cache or API
   useEffect(() => {
-    if (sources && sources.length > 0) {
+    if (!sources || sources.length === 0) {
       setIsLoading(false);
+      return;
     }
-  }, [sources]);
+
+    const fetchLinkPreviews = async () => {
+      const CACHE_KEY_PREFIX = 'link-preview-';
+      const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+      // Fetch previews in parallel
+      const previewPromises = sources.map(async (source, index) => {
+        try {
+          // Check cache first
+          const cacheKey = `${CACHE_KEY_PREFIX}${source.url}`;
+          const cached = localStorage.getItem(cacheKey);
+          
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            // Check if cache is still valid
+            if (Date.now() - timestamp < CACHE_EXPIRY_MS) {
+              console.log(`Using cached preview for ${source.url}`);
+              return { index, data };
+            }
+          }
+
+          // Fetch from API
+          const { data, error } = await supabase.functions.invoke('fetch-link-preview', {
+            body: { url: source.url }
+          });
+
+          if (error) throw error;
+
+          // Cache the result
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+
+          return { index, data };
+        } catch (error) {
+          console.error(`Failed to fetch preview for ${source.url}:`, error);
+          return { index, data: null };
+        }
+      });
+
+      // Process results as they come in
+      const results = await Promise.all(previewPromises);
+      
+      // Build enhanced sources from results
+      const newEnhancedSources: EnhancedSource[] = sources.map((source, index) => {
+        const result = results[index];
+        if (result.data && !result.data.error) {
+          return {
+            ...source,
+            enhancedTitle: result.data.title,
+            enhancedDescription: result.data.description,
+            siteName: result.data.siteName,
+            isLoading: false
+          };
+        }
+        return { ...source, isLoading: false };
+      });
+      
+      setEnhancedSources(newEnhancedSources);
+      setIsLoading(false);
+    };
+
+    fetchLinkPreviews();
+  }, [sourceUrls, sources]);
   
   if (!sources || sources.length === 0) {
     return null;
@@ -138,7 +219,8 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
   }
 
   // Sort all sources by priority (government > news agencies > newspapers)
-  const prioritizedSources = sources
+  const displaySources = enhancedSources.length > 0 ? enhancedSources : sources;
+  const prioritizedSources = displaySources
     .sort((a, b) => getSourcePriority(b.url) - getSourcePriority(a.url));
 
   return (
@@ -148,23 +230,35 @@ export function CollapsibleSources({ sources }: CollapsibleSourcesProps) {
       <div className="space-y-4">
         {prioritizedSources.map((source, index) => {
           const domain = new URL(source.url).hostname;
-          const summaryText = source.headline 
-            ? source.headline.trim()
-            : source.description.replace(/<[^>]*>/g, '').trim();
+          const enhancedSource = source as EnhancedSource;
+          
+          // Use enhanced title from link preview, or fallback to domain
+          // Decode HTML entities as a safety fallback
+          const displayTitle = decodeHtmlEntities(enhancedSource.enhancedTitle || domain);
+          const displayDescription = decodeHtmlEntities(enhancedSource.enhancedDescription);
           
           return (
             <div key={index} className="space-y-2">
               <div className="body-text text-sm leading-relaxed">
-                {summaryText}{' '}
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
-                  aria-label={`Read source from ${domain} (opens in new tab)`}
-                >
-                  {domain}
-                </a>
+                {enhancedSource.isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-muted-foreground">Loading preview...</span>
+                  </div>
+                ) : (
+                  <>
+                    {displayTitle}{' '}
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block align-baseline text-sm font-medium leading-tight px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                      aria-label={`Read source from ${domain} (opens in new tab)`}
+                    >
+                      {enhancedSource.siteName || domain}
+                    </a>
+                  </>
+                )}
               </div>
             </div>
           );

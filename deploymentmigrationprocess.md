@@ -21,6 +21,11 @@ git checkout main
 ```
 
 **Install tools (one time):**
+* Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+* Install Docker Desktop
+brew install --cask docker
 
 * Docker Desktop (start it)
 * PostgreSQL client (psql/pg\_dump): `brew install postgresql`
@@ -33,7 +38,7 @@ git checkout main
 
 ## 1) Environment variables (copy‑paste)
 
-The scripts will **prompt** if these are missing, but the fastest path is to set them once per terminal session.
+The scripts will **prompt** if these are missing, but the fastest path is to set them once per terminal session (the 3 you need are stored in our pw manager with the relevant names)
 
 ### Option A — Create a local env file (recommended)
 
@@ -65,14 +70,14 @@ export SUPABASE_PROD_REF='xwsgyxlvxntgpochonwe';
 **What these are:**
 
 * `STAGING_DB_PASSWORD`, `PRODUCTION_DB_PASSWORD`: the DB passwords for your Supabase projects.
-* `SUPABASE_STAGING_REF`, `SUPABASE_PROD_REF`: your Supabase project refs.
+* `SUPABASE_STAGING_REF`, `SUPABASE_PROD_REF`: your Supabase project refs, found also in the URLs
 * `SUPABASE_ACCESS_TOKEN` (optional): required if you want the script to deploy Edge Functions.
 
 ---
 
 ## 2) Choosing the right script
 
-* **Sync (safe default)** → `./sync_staging_to_prod.sh`
+* **Sync (safe default)** → `./sync_staging_to_prod.sh` (almost always use this)
 
   * Updates **schema only** (public schema), **preserves prod data**.
   * Perfect for everyday deploys (new tables/columns/indexes, enum additions, functions/triggers/RLS).

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/AppContext';
 import { getUnitPriceCents, getTotalPriceCents } from '@/lib/pricing';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
 
 export default function PaymentReturn() {
   const [searchParams] = useSearchParams();
@@ -139,7 +140,8 @@ export default function PaymentReturn() {
               sessionId: searchParams.get('session_id'),
               orderId: data.orderId,
               orderingResults: data,
-              actualMailingDate: data.actualMailingDate
+              actualMailingDate: data.actualMailingDate,
+              sharingLink: data.sharingLink
             }
           });
         }, remainingTime);
@@ -171,6 +173,17 @@ export default function PaymentReturn() {
             
             if (refundError) {
               console.error("Refund failed:", refundError);
+              captureEdgeFunctionError(refundError, 'refund-payment', {
+                sessionId,
+                email: state.postcardData?.email,
+                zipCode: state.postcardData?.zipCode,
+                representative: state.postcardData?.representative?.name,
+                sendOption: state.postcardData?.sendOption,
+                step: 'payment_return',
+                refundAmount: refundAmountCents,
+                totalFailed,
+                totalRecipients
+              });
             } else {
               console.log("Partial refund successful:", refundData);
             }
@@ -189,6 +202,18 @@ export default function PaymentReturn() {
             return;
           } catch (refundError) {
             console.error("Error during partial refund process:", refundError);
+            captureEdgeFunctionError(refundError, 'refund-payment', {
+              sessionId,
+              email: state.postcardData?.email,
+              zipCode: state.postcardData?.zipCode,
+              representative: state.postcardData?.representative?.name,
+              sendOption: state.postcardData?.sendOption,
+              step: 'payment_return',
+              refundAmount: refundAmountCents,
+              totalFailed,
+              totalRecipients,
+              errorContext: 'catch_block'
+            });
           }
         }
         
@@ -226,10 +251,21 @@ export default function PaymentReturn() {
     try {
       // Verify payment with Stripe
       const { data: verificationResult, error: verificationError } = await supabase.functions.invoke('verify-payment', {
-        body: { sessionId }
+        body: { 
+          sessionId,
+          frontendUrl: window.location.origin
+        }
       });
       
       if (verificationError) {
+        captureEdgeFunctionError(verificationError, 'verify-payment', {
+          sessionId,
+          email: state.postcardData?.email,
+          zipCode: state.postcardData?.zipCode,
+          representative: state.postcardData?.representative?.name,
+          sendOption: state.postcardData?.sendOption,
+          step: 'payment_verification'
+        });
         throw new Error('Failed to verify payment status');
       }
       
@@ -261,11 +297,12 @@ export default function PaymentReturn() {
         
         // Handle postcard results from verify-payment (server-side orchestration)
         if (verificationResult.postcardResults) {
-          // Add orderId and actualMailingDate to the results for proper navigation
+          // Add orderId, actualMailingDate, and sharingLink to the results for proper navigation
           const resultsWithOrderId = {
             ...verificationResult.postcardResults,
             orderId: verificationResult.orderId,
-            actualMailingDate: verificationResult.actualMailingDate
+            actualMailingDate: verificationResult.actualMailingDate,
+            sharingLink: verificationResult.sharingLink
           };
           handlePostcardResults(resultsWithOrderId);
         } else {
@@ -281,7 +318,8 @@ export default function PaymentReturn() {
                 sessionId: searchParams.get('session_id'),
                 orderId: verificationResult.orderId,
                 orderingResults: { success: true, summary: { totalSent: 1, totalFailed: 0 } },
-                actualMailingDate: verificationResult.actualMailingDate
+                actualMailingDate: verificationResult.actualMailingDate,
+                sharingLink: verificationResult.sharingLink
               }
             });
           }, remainingTime);
@@ -305,6 +343,15 @@ export default function PaymentReturn() {
       setStatus('error');
       // Clear global payment loading on error
       dispatch({ type: 'SET_PAYMENT_LOADING', payload: false });
+      captureEdgeFunctionError(error, 'verify-payment', {
+        sessionId,
+        email: state.postcardData?.email,
+        zipCode: state.postcardData?.zipCode,
+        representative: state.postcardData?.representative?.name,
+        sendOption: state.postcardData?.sendOption,
+        step: 'payment_verification',
+        errorContext: 'catch_block'
+      });
       toast({
         title: "Payment verification failed",
         description: "Unable to verify payment. Please try again or contact support.",

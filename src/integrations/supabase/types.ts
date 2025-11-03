@@ -29,6 +29,7 @@ export type Database = {
           parsed_via: string | null
           postal_code: string | null
           raw_address_text: string
+          sharing_link: string | null
           state: string | null
           updated_at: string
         }
@@ -46,6 +47,7 @@ export type Database = {
           parsed_via?: string | null
           postal_code?: string | null
           raw_address_text: string
+          sharing_link?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           parsed_via?: string | null
           postal_code?: string | null
           raw_address_text?: string
+          sharing_link?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -106,6 +109,7 @@ export type Database = {
           currency: string
           customer_id: string
           email_for_receipt: string
+          frontend_url: string | null
           id: string
           metadata_snapshot: Json | null
           paid_at: string | null
@@ -124,6 +128,7 @@ export type Database = {
           currency?: string
           customer_id: string
           email_for_receipt: string
+          frontend_url?: string | null
           id?: string
           metadata_snapshot?: Json | null
           paid_at?: string | null
@@ -142,6 +147,7 @@ export type Database = {
           currency?: string
           customer_id?: string
           email_for_receipt?: string
+          frontend_url?: string | null
           id?: string
           metadata_snapshot?: Json | null
           paid_at?: string | null

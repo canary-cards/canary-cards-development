@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAppContext } from '../../context/AppContext';
 import { PostcardHero } from '../PostcardHero';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { usePostHog } from 'posthog-js/react';
 
 export function ReviewCardScreen() {
+  const posthog = usePostHog();
   const { state, dispatch } = useAppContext();
   const [isMessageExpanded, setIsMessageExpanded] = useState(false);
   
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
   const finalMessage = state.postcardData.finalMessage;
+
+  // Track page view on mount
+  useEffect(() => {
+    posthog.capture('review_card_viewed');
+  }, []);
 
   // Replace placeholders in the message with actual user data
   const replacePlaceholders = (message: string) => {
@@ -82,7 +89,7 @@ export function ReviewCardScreen() {
           <CardContent className="p-0">
             <Collapsible open={isMessageExpanded} onOpenChange={setIsMessageExpanded}>
               <CollapsibleTrigger asChild>
-                <button className="w-full p-6 text-left hover-blue-standard flex items-center justify-between rounded-xl">
+                <button className="w-full p-6 text-left hover-blue-standard flex items-center justify-between rounded-xl" data-attr="click-review-card-message-expand">
                   <span className="text-primary font-medium">See your message (optional)</span>
                   {isMessageExpanded ? 
                     <ChevronUp className="w-4 h-4 text-muted-foreground" /> : 
@@ -115,6 +122,7 @@ export function ReviewCardScreen() {
               variant="secondary" 
               onClick={goBack} 
               className="flex-shrink-0"
+              data-attr="click-review-card-back"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -123,6 +131,7 @@ export function ReviewCardScreen() {
             <Button 
               onClick={handleContinue}
               className="flex-1 bg-primary text-white hover:bg-primary/90"
+              data-attr="submit-review-card-continue"
             >
               Continue →
             </Button>

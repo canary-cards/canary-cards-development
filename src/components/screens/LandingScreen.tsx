@@ -7,22 +7,26 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { RepresentativeCard } from '@/components/rep/RepresentativeCard';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '../../context/AppContext';
 import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
 import { Representative } from '../../types';
 import { lookupRepresentatives } from '../../services/geocodio';
-import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, Target } from 'lucide-react';
+import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, Mail, ChevronRight } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
+import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
-
+import { usePostHog } from 'posthog-js/react';
 export function LandingScreen() {
+  const posthog = usePostHog();
+  const [openResearchMenu, setOpenResearchMenu] = useState(false);
+  const [menuView, setMenuView] = useState<'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research'>('main');
   const {
     state,
     dispatch
   } = useAppContext();
-  
   const [zipCode, setZipCode] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -35,14 +39,43 @@ export function LandingScreen() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Check for shared link on mount
+  // Track landing page view
+  useEffect(() => {
+    posthog.capture('landing_page_viewed');
+  }, []);
+
+  // Auto-focus ZIP input with mobile-friendly delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const zipInput = document.getElementById('zipCode');
+      if (zipInput) {
+        zipInput.focus();
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Check for shared link and menu view parameter on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const sharedBy = urlParams.get('shared_by');
-    if (sharedBy) {
-      setSharedByName(decodeURIComponent(sharedBy));
-      setShowSharedDialog(true);
+    
+    // Check for ref parameter (sharing link)
+    const ref = urlParams.get('ref');
+    if (ref) {
+      // Import formatSharingLinkForDisplay dynamically
+      import('@/lib/shareUtils').then(({ formatSharingLinkForDisplay }) => {
+        const formattedName = formatSharingLinkForDisplay(decodeURIComponent(ref));
+        setSharedByName(formattedName);
+        setShowSharedDialog(true);
+      });
       // Don't remove the query param - keep it for persistence
+    }
+    
+    // Check for view parameter to open menu to specific view
+    const view = urlParams.get('view');
+    if (view && ['research', 'faq', 'about', 'contact', 'privacy-terms'].includes(view)) {
+      setMenuView(view as any);
+      setOpenResearchMenu(true);
     }
   }, []);
   const validateZipCode = (zip: string) => {
@@ -99,6 +132,7 @@ export function LandingScreen() {
   };
   const handleContinue = () => {
     if (selectedRep) {
+      setShowSharedDialog(false); // Dismiss share banner before moving to next step
       dispatch({
         type: 'UPDATE_POSTCARD_DATA',
         payload: {
@@ -113,62 +147,45 @@ export function LandingScreen() {
     }
   };
   return <>
+      <div className="min-h-screen bg-background relative">
       {/* Shared Link Banner */}
-      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} />}
-
-      <div className={`min-h-screen bg-background ${showSharedDialog ? 'pt-16' : ''}`}>
-      <div className="mx-auto px-4 max-w-2xl pb-1">
-        {/* Mobile-First Hero Section */}
-        <div className="text-center">
-          {/* Hero Text */}
-          <div className="w-full p-6 pb-0">
-            <h1 className="text-2xl md:text-3xl display-title leading-tight mb-4">
-              Send a Real Postcard to Your Representative
-            </h1>
-            <h2 className="subtitle text-base mb-0 leading-relaxed">
-              Handwritten postcards get noticed. Emails don't.
-            </h2>
-          </div>
-        </div>
-
-        {/* Icon between title and form */}
-        <div className="flex justify-center mb-2">
-          <div className="w-full max-w-56 h-48 sm:h-56 md:h-64 flex items-center justify-center">
-            <DynamicSvg 
-              assetName="zip_code_page_icon.svg"
-              alt="Enter your zip code"
-              className="w-full h-full object-contain"
-            />
-          </div>
-        </div>
-
-        {/* Primary CTA - Zip Code Form (Above the fold) */}
+      {showSharedDialog && <SharedBanner sharedBy={sharedByName} onDismiss={() => setShowSharedDialog(false)} variant="app" />}
+      <div className="mx-auto px-4 max-w-2xl py-4 pb-1">
+        {/* Primary CTA Card - Title, Subtitle, and Zip Code Form */}
         <Card className="mb-4 border-primary/20 shadow-sm">
-          <CardContent className="p-4 md:p-6">
+          <CardContent className="p-6 md:p-8">
+            {/* Hero Text */}
+            <div className="text-center mb-6">
+              <h1 className="display-title leading-tight mb-4">Send a real postcard to congress</h1>
+              <div className="flex justify-center mt-4">
+                <div className="w-full max-w-32 h-24 sm:h-28 flex items-center justify-center">
+                  <DynamicSvg assetName="zip_code_page_icon.svg" alt="Enter your zip code" className="w-full h-full object-contain opacity-90" />
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleZipSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="zipCode" className="text-sm md:text-base font-medium text-center block">
-                  Enter your zip code to get started
-                </Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="12345" value={zipCode} onChange={e => {
-                     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-                     setZipCode(value);
-                     setSearchError('');
-                   }} className="pl-10 pr-10 h-12 text-center text-lg md:text-base focus:ring-accent focus:border-accent border-2" style={{
-                     textAlign: 'center',
-                     paddingLeft: '2.5rem',
-                     paddingRight: '2.5rem'
-                   }} maxLength={5} />
+                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                   <Input id="zipCode" type="text" inputMode="numeric" pattern="[0-9]{5}" placeholder="e.g., 12345" value={zipCode} onChange={e => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                    setZipCode(value);
+                    setSearchError('');
+                  }} className="pl-10 pr-10 h-14 text-center text-lg focus:ring-accent focus:border-accent border-2" maxLength={5} data-attr="input-zip-code" />
                 </div>
                 {searchError && <p className="text-sm text-destructive">
                     {searchError}
                     {searchError.includes('valid')}
                   </p>}
+                {!searchError && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Enter your ZIP code to find your Rep
+                  </p>
+                )}
               </div>
               
-              <Button type="submit" className={`w-full h-12 text-base font-medium ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : ''}`} disabled={isSearching || !zipCode}>
+              <Button type="submit" className={`w-full h-14 text-base font-semibold ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : zipCode.length === 5 && validateZipCode(zipCode) ? 'animate-pulse-subtle' : ''}`} disabled={isSearching || !zipCode} data-attr="submit-zip-code">
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     Finding Your Rep...
@@ -181,100 +198,97 @@ export function LandingScreen() {
           </CardContent>
         </Card>
 
-        {/* Why Postcards Work - Comprehensive */}
-        <Card className="mb-6 bg-card border-border">
-          <CardContent className="p-6 space-y-6">
-            <div className="text-center mb-6">
-              <p className="text-sm font-semibold text-secondary mb-3 tracking-wide uppercase">
-                Why Personalized, Handwritten Postcards Work
-              </p>
+        {/* Research Card */}
+        <Card className="mb-4 border-primary/20 shadow-sm">
+          <CardContent className="pt-4 px-4 !pb-1">
+            <div className="text-center mb-4">
+              <h3 className="subtitle text-sm">THE RESEARCH</h3>
             </div>
-
-            {/* Section 1: Personalized correspondence */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground">
-                1. Personalized correspondence is the key to influence.
-              </h3>
-              <p className="text-sm text-foreground leading-relaxed">
-                Congressional offices consistently state that nothing has more sway on undecided votes than personalized communication from real constituents—not mass petitions, not form letters, not even most calls. In fact, 96% of Capitol Hill staff say that personalized letters specifically influence how their bosses vote, especially when the issue is undecided. The Congressional Management Foundation's research has found that messages which include personal stories, details about how an issue affects the sender, and some sign of genuine effort—like writing by hand—get more attention and are far more likely to be passed directly to the Member.
-              </p>
-              
-              {/* Responsive Chart */}
-              <div className="w-full mt-4">
-                <DynamicSvg 
-                  assetName="constituent-importance-mobile.svg"
-                  alt="Chart showing constituent importance rankings - mobile view"
-                  className="w-full h-auto md:hidden"
-                />
-                <DynamicSvg 
-                  assetName="constituent-importance-desktop.svg"
-                  alt="Chart showing constituent importance rankings - desktop view"
-                  className="hidden md:block w-full h-auto"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 italic">
-                Data source: CMF 2011 Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill
-              </p>
+            <div className="text-center text-primary text-sm mb-3">
+              <p className="body-text font-medium">96% of staffers say personalized constituent messages influence undecided votes</p>
             </div>
-
-            {/* Section 2: AI impact */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground">
-                2. Generative AI has changed the email game.
-              </h3>
-              <p className="text-sm text-foreground leading-relaxed">
-                Mass AI-generated emails can now mimic personalization. According to CMF, many congressional offices are increasingly aware of this and are treating many digital messages—no matter how "personal"—like form emails, discounting their impact.
-              </p>
-            </div>
-
-            {/* Section 3: Physical mail advantages */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground">
-                3. Physical mail cuts through.
-              </h3>
-              <p className="text-sm text-foreground leading-relaxed">
-                We use AI to help write the postcards, but our postcards are AI proof. Congressional offices use digital tools and AI to scan, categorize, and filter emails before any human reads them. Physical postcards must be handled, sorted, and read by a real person, guaranteeing your message breaks through the digital wall.
-              </p>
-            </div>
-
-            {/* Call to action */}
-            <div className="text-center pt-4 border-t border-muted">
-              <p className="text-base font-semibold text-primary">
-                Send a postcard. Be heard.
-              </p>
-            </div>
-
-            {/* Sources */}
-            <div className="pt-4 border-t border-muted/50">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Sources:</p>
-              <div className="space-y-1 text-xs text-muted-foreground leading-relaxed">
-                <p>Abernathy, C.E. (2015). Legislative Correspondence Management Practices: Congressional Offices and the Treatment of Constituent Opinion. Vanderbilt University Ph.D. Dissertation.</p>
-                <p>Congressional Management Foundation. Building Trust by Modernizing Constituent Engagement (2022).</p>
-                <p>Congressional Management Foundation. Communicating with Congress: Perceptions of Citizen Advocacy on Capitol Hill (2011).</p>
-                <p>Congressional Management Foundation. Communicating with Congress: How Citizen Advocacy Is Changing Mail Operations on Capitol Hill (2011).</p>
-              </div>
+            
+            <Separator className="my-0.5" />
+            
+            {/* Learn Why This Works Link */}
+            <div className="text-center py-1">
+              <button
+                onClick={() => {
+                  setMenuView('research');
+                  setOpenResearchMenu(true);
+                }}
+                className="text-xs leading-none text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer inline-flex items-center gap-1"
+                data-attr="click-landing-research"
+              >
+                Learn More
+                <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Representatives Results */}
+
+        {/* Representatives Results - Action First */}
         {isSearching && <div className="mb-6">
             <Skeleton className="h-20 w-full rounded-xl" />
           </div>}
 
-        {representatives.length > 0 && !isSearching && <div ref={resultsRef} className="mb-3 space-y-4">
-            {representatives.length > 1 && <p className="text-center text-sm text-muted-foreground px-4">
-                Multiple representatives found. Select yours:
-              </p>}
-            
-            {representatives.map(rep => <RepresentativeCard key={rep.id} representative={rep} isSelected={selectedRep?.id === rep.id} showBadge={true} onClick={() => handleRepSelect(rep)} />)}
-            
-            {selectedRep && <Button ref={continueButtonRef} onClick={handleContinue} className="w-full h-12 text-base font-medium mb-3">
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>}
-          </div>}
+        {representatives.length > 0 && !isSearching && (
+          <>
+            <div ref={resultsRef} className="mb-3 space-y-4">
+              {representatives.length > 1 && (
+                <p className="text-center text-sm text-muted-foreground px-4">
+                  Multiple representatives found. Select yours:
+                </p>
+              )}
+
+              {representatives.map((rep) => (
+                <RepresentativeCard
+                  key={rep.id}
+                  representative={rep}
+                  isSelected={selectedRep?.id === rep.id}
+                  showBadge={true}
+                  onClick={() => handleRepSelect(rep)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Spacer for sticky button */}
+        {selectedRep && <div className="h-20" />}
       </div>
+
+      {/* Programmatically controlled HamburgerMenu for Research - Always available */}
+      <HamburgerMenu 
+        initialView={openResearchMenu ? menuView : "main"}
+        externalOpen={openResearchMenu}
+        externalSetOpen={setOpenResearchMenu}
+        hideTrigger={true}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenResearchMenu(false);
+            setMenuView('main');
+          }
+        }}
+      />
+
+      {/* Sticky CTA */}
+      {selectedRep && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg animate-slide-in-right">
+          <div className="max-w-2xl mx-auto">
+            <Button 
+              ref={continueButtonRef}
+              onClick={handleContinue} 
+              className="w-full h-12 text-base font-medium"
+              data-attr="submit-landing-continue"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
     </>;
 }

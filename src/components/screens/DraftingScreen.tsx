@@ -1,65 +1,67 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../integrations/supabase/client';
-import { DynamicSvg } from '../DynamicSvg';
-import { DotLottiePlayer } from '@dotlottie/react-player';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
+import { captureEdgeFunctionError } from '@/lib/errorTracking';
+import { CrossfadeLottie } from '../lottie/CrossfadeLottie';
 
 const draftingMessages = [
-  "Polishing your message…",
-  "Fitting onto a postcard…",
-  "Matching with bills in Congress…",
-  "Highlighting local impact…",
-  "Optimizing for influence…",
-  "Completing draft — amplifying your voice..."
+  "Synthesizing your concerns",
+  "Researching trusted local sources",
+  "Polishing your message",
+  "Completing draft — amplifying your voice"
 ];
 
 export function DraftingScreen() {
   const { state, dispatch } = useAppContext();
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1); // Start at -1 to show initial delay
-  const [displayedMessageIndex, setDisplayedMessageIndex] = useState(-1); // What message is actually shown
+  const { toast } = useToast();
+  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
   const [startTime] = useState(Date.now());
-  const [showTypewriter, setShowTypewriter] = useState(false);
+  const [showTypewriter, setShowTypewriter] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [animationError, setAnimationError] = useState(false);
-
+  const [apiCompleted, setApiCompleted] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState(draftingMessages[0]);
+  const hasDraftedRef = useRef(false);
+  
+  // Update message based on current animation
   useEffect(() => {
-    // Start immediately with no delay
-    setCurrentMessageIndex(0);
-    setDisplayedMessageIndex(0);
-    setShowTypewriter(true);
-  }, []);
-
-  // Rotate messages every 1.5 seconds after the initial delay
-  useEffect(() => {
-    if (currentMessageIndex >= 0) {
-      const interval = setInterval(() => {
-        setCurrentMessageIndex((prev) => {
-          if (prev < draftingMessages.length - 1) {
-            // First fade out current message
-            setShowTypewriter(false);
-            // Then update the displayed message and fade in
-            setTimeout(() => {
-              setDisplayedMessageIndex(prev + 1);
-              setShowTypewriter(true);
-            }, 200); // Faster crossfade for smoother transitions
-            return prev + 1;
-          }
-          return prev; // Stay on last message
-        });
-      }, 1500);
-
-      return () => clearInterval(interval);
+    const messageIndex = currentAnimationIndex;
+    const newMessage = draftingMessages[messageIndex] || draftingMessages[draftingMessages.length - 1];
+    
+    if (newMessage !== currentMessage) {
+      setShowTypewriter(false);
+      setTimeout(() => {
+        setCurrentMessage(newMessage);
+        setShowTypewriter(true);
+      }, 200);
     }
-  }, [currentMessageIndex]);
+  }, [currentAnimationIndex, currentMessage]);
 
   // Handle the actual drafting process
   useEffect(() => {
+    // Guard: prevent duplicate calls
+    if (hasDraftedRef.current) {
+      console.log('⚠️ Draft already initiated, skipping duplicate call');
+      return;
+    }
+    
+    hasDraftedRef.current = true;
+    console.log('✅ Initiating draft process (first and only call)');
+    
     const draftMessage = async () => {
       try {
         const { concerns, personalImpact } = state.postcardData;
         
         if (!concerns && !personalImpact) {
-          dispatch({ type: 'SET_ERROR', payload: 'Missing required information' });
+          setHasError(true);
+          toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Please provide your concerns or personal impact.",
+          });
           return;
         }
 
@@ -70,13 +72,18 @@ export function DraftingScreen() {
           zipCode: state.postcardData.zipCode
         });
 
+        // Capture ref parameter from URL for tracking
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref') || undefined;
+
         // Call the edge function to draft the message
         const { data, error } = await supabase.functions.invoke('draft-postcard-message', {
           body: {
             concerns,
             personalImpact,
             representative: state.postcardData.representative,
-            zipCode: state.postcardData.zipCode
+            zipCode: state.postcardData.zipCode,
+            inviteCode: refCode
           }
         });
 
@@ -84,26 +91,46 @@ export function DraftingScreen() {
 
         if (error) {
           console.error('Error drafting message:', error);
-          dispatch({ type: 'SET_ERROR', payload: `Failed to draft message: ${error.message}` });
+          captureEdgeFunctionError(error, 'draft-postcard-message', {
+            email: state.postcardData?.email,
+            zipCode: state.postcardData.zipCode,
+            representative: state.postcardData.representative?.name,
+            step: 'drafting',
+            hasConcerns: !!concerns,
+            hasPersonalImpact: !!personalImpact
+          });
+          setApiCompleted(true);
+          setHasError(true);
           return;
         }
 
         if (!data) {
           console.error('No data in response');
-          dispatch({ type: 'SET_ERROR', payload: 'No response from AI service' });
+          setApiCompleted(true);
+          setHasError(true);
           return;
         }
 
         // Note: draftMessage might be empty if AI generation failed, but we still have a draftId
         if (!data.draftMessage && !data.draftId) {
           console.error('No draft message or draft ID in response:', data);
-          dispatch({ type: 'SET_ERROR', payload: 'Invalid response from AI service' });
+          setApiCompleted(true);
+          setHasError(true);
           return;
         }
 
-        // Ensure minimum 1 second dwell time
+        // Mark API as completed successfully
+        setApiCompleted(true);
+
+        // Check if timeout already occurred - ignore late responses
+        if (hasError) {
+          console.log('⏱️ Ignoring late response - timeout already occurred');
+          return;
+        }
+
+        // Ensure minimum 15.5 second display time for better UX
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, 1000 - elapsedTime);
+        const remainingTime = Math.max(0, 15500 - elapsedTime);
 
         setTimeout(() => {
           // Log the data for debugging
@@ -138,68 +165,95 @@ export function DraftingScreen() {
 
       } catch (error) {
         console.error('Error in drafting process:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'An error occurred while drafting your message' });
+        captureEdgeFunctionError(error, 'draft-postcard-message', {
+          email: state.postcardData?.email,
+          zipCode: state.postcardData.zipCode,
+          representative: state.postcardData.representative?.name,
+          step: 'drafting',
+          hasConcerns: !!state.postcardData.concerns,
+          hasPersonalImpact: !!state.postcardData.personalImpact,
+          errorContext: 'catch_block'
+        });
+        setApiCompleted(true);
+        setHasError(true);
       }
     };
 
     draftMessage();
 
-    // Set timeout for 45 seconds
+    // Set timeout for 60 seconds (1 minute)
     const timeout = setTimeout(() => {
-      // Mark as completed and navigate to review
-      setIsCompleted(true);
-      setTimeout(() => {
-        dispatch({ type: 'SET_STEP', payload: 3 });
-      }, 500);
-    }, 45000);
+      if (!apiCompleted) {
+        console.error('⏱️ Timeout: Request took too long, showing fallback placeholder');
+        setApiCompleted(true);
+        setHasError(true);
+        
+        // Set the fallback placeholder message and navigate to review (no toast error)
+        setTimeout(() => {
+          dispatch({
+            type: 'UPDATE_POSTCARD_DATA',
+            payload: {
+              originalMessage: `${state.postcardData.concerns}\n\n${state.postcardData.personalImpact}`,
+              draftMessage: "Canary just returned from a long flight and needs a moment to catch its breath Please write your message below, and we'll make sure it reaches your representative",
+              sources: [],
+              draftId: undefined, // No draft ID since we timed out
+              isFallbackPlaceholder: true // This flag makes it show as placeholder
+            }
+          });
+          
+          // Navigate to review screen
+          dispatch({ type: 'SET_STEP', payload: 3 });
+        }, 500);
+      }
+    }, 60000);
 
     return () => clearTimeout(timeout);
-  }, [state.postcardData, dispatch, startTime]);
+  }, []); // Empty array: run once on mount only
+
+  const handleRetry = () => {
+    // Navigate back to the craft message screen
+    dispatch({ type: 'SET_STEP', payload: 2 });
+  };
 
   return (
     <div className="min-h-screen h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-6 max-w-md mx-auto">
-        <div className="flex flex-col items-center justify-center space-y-6">
-          <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72">
-            {!animationError ? (
-              <Suspense fallback={
-                <div className="w-full h-full bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
-                  <div className="w-3/4 h-3/4 bg-primary/20 rounded-full" />
-                </div>
-              }>
-                <DotLottiePlayer
-                  src="/assets/writing-animation.json"
-                  autoplay
-                  loop
-                  className="w-full h-full"
-                  onError={() => setAnimationError(true)}
-                />
-              </Suspense>
-            ) : (
-              <DynamicSvg 
-                assetName="onboarding_icon_2.svg"
-                alt="Canary research process"
-                className="w-full h-full"
-              />
-            )}
+        {hasError ? (
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="w-10 h-10 text-destructive" />
+            </div>
+            <div className="text-center space-y-3">
+              <h1 className="display-title">
+                Something went wrong
+              </h1>
+              <p className="text-base text-muted-foreground">
+                We couldn't draft your postcard Please try again
+              </p>
+            </div>
+            <Button onClick={handleRetry} size="lg">
+              Try Again
+            </Button>
           </div>
-          <div className="text-center space-y-3">
-            <h1 className="text-2xl display-title">
-              Drafting your postcard
-            </h1>
-            
-            {/* Typewriter message with smooth transition */}
-            <div className="h-6 flex items-center justify-center">
-              {displayedMessageIndex >= 0 && (
-                <p className={`text-base font-semibold text-primary transition-all duration-300 ease-in-out ${
-                  showTypewriter ? 'animate-scale-in typewriter-text' : 'opacity-0 scale-95'
+        ) : (
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <CrossfadeLottie />
+            <div className="text-center space-y-3">
+              <h1 className="display-title">
+                Drafting your postcard
+              </h1>
+              
+              {/* Typewriter message with smooth transition */}
+              <div className="h-6 flex items-center justify-center">
+                <p className={`text-base font-semibold text-primary transition-opacity duration-200 ${
+                  showTypewriter ? 'opacity-100' : 'opacity-0'
                 }`}>
-                  {draftingMessages[displayedMessageIndex]}
+                  {currentMessage}
                 </p>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

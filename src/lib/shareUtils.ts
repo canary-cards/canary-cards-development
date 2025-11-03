@@ -8,21 +8,53 @@ import { getFrontendUrl } from '@/lib/environment';
 // Standard share content
 export const SHARE_TEXT = 'Did something small but powerful today: sent a real postcard to Congress with Canary Cards. Took 3 minutes and actually works.';
 export const SHARE_TITLE = 'Send a handwritten postcard to Congress.';
-export const SHARE_DESCRIPTION = 'Just 50 cards can swing a vote. Canary makes it effortless.';
+export const SHARE_DESCRIPTION = 'Just a few handwritten postcards can swing a congressional vote';
 
 /**
- * Get the app URL for sharing - always use production domain
+ * Strip trailing numbers from a sharing link for display purposes
+ * Example: "Ben-W-2" -> "Ben W."
+ */
+export const formatSharingLinkForDisplay = (link: string): string => {
+  if (!link) return '';
+  
+  // Remove trailing -N pattern (e.g., "-2", "-3")
+  const baseLink = link.replace(/-\d+$/, '');
+  
+  // Convert "Ben-W" to "Ben W."
+  const parts = baseLink.split('-');
+  if (parts.length === 2) {
+    return `${parts[0]} ${parts[1]}.`;
+  }
+  
+  return link;
+};
+
+/**
+ * Get the app URL for sharing - use current environment or production
  */
 export const getAppUrl = (): string => {
+  // In development/staging, use current domain for testing
+  // In production, use production domain
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const origin = window.location.origin;
+    const isDev = hostname.includes('lovable.app') || hostname === 'localhost';
+    const result = isDev ? origin : 'https://canary.cards';
+    console.log('[shareUtils] getAppUrl()', { hostname, origin, isDev, result });
+    return result;
+  }
+  // SSR/build fallback
   return 'https://canary.cards';
 };
 
 /**
- * Generate a referral URL with optional ref parameter
+ * Generate a referral URL with sharing link
  */
-export const generateReferralUrl = (ref?: string): string => {
+export const generateReferralUrl = (sharingLink?: string): string => {
   const baseUrl = getAppUrl();
-  return ref ? `${baseUrl}?ref=${ref}` : baseUrl;
+  const finalUrl = sharingLink ? `${baseUrl}?ref=${encodeURIComponent(sharingLink)}` : baseUrl;
+  console.log('[shareUtils] generateReferralUrl()', { sharingLink, baseUrl, finalUrl });
+  return finalUrl;
 };
 
 /**
@@ -66,12 +98,39 @@ export const shareContent = async (url: string, customText?: string): Promise<vo
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         // Fallback to clipboard if share fails (but not if user cancelled)
-        await copyShareContent(url, customText);
+        // On desktop fallback, only copy the URL without the message text
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({
+            title: "Link copied!",
+            description: "Share link copied to clipboard",
+          });
+        } catch (clipboardError) {
+          console.error('Failed to copy:', clipboardError);
+          toast({
+            title: "Failed to copy",
+            description: "Please copy the link manually.",
+            variant: "destructive"
+          });
+        }
       }
     }
   } else {
-    // Fallback to clipboard
-    await copyShareContent(url, customText);
+    // Desktop fallback - only copy the URL, not the message text
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: "Share link copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the link manually.",
+        variant: "destructive"
+      });
+    }
   }
 };
 
