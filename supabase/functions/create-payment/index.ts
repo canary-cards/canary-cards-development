@@ -98,6 +98,23 @@ serve(async (req) => {
             }
           : {};
 
+        // Create compact versions of representative and senators data
+        // Only include essential fields to stay under Stripe's 500 char limit
+        const compactRepresentative = postcardData.representative ? {
+          id: postcardData.representative.id,
+          name: postcardData.representative.name,
+          type: postcardData.representative.type,
+          district: postcardData.representative.district,
+          address: postcardData.representative.address
+        } : null;
+
+        const compactSenators = postcardData.senators ? postcardData.senators.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          address: s.address
+        })) : [];
+
         postcardMetadata = {
           // Keep address basics for post-payment processing
           postcard_userInfo: JSON.stringify(essentialUserInfo),
@@ -106,9 +123,9 @@ serve(async (req) => {
           postcard_sendOption: postcardData.sendOption || sendOption,
           postcard_email: postcardData.email || email,
           postcard_draftId: postcardData.draftId || "",
-          // Include representative and senators data - essential for sending
-          postcard_representative: postcardData.representative ? JSON.stringify(postcardData.representative) : "",
-          postcard_senators: postcardData.senators ? JSON.stringify(postcardData.senators) : "[]",
+          // Include representative and senators data - compact version for Stripe limits
+          postcard_representative: compactRepresentative ? JSON.stringify(compactRepresentative) : "",
+          postcard_senators: compactSenators.length > 0 ? JSON.stringify(compactSenators) : "[]",
         };
         console.log("Prepared postcard metadata for session (minimal, within Stripe limits)");
       } catch (error) {
