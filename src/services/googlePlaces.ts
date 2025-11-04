@@ -38,17 +38,19 @@ export async function searchAddressAutocomplete(query: string, zipCode?: string)
     });
 
     if (error) {
-      throw new Error(`Supabase function error: ${error.message}`);
+      console.error('Google Places API invocation error:', error);
+      throw new Error(`Address lookup service error: ${error.message}`);
     }
     
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      throw new Error(`Google Places API error: ${data.status}`);
+      console.error('Google Places API error status:', data.status);
+      throw new Error(`Address search unavailable (${data.status})`);
     }
 
     return data.predictions || [];
   } catch (error) {
     console.error('Google Places autocomplete error:', error);
-    return [];
+    throw error; // Re-throw to let caller handle the error
   }
 }
 

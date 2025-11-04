@@ -9,6 +9,7 @@ import { useAppContext } from '../../context/AppContext';
 import { MapPin, ArrowLeft, ArrowRight, Home, Plus, Minus } from 'lucide-react';
 import { searchAddressAutocomplete, getPlaceDetails, GooglePlacesAddressPrediction } from '../../services/googlePlaces';
 import { capitalizeName } from '../../lib/utils';
+import { toast } from 'sonner';
 
 // Interface removed - now using GooglePlacesAddressPrediction from service
 
@@ -89,8 +90,18 @@ export function ReturnAddressScreen() {
       const suggestions = await searchAddressAutocomplete(query, zipCode);
       setAddressSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
+      
+      // Show error if no results (might indicate API issue)
+      if (suggestions.length === 0 && query.length >= 3) {
+        toast.error('No addresses found. Try typing more of your address.', {
+          duration: 3000
+        });
+      }
     } catch (error) {
       console.error('Address search failed:', error);
+      toast.error('Address search failed. Please try again or enter manually.', {
+        duration: 4000
+      });
       setAddressSuggestions([]);
       setShowSuggestions(false);
     } finally {
