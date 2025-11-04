@@ -48,25 +48,34 @@ export function CheckoutScreen() {
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
 
-  // Fetch senators when component mounts
+  // Fetch senators AND representative when ZIP changes
   useEffect(() => {
-    const fetchSenatorsFromZip = async () => {
+    const fetchLegislatorsFromZip = async () => {
       if (userInfo?.zipCode) {
         setLoadingSenators(true);
         try {
           const {
+            representative: newRep,
             senators: stateSenators
           } = await lookupRepresentativesAndSenators(userInfo.zipCode);
           setSenators(stateSenators);
+          
+          // Update the app state with the correct representative for this ZIP
+          if (newRep) {
+            dispatch({
+              type: 'UPDATE_POSTCARD_DATA',
+              payload: { representative: newRep }
+            });
+          }
         } catch (error) {
-          console.error('Failed to fetch senators:', error);
+          console.error('Failed to fetch legislators:', error);
         } finally {
           setLoadingSenators(false);
         }
       }
     };
-    fetchSenatorsFromZip();
-  }, [userInfo?.zipCode]);
+    fetchLegislatorsFromZip();
+  }, [userInfo?.zipCode, dispatch]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
