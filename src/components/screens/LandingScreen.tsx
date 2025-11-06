@@ -18,9 +18,9 @@ import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
 import { HamburgerMenu } from '../HamburgerMenu';
 import heroImage from '@/assets/civic-hero-mobile.jpg';
-import { usePostHog } from 'posthog-js/react';
+import { trackPageView, trackZipCodeEntered, trackRepresentativeSelected, setUserProperties } from '@/lib/analytics';
+
 export function LandingScreen() {
-  const posthog = usePostHog();
   const [openResearchMenu, setOpenResearchMenu] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'about' | 'faq' | 'contact' | 'privacy-terms' | 'research'>('main');
   const {
@@ -41,7 +41,7 @@ export function LandingScreen() {
 
   // Track landing page view
   useEffect(() => {
-    posthog.capture('landing_page_viewed');
+    trackPageView('landing');
   }, []);
 
   // Auto-focus ZIP input with mobile-friendly delay
@@ -94,6 +94,10 @@ export function LandingScreen() {
     try {
       const reps = await lookupRepresentatives(zipCode);
       setRepresentatives(reps);
+      
+      // Track zip code entry
+      trackZipCodeEntered(zipCode);
+      
       if (reps.length === 1) {
         setSelectedRep(reps[0]);
       }
@@ -129,6 +133,23 @@ export function LandingScreen() {
   }, [selectedRep]);
   const handleRepSelect = (rep: Representative) => {
     setSelectedRep(rep);
+    
+    // Track representative selection
+    trackRepresentativeSelected({
+      name: rep.name,
+      party: rep.party,
+      chamber: rep.type, // 'type' field contains chamber info
+      state: rep.state,
+    });
+    
+    // Set user properties
+    setUserProperties({
+      zipCode,
+      state: rep.state,
+      representativeName: rep.name,
+      representativeParty: rep.party,
+      representativeChamber: rep.type,
+    });
   };
   const handleContinue = () => {
     if (selectedRep) {

@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import { trackAPICall } from './analytics';
 
 /**
  * Centralized error tracking helper for edge function errors
@@ -13,6 +14,7 @@ export const captureEdgeFunctionError = (
     representative?: string;
     sendOption?: string;
     step?: string;
+    duration?: number;
     [key: string]: any;
   }
 ) => {
@@ -26,6 +28,11 @@ export const captureEdgeFunctionError = (
   const errorMessage = error?.message || error?.toString() || 'Unknown error';
   const statusCode = error?.status || error?.statusCode || null;
   const errorName = error?.name || 'EdgeFunctionError';
+
+  // Track API call failure
+  if (context?.duration) {
+    trackAPICall(functionName, context.duration, false, statusCode || undefined);
+  }
 
   // Capture exception with PostHog
   posthog.captureException(error, {

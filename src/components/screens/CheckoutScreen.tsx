@@ -18,6 +18,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getTotalPriceDollars } from '@/lib/pricing';
 import { validateEmailWithSuggestion, normalizeEmail } from '@/lib/emailUtils';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
+import { trackPageView, trackCheckoutStarted, identifyUser } from '@/lib/analytics';
+
 type RecipientSelection = 'rep-only' | 'all-three' | 'custom';
 export function CheckoutScreen() {
   const {
@@ -47,6 +49,16 @@ export function CheckoutScreen() {
   const [validationError, setValidationError] = useState('');
   const rep = state.postcardData.representative;
   const userInfo = state.postcardData.userInfo;
+
+  // Track checkout page view
+  useEffect(() => {
+    trackPageView('checkout');
+    
+    // Track checkout started with price
+    const sendOption = getSendOption();
+    const price = getTotalPriceDollars(sendOption) * 100; // Convert to cents
+    trackCheckoutStarted(price);
+  }, []);
 
   // Fetch senators AND representative when ZIP changes
   useEffect(() => {
@@ -93,6 +105,14 @@ export function CheckoutScreen() {
     } else {
       setEmailError('');
       setEmailValid(true);
+      
+      // Identify user with PostHog
+      identifyUser(value, {
+        fullName: userInfo?.fullName,
+        zipCode: userInfo?.zipCode,
+        state: userInfo?.state,
+        city: userInfo?.city,
+      });
     }
     setEmailSuggestion(''); // Always clear suggestions
   };

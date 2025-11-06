@@ -9,6 +9,7 @@ import { useAppContext } from '../../context/AppContext';
 import { MapPin, ArrowLeft, ArrowRight, Home, Plus, Minus } from 'lucide-react';
 import { searchAddressAutocomplete, getPlaceDetails, GooglePlacesAddressPrediction } from '../../services/googlePlaces';
 import { capitalizeName } from '../../lib/utils';
+import { trackPageView, trackAddressEntered, identifyUser, setUserProperties } from '@/lib/analytics';
 import { toast } from 'sonner';
 
 // Interface removed - now using GooglePlacesAddressPrediction from service
@@ -262,6 +263,23 @@ export function ReturnAddressScreen() {
       state: state,
       zipCode: parsedZip
     };
+    
+    // Track address entry
+    trackAddressEntered({
+      street: finalStreetAddress,
+      city: city,
+      state: state,
+      zipCode: parsedZip
+    });
+    
+    // Update user properties
+    setUserProperties({
+      fullName: capitalizeName(fullName),
+      city: city,
+      state: state,
+      zipCode: parsedZip
+    });
+    
     dispatch({
       type: 'UPDATE_POSTCARD_DATA',
       payload: {

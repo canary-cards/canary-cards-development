@@ -10,11 +10,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { safeStorage } from '@/lib/safeStorage';
 import { captureEdgeFunctionError } from '@/lib/errorTracking';
+import { trackPageView, trackMessageDraftStarted, trackMessageDraftCompleted, trackMessageEdited } from '@/lib/analytics';
+
 export function CraftMessageScreen() {
   const {
     state,
     dispatch
   } = useAppContext();
+  
+  // Track page view
+  useEffect(() => {
+    trackPageView('craft_message');
+  }, []);
   const {
     toast
   } = useToast();
