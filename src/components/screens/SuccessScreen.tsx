@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReferralUrl } from '@/lib/shareUtils';
-import { trackPageView, trackPaymentCompleted, trackShareInitiated, trackShareCompleted } from '@/lib/analytics';
 
 export function SuccessScreen() {
   const { state, dispatch } = useAppContext();
@@ -29,12 +28,6 @@ export function SuccessScreen() {
   };
 
   useEffect(() => {
-    // Track successful payment
-    const sendOption = state.postcardData.sendOption || 'single';
-    const price = (sendOption === 'single' ? 5 : sendOption === 'double' ? 9 : 13) * 100;
-    trackPaymentCompleted(state.postcardData.draftId || 'unknown', price);
-    trackPageView('success');
-    
     const fetchSharingLink = async () => {
       try {
         const email = state.postcardData.email;
@@ -125,17 +118,13 @@ export function SuccessScreen() {
   };
 
   const copyInviteLink = async () => {
-    trackShareInitiated(state.postcardData.draftId || 'unknown');
     const { copyShareContent } = await import('@/lib/shareUtils');
     await copyShareContent(inviteLink);
-    trackShareCompleted('copy');
   };
 
   const shareViaText = async () => {
-    trackShareInitiated(state.postcardData.draftId || 'unknown');
     const { shareViaSMS } = await import('@/lib/shareUtils');
     shareViaSMS(inviteLink);
-    trackShareCompleted('native');
   };
 
   const handleSharePageNavigation = () => {

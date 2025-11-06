@@ -12,36 +12,30 @@ if (isProduction()) {
   posthog.init(getPostHogKey(), {
     api_host: getPostHogHost(),
     person_profiles: 'always',
-    
-    // Session Replay - captures user interactions for debugging
-    session_recording: {
-      recordCrossOriginIframes: true,
-      maskAllInputs: true, // Protect PII
-      maskTextSelector: '[data-mask]', // Custom masking
-    },
-    
-    // Autocapture configuration
     autocapture: {
+      // Capture standard DOM events
       dom_event_allowlist: ['click', 'change', 'submit'],
+      
+      // Capture these element types
       element_allowlist: ['button', 'a', 'input', 'select', 'textarea', 'label'],
+      
+      // Also capture any element with data-attr attribute
       css_selector_allowlist: ['[data-attr]'],
+      
+      // KEY FIX: Don't ignore any attributes - this ensures data-attr is captured
       element_attribute_ignorelist: [],
     },
-    
-    // Performance monitoring
-    capture_performance: true,
-    
     // Ensure custom properties aren't blocked
     property_denylist: [],
-    
-    // Debug mode (consider disabling in production)
-    debug: false,
-    
-    // Auto page view tracking
+    debug: true,
     capture_pageview: true,
-    
     loaded: (posthog) => {
-      console.log('PostHog initialized with enhanced tracking');
+      console.log('PostHog loaded successfully', posthog);
+      console.log('PostHog config:', {
+        key: getPostHogKey(),
+        host: getPostHogHost(),
+        distinct_id: posthog.get_distinct_id()
+      });
     }
   })
   console.log('PostHog initialized for production environment');
