@@ -234,12 +234,6 @@ serve(async (req) => {
       return selectedFont;
     };
 
-    // Helper to strip greeting from message (IgnitePost templates handle greetings)
-    const stripGreeting = (message: string): string => {
-      const greetingPattern = /^(?:Dear\s+)?(Rep|Sen)\.\s+\w+,?\s*\n?/i;
-      return message.replace(greetingPattern, '').trim();
-    };
-
     // Simple helper to derive office address - use exact contact.address with standardized city/state
     const deriveOfficeAddress = (recipient: any, recipientType: 'representative' | 'senator') => {
       console.log(`Deriving address for ${recipientType}:`, recipient);
@@ -321,7 +315,7 @@ serve(async (req) => {
       const orderData = {
         letter_template_id: templateId,
         font: fontKey,
-        message: stripGreeting(message),
+        message: message,
         // Only include image parameter if not simulating failure
         ...(shouldFailOrder ? {} : { image: 'white' }), // Remove image parameter for failure simulation
         recipient_name: recipientName,
@@ -343,10 +337,7 @@ serve(async (req) => {
         'metadata[postcard_id]': postcardId
       };
 
-      console.log(`Creating ${recipientType} postcard order${shouldFailOrder ? ' (SIMULATING FAILURE)' : ''} with UID ${postcardId}`);
-      console.log(`Original message: ${message.substring(0, 100)}...`);
-      console.log(`Stripped message: ${orderData.message.substring(0, 100)}...`);
-      console.log(`Full order data:`, JSON.stringify(orderData, null, 2));
+      console.log(`Creating ${recipientType} postcard order${shouldFailOrder ? ' (SIMULATING FAILURE)' : ''} with UID ${postcardId}:`, JSON.stringify(orderData, null, 2));
 
       let ignitepostResult = null;
       let deliveryStatus = 'failed';

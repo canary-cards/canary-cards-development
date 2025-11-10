@@ -225,16 +225,10 @@ const handler = async (req) => {
 
     const primaryRepName = representative ? formatRepresentativeName(representative) : 'your representative';
 
-    // Postcard content
+    // Postcard content - use finalMessage as-is since it already contains the proper greeting
     let postcardContent = '';
     if (finalMessage && successfulOrders.length > 0) {
-      const firstRep = successfulOrders[0].type === 'representative' 
-        ? representative 
-        : senators?.find(s => s.name === successfulOrders[0].recipient);
-      const nameParts = firstRep.name.split(' ');
-      const lastName = nameParts[nameParts.length - 1];
-      const shortTitle = firstRep.type === 'representative' ? 'Rep.' : 'Sen.';
-      postcardContent = `Dear ${shortTitle} ${lastName},\n\n${finalMessage}`;
+      postcardContent = finalMessage;
     }
 
     // Other recipients list
