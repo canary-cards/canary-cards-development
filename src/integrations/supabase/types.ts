@@ -407,22 +407,10 @@ export type Database = {
           status: string
         }[]
       }
-      normalize_email: {
-        Args: { email_input: string }
-        Returns: string
-      }
-      prepare_migration_from_staging: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      trigger_production_migration: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      validate_production_environment: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      normalize_email: { Args: { email_input: string }; Returns: string }
+      prepare_migration_from_staging: { Args: never; Returns: string }
+      trigger_production_migration: { Args: never; Returns: string }
+      validate_production_environment: { Args: never; Returns: Json }
     }
     Enums: {
       delivery_status: "submitted" | "mailed" | "failed"
