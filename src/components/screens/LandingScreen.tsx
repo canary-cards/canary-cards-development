@@ -93,9 +93,11 @@ export function LandingScreen() {
     setShowSharedDialog(false); // Hide the shared banner when user starts searching
 
     try {
-      const { representative: rep, senators: stateSenators } = await lookupRepresentativesAndSenators(zipCode);
+      const { representatives, senators: stateSenators } = await lookupRepresentativesAndSenators(zipCode);
+      // Take the first representative (most ZIP codes have only one)
+      const rep = representatives && representatives.length > 0 ? representatives[0] : null;
       setRepresentative(rep);
-      setSenators(stateSenators);
+      setSenators(stateSenators || []);
       setHasResults(true);
     } catch (error) {
       setSearchError('Hmm. That doesn\'t look like a valid zip code. Please try again.');
