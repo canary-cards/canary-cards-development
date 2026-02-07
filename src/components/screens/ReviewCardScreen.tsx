@@ -54,15 +54,29 @@ export function ReviewCardScreen() {
         <Card className="bg-white shadow-sm mb-6">
           <CardContent className="p-6">
             <div className="space-y-4">
-              {/* TO Address */}
+              {/* TO Addresses - All Three Representatives */}
               <div>
-                <div className="text-xs font-semibold text-secondary uppercase tracking-wide mb-1">
+                <div className="text-xs font-semibold text-secondary uppercase tracking-wide mb-2">
                   TO:
                 </div>
-                <div className="text-primary font-inter">
-                  <p className="font-medium">{rep?.name}</p>
-                  <p className="text-sm">{rep?.address || '2206 Rayburn House Office Building'}</p>
-                  <p className="text-sm">{rep?.address ? '' : 'Washington, DC 20515-0507'}</p>
+                <div className="space-y-3">
+                  {/* House Representative */}
+                  {rep && (
+                    <div className="text-primary font-inter">
+                      <p className="font-medium">Rep. {rep?.name}</p>
+                      <p className="text-sm">{rep?.address || '2206 Rayburn House Office Building'}</p>
+                      <p className="text-sm">{rep?.address ? '' : 'Washington, DC 20515'}</p>
+                    </div>
+                  )}
+
+                  {/* Senators */}
+                  {state.postcardData.senators?.map((senator, index) => (
+                    <div key={senator.id || index} className="text-primary font-inter border-t border-border pt-3">
+                      <p className="font-medium">Sen. {senator?.name}</p>
+                      <p className="text-sm">{senator?.address || 'United States Senate'}</p>
+                      <p className="text-sm">{senator?.address ? '' : 'Washington, DC 20510'}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

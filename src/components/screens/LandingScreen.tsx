@@ -12,7 +12,7 @@ import { useAppContext } from '../../context/AppContext';
 import { ProgressIndicator } from '../ProgressIndicator';
 import { SharedBanner } from '../SharedBanner';
 import { Representative } from '../../types';
-import { lookupRepresentatives } from '../../services/geocodio';
+import { lookupRepresentativesAndSenators } from '../../services/geocodio';
 import { MapPin, Users, Bot, PenTool, ArrowRight, Heart, CheckCircle2, Mail, ChevronRight } from 'lucide-react';
 import { Logo } from '../Logo';
 import { DynamicSvg } from '../DynamicSvg';
@@ -28,10 +28,11 @@ export function LandingScreen() {
     dispatch
   } = useAppContext();
   const [zipCode, setZipCode] = useState('');
-  const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [representative, setRepresentative] = useState<Representative | null>(null);
+  const [senators, setSenators] = useState<Representative[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [selectedRep, setSelectedRep] = useState<Representative | null>(null);
+  const [hasResults, setHasResults] = useState(false);
   const [showSharedDialog, setShowSharedDialog] = useState(false);
   const [sharedByName, setSharedByName] = useState('');
 
@@ -92,11 +93,10 @@ export function LandingScreen() {
     setShowSharedDialog(false); // Hide the shared banner when user starts searching
 
     try {
-      const reps = await lookupRepresentatives(zipCode);
-      setRepresentatives(reps);
-      if (reps.length === 1) {
-        setSelectedRep(reps[0]);
-      }
+      const { representative: rep, senators: stateSenators } = await lookupRepresentativesAndSenators(zipCode);
+      setRepresentative(rep);
+      setSenators(stateSenators);
+      setHasResults(true);
     } catch (error) {
       setSearchError('Hmm. That doesn\'t look like a valid zip code. Please try again.');
     } finally {
@@ -106,7 +106,7 @@ export function LandingScreen() {
 
   // Auto-scroll when representatives are loaded
   useEffect(() => {
-    if (representatives.length > 0 && resultsRef.current) {
+    if (hasResults && resultsRef.current) {
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({
           behavior: 'smooth',
@@ -114,11 +114,11 @@ export function LandingScreen() {
         });
       }, 300);
     }
-  }, [representatives]);
+  }, [hasResults]);
 
-  // Auto-scroll when representative is selected
+  // Auto-scroll to continue button when results are loaded
   useEffect(() => {
-    if (selectedRep && continueButtonRef.current) {
+    if (hasResults && continueButtonRef.current) {
       setTimeout(() => {
         continueButtonRef.current?.scrollIntoView({
           behavior: 'smooth',
@@ -126,18 +126,16 @@ export function LandingScreen() {
         });
       }, 300);
     }
-  }, [selectedRep]);
-  const handleRepSelect = (rep: Representative) => {
-    setSelectedRep(rep);
-  };
+  }, [hasResults]);
   const handleContinue = () => {
-    if (selectedRep) {
+    if (representative) {
       setShowSharedDialog(false); // Dismiss share banner before moving to next step
       dispatch({
         type: 'UPDATE_POSTCARD_DATA',
         payload: {
           zipCode,
-          representative: selectedRep
+          representative,
+          senators
         }
       });
       dispatch({
@@ -180,7 +178,7 @@ export function LandingScreen() {
                   </p>}
                 {!searchError && (
                   <p className="text-xs text-muted-foreground text-center">
-                    Enter your ZIP code to find your Rep
+                    Enter your ZIP code to find your Representatives
                   </p>
                 )}
               </div>
@@ -188,9 +186,9 @@ export function LandingScreen() {
               <Button type="submit" className={`w-full h-14 text-base font-semibold ${isSearching ? '!bg-[hsl(var(--primary-pressed))] !text-primary-foreground hover:!bg-[hsl(var(--primary-pressed))]' : zipCode.length === 5 && validateZipCode(zipCode) ? 'animate-pulse-subtle' : ''}`} disabled={isSearching || !zipCode} data-attr="submit-zip-code">
                 {isSearching ? <>
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                    Finding Your Rep...
+                    Finding Your Representatives...
                   </> : <>
-                    Find My Representative
+                    Find My Representatives
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>}
               </Button>
@@ -233,22 +231,29 @@ export function LandingScreen() {
             <Skeleton className="h-20 w-full rounded-xl" />
           </div>}
 
-        {representatives.length > 0 && !isSearching && (
+        {hasResults && !isSearching && (
           <>
             <div ref={resultsRef} className="mb-3 space-y-4">
-              {representatives.length > 1 && (
-                <p className="text-center text-sm text-muted-foreground px-4">
-                  Multiple representatives found. Select yours:
-                </p>
+              <p className="text-center text-sm text-muted-foreground px-4">
+                Your three representatives in Congress:
+              </p>
+
+              {/* House Representative */}
+              {representative && (
+                <RepresentativeCard
+                  representative={representative}
+                  isSelected={true}
+                  showBadge={true}
+                />
               )}
 
-              {representatives.map((rep) => (
+              {/* Senators */}
+              {senators.map((senator) => (
                 <RepresentativeCard
-                  key={rep.id}
-                  representative={rep}
-                  isSelected={selectedRep?.id === rep.id}
+                  key={senator.id}
+                  representative={senator}
+                  isSelected={true}
                   showBadge={true}
-                  onClick={() => handleRepSelect(rep)}
                 />
               ))}
             </div>
@@ -256,7 +261,7 @@ export function LandingScreen() {
         )}
 
         {/* Spacer for sticky button */}
-        {selectedRep && <div className="h-20" />}
+        {hasResults && <div className="h-20" />}
       </div>
 
       {/* Programmatically controlled HamburgerMenu for Research - Always available */}
@@ -274,7 +279,7 @@ export function LandingScreen() {
       />
 
       {/* Sticky CTA */}
-      {selectedRep && (
+      {hasResults && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg animate-slide-in-right">
           <div className="max-w-2xl mx-auto">
             <Button 

@@ -219,8 +219,15 @@ ${userInfo?.fullName}`;
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Your message</label>
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <label className="text-sm font-medium">
+                    Your message 
+                    <span className="text-muted-foreground font-normal">
+                      (addressed to {state.postcardData.representative?.type === 'senator' ? 'Sen.' : 'Rep.'} {state.postcardData.representative?.name?.split(' ').pop()}
+                      {state.postcardData.senators?.[0] && `, Sen. ${state.postcardData.senators[0].name?.split(' ').pop()}`}
+                      {state.postcardData.senators?.[1] && `, Sen. ${state.postcardData.senators[1].name?.split(' ').pop()}`})
+                    </span>
+                  </label>
                   <span className={`text-xs ${charCount > maxChars || charCount < minChars && charCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {charCount}/{maxChars}
                   </span>

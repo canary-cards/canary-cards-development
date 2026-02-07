@@ -469,28 +469,26 @@ async function draftPostcard({ concerns, personalImpact, location, themeAnalysis
 }): Promise<string> {
   const apiKey = getApiKey('ANTHROPIC_KEY');
   
-  const repLastName = extractRepresentativeLastName(representative.name);
-  const greeting = `Rep. ${repLastName},\n`;
-  const greetingLength = greeting.length;
-  const contentMaxLength = 300 - greetingLength;
+  // No longer adding a rep-specific greeting - message will be generic for all recipients
+  const maxLength = 300;
   
   const POSTCARD_SYSTEM_PROMPT = `Write a congressional postcard that sounds like a real person, not a political speech.
 
 EXACT FORMAT REQUIREMENTS (NON-NEGOTIABLE):
-[content - start directly with the message content, NO greeting needed as it will be added automatically]
+[content - start directly with the message content, NO greeting needed]
 
-GREETING HANDLING:
-- DO NOT include "Rep. Name," or "Dear Rep." - this will be added automatically
+CRITICAL - NO GREETING OR SIGNATURE:
+- DO NOT include any greeting like "Dear Rep.", "Dear Senator", "Rep. Name," etc.
+- The same message will be sent to multiple recipients (1 Representative and 2 Senators)
+- A personalized greeting will be added dynamically for each recipient when the postcard is printed
 - Start directly with your message content
 - DO NOT end with "Sincerely, [name]" or any signature line
 - Keep the message focused and direct
 
 🚨 ABSOLUTE LENGTH RULE (DO NOT BREAK):
-- HARD MAXIMUM: ${contentMaxLength} characters for your content (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
-- A greeting "Rep. ${repLastName}," will be automatically added, using ${greetingLength} characters
-- Total final postcard will be exactly 300 characters maximum
-- If your draft is even 1 character over ${contentMaxLength}, it will be rejected and not sent.
-- TARGET: ${Math.max(contentMaxLength - 25, contentMaxLength - 20)}-${contentMaxLength - 5} characters for optimal space utilization
+- HARD MAXIMUM: ${maxLength} characters for your content (including newlines). THIS IS A NON-NEGOTIABLE, CRITICAL REQUIREMENT.
+- If your draft is even 1 character over ${maxLength}, it will be rejected and not sent.
+- TARGET: ${maxLength - 25}-${maxLength - 5} characters for optimal space utilization
 - Character counting includes newlines
 
 ⚠️ CRITICAL OUTPUT RULE:
@@ -510,7 +508,7 @@ SOURCE INTEGRATION:
 - Connect national news to local impact
 - Only use sources that genuinely relate to the concern
 
-Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed 300 characters.`;
+Write the complete postcard following these guidelines exactly. If you are unsure, it is better to be short than to go over the limit. Never exceed ${maxLength} characters.`;
 
   const today = new Date().toISOString().split('T')[0];
   const context = `
@@ -548,10 +546,8 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
   // Clean the AI response to remove any character count debugging info
   const text = cleanAIResponse(rawText);
   
-  // Prepend the greeting to the AI-generated content
-  const finalPostcard = greeting + text;
-  
-  return finalPostcard;
+  // Return the message without greeting - it will be added dynamically per recipient
+  return text;
 }
 
 // Helper function to smart truncate text at the last period under the limit
