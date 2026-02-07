@@ -33,7 +33,7 @@ export function CheckoutScreen() {
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [senators, setSenators] = useState<Representative[]>([]);
   const [loadingSenators, setLoadingSenators] = useState(false);
-  const [selection, setSelection] = useState<RecipientSelection>('rep-only'); // Default to "Just your Representative"
+  const [selection, setSelection] = useState<RecipientSelection>('all-three'); // Default to "Maximum Impact"
   const [customSelection, setCustomSelection] = useState({
     representative: true,
     senator1: false,
@@ -393,40 +393,7 @@ export function CheckoutScreen() {
           </div>
 
           {/* Section 1 - Recipients Panel */}
-          {/* Single Voice Card */}
-          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => handleSelectionChange('rep-only')}>
-            {/* Checkbox in top-right corner */}
-            <div className="absolute top-4 right-4">
-              <Checkbox checked={selection === 'rep-only'} onCheckedChange={checked => checked && handleSelectionChange('rep-only')} onClick={e => e.stopPropagation()} />
-            </div>
-
-            <div className="mb-2">
-              <span className="display-title text-lg">Single Voice</span>
-            </div>
-            <div className="flex items-center justify-between mb-3 pr-8">
-              <p className="text-sm text-muted-foreground">
-                Send to Rep. {rep?.name.split(' ').pop() || 'Representative'} only
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {rep?.photo ? <img src={rep.photo} alt={`Photo of Rep. ${rep.name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
-                    {rep?.name.split(' ').map(n => n[0]).join('')}
-                  </div>}
-              </div>
-            </div>
-            
-            <div className="mb-3">
-              <span className="font-bold text-lg text-foreground">Total: $5</span>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              Quieter reach — one office hears you today.
-            </p>
-          </div>
-
-          {/* Recommended - Maximum Impact Card */}
+          {/* Recommended - Maximum Impact Card (FIRST) */}
           <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'all-three' ? 'border-2 border-primary shadow-lg' : 'border-primary/20 shadow-md hover:border-primary/30 hover:shadow-lg'}`} onClick={() => handleSelectionChange('all-three')} data-confetti-card>
             {/* Save $3 Badge */}
             <div className="absolute -top-2 -left-2 z-10">
@@ -486,7 +453,40 @@ export function CheckoutScreen() {
               <span>Auto-addressed with proper titles</span>
             </div>
             
-            <p className="text-sm text-muted-foreground">Louder voice — your message lands on every federal office that represents you.</p>
+            <p className="text-sm text-muted-foreground">Louder voice — your message lands on every federal office that represents you.</p>
+          </div>
+
+          {/* Single Voice Card (SECOND) */}
+          <div className={`rounded-lg border p-4 transition-all mb-6 bg-card cursor-pointer relative ${selection === 'rep-only' ? 'border-2 border-primary shadow-md' : 'border-primary/20 shadow-sm hover:border-primary/30'}`} onClick={() => handleSelectionChange('rep-only')}>
+            {/* Checkbox in top-right corner */}
+            <div className="absolute top-4 right-4">
+              <Checkbox checked={selection === 'rep-only'} onCheckedChange={checked => checked && handleSelectionChange('rep-only')} onClick={e => e.stopPropagation()} />
+            </div>
+
+            <div className="mb-2">
+              <span className="display-title text-lg">Single Voice</span>
+            </div>
+            <div className="flex items-center justify-between mb-3 pr-8">
+              <p className="text-sm text-muted-foreground">
+                Send to Rep. {rep?.name.split(' ').pop() || 'Representative'} only
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                {rep?.photo ? <img src={rep.photo} alt={`Photo of Rep. ${rep.name}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-primary text-sm font-medium">
+                    {rep?.name.split(' ').map(n => n[0]).join('')}
+                  </div>}
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <span className="font-bold text-lg text-foreground">Total: $5</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Quieter reach — one office hears you today.
+            </p>
           </div>
 
           {/* Mix & Match Card */}

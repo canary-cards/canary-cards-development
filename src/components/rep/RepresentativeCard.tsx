@@ -44,17 +44,23 @@ export function RepresentativeCard({
               />
             </div>
             <div className="flex-grow min-w-0">
-              <h3 className="text-primary font-semibold text-lg mb-1">
-                {representative.name}
-              </h3>
-              <p className="text-muted-foreground text-sm mb-2 leading-tight">
-                {representative.district} • {representative.city}, {representative.state}
-              </p>
-              {showBadge && isSelected && (
-                <Badge variant="default" className="text-xs px-2 py-0.5 bg-amber-400 text-primary hover:bg-amber-400 shadow-sm whitespace-nowrap">
-                  My Rep
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-primary font-semibold text-lg">
+                  {representative.name}
+                </h3>
+                {/* Type badge - Representative or Senator */}
+                <Badge 
+                  variant="accent" 
+                  className="text-xs px-2 py-0.5 whitespace-nowrap"
+                >
+                  {representative.type === 'senator' ? 'Senator' : 'Representative'}
                 </Badge>
-              )}
+              </div>
+              <p className="text-muted-foreground text-sm mb-2 leading-tight">
+                {representative.type === 'senator' 
+                  ? `${representative.state}` 
+                  : `${representative.district} • ${representative.city}, ${representative.state}`}
+              </p>
             </div>
           </div>
           
