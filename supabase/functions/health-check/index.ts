@@ -31,6 +31,14 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Handle HEAD requests (used by UptimeRobot and other monitors)
+  if (req.method === 'HEAD') {
+    return new Response(null, {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
   
   const startTime = Date.now();
   
