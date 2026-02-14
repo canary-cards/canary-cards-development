@@ -51,7 +51,7 @@ export function RepresentativeCard({
               />
             </div>
             <div className="flex-grow min-w-0 pr-16">
-              <h3 className="text-primary font-semibold text-lg">
+              <h3 className="text-primary font-semibold text-lg leading-tight">
                 {representative.name}
               </h3>
               <p className="text-muted-foreground text-sm mb-2 leading-tight">
