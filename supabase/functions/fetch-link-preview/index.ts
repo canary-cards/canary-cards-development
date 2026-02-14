@@ -47,8 +47,20 @@ serve(async (req) => {
 
     clearTimeout(timeoutId);
 
+    // If the site blocks us, return a graceful fallback instead of throwing
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      console.warn(`HTTP ${response.status} for ${url}, returning fallback preview`);
+      const urlObj = new URL(url);
+      const fallback: LinkPreview = {
+        url,
+        title: urlObj.hostname.replace('www.', ''),
+        siteName: urlObj.hostname.replace('www.', ''),
+        favicon: `https://${urlObj.hostname}/favicon.ico`
+      };
+      return new Response(
+        JSON.stringify(fallback),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const html = await response.text();
