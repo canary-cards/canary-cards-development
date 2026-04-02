@@ -545,6 +545,10 @@ ${sources.map((s, i) => `  ${i+1}. Title: ${s.headline}
   });
 
   const result = await response.json();
+  if (!response.ok || !result.content || !Array.isArray(result.content) || result.content.length === 0) {
+    console.error('Postcard generation API error:', JSON.stringify(result));
+    throw new Error(`Postcard generation failed: ${result.error?.message || response.statusText || 'No content returned'}`);
+  }
   const rawText = result.content[0]?.text?.trim() || '';
   
   // Clean the AI response to remove any character count debugging info
